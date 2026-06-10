@@ -2,9 +2,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import CreateView, UpdateView
 
 from core.roles import BMNRequiredMixin, MaintenanceRequiredMixin, VehicleViewRequiredMixin
+from core.listing import SearchListMixin
 from master.models import Kendaraan
 
 from .models import (
@@ -45,25 +46,27 @@ def get_kendaraan_foto_map():
     return kendaraan_foto_map
 
 
-class SIPKendaraanListView(VehicleViewRequiredMixin, ListView):
+class SIPKendaraanListView(VehicleViewRequiredMixin, SearchListMixin):
     model = SIPKendaraan
     template_name = 'kendaraan/sip_list.html'
-    paginate_by = 15
-
-    def get_queryset(self):
-        qs = super().get_queryset().select_related('kendaraan', 'pegawai')
-
-        q = self.request.GET.get('q')
-
-        if q:
-            qs = qs.filter(nomor_sip__icontains=q)
-
-        return qs
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['q'] = self.request.GET.get('q', '')
-        return ctx
+    select_related = ['kendaraan', 'pegawai', 'kendaraan__unit_kerja', 'pegawai__unit_kerja']
+    search_fields = [
+        ('nomor_sip', 'Nomor SIP'),
+        ('kendaraan__kode_kendaraan', 'Kode Kendaraan'),
+        ('kendaraan__nomor_polisi', 'Nomor Polisi'),
+        ('kendaraan__merek', 'Merek Kendaraan'),
+        ('kendaraan__tipe', 'Tipe Kendaraan'),
+        ('pegawai__nama', 'Nama Pegawai'),
+        ('pegawai__nip', 'NIP Pegawai'),
+        ('pegawai__jabatan', 'Jabatan Pegawai'),
+        ('pegawai__unit_kerja__nama_unit', 'Unit Kerja Pegawai'),
+        ('jenis_pemakaian', 'Jenis Pemakaian'),
+        ('tujuan_pemakaian', 'Tujuan Pemakaian'),
+        ('lokasi_penggunaan', 'Lokasi Penggunaan'),
+        ('pejabat_penandatangan', 'Pejabat Penandatangan'),
+        ('status', 'Status SIP'),
+        ('catatan', 'Catatan'),
+    ]
 
 
 class SIPKendaraanCreateView(BMNRequiredMixin, CreateView):
@@ -84,13 +87,24 @@ class SIPKendaraanUpdateView(BMNRequiredMixin, UpdateView):
     success_url = reverse_lazy('kendaraan:sip_list')
 
 
-class ServiceKendaraanListView(MaintenanceRequiredMixin, ListView):
+class ServiceKendaraanListView(MaintenanceRequiredMixin, SearchListMixin):
     model = ServiceKendaraan
     template_name = 'kendaraan/service_list.html'
-    paginate_by = 15
-
-    def get_queryset(self):
-        return super().get_queryset().select_related('kendaraan')
+    select_related = ['kendaraan', 'kendaraan__unit_kerja', 'dicatat_oleh']
+    search_fields = [
+        ('kendaraan__kode_kendaraan', 'Kode Kendaraan'),
+        ('kendaraan__nomor_polisi', 'Nomor Polisi'),
+        ('kendaraan__merek', 'Merek Kendaraan'),
+        ('kendaraan__tipe', 'Tipe Kendaraan'),
+        ('kendaraan__unit_kerja__nama_unit', 'Unit Kerja'),
+        ('jenis_service', 'Jenis Service'),
+        ('bengkel', 'Bengkel'),
+        ('uraian_pekerjaan', 'Uraian Pekerjaan'),
+        ('sparepart_diganti', 'Sparepart Diganti'),
+        ('kondisi_sebelum', 'Kondisi Sebelum'),
+        ('kondisi_sesudah', 'Kondisi Sesudah'),
+        ('dicatat_oleh__username', 'Petugas Pencatat'),
+    ]
 
 
 class ServiceKendaraanCreateView(MaintenanceRequiredMixin, CreateView):
@@ -169,13 +183,20 @@ def kuitansi_service_delete(request, pk):
     return redirect('kendaraan:service_update', pk=service_id)
 
 
-class RiwayatKondisiListView(MaintenanceRequiredMixin, ListView):
+class RiwayatKondisiListView(MaintenanceRequiredMixin, SearchListMixin):
     model = RiwayatKondisiKendaraan
     template_name = 'kendaraan/kondisi_list.html'
-    paginate_by = 15
-
-    def get_queryset(self):
-        return super().get_queryset().select_related('kendaraan')
+    select_related = ['kendaraan', 'kendaraan__unit_kerja', 'dicatat_oleh']
+    search_fields = [
+        ('kendaraan__kode_kendaraan', 'Kode Kendaraan'),
+        ('kendaraan__nomor_polisi', 'Nomor Polisi'),
+        ('kendaraan__merek', 'Merek Kendaraan'),
+        ('kendaraan__tipe', 'Tipe Kendaraan'),
+        ('kendaraan__unit_kerja__nama_unit', 'Unit Kerja'),
+        ('kondisi', 'Kondisi'),
+        ('uraian_kondisi', 'Uraian Kondisi'),
+        ('dicatat_oleh__username', 'Petugas Pencatat'),
+    ]
 
 
 class RiwayatKondisiCreateView(MaintenanceRequiredMixin, CreateView):

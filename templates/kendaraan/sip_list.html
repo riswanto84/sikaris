@@ -1,3 +1,30 @@
 {% extends 'base.html' %}
 {% block page_title %}SIP Kendaraan{% endblock %}
-{% block content %}<div class="toolbar"><form class="search-box" method="get"><input class="search-input" name="q" value="{{ q }}" placeholder="Cari nomor SIP kendaraan..."><button class="btn btn-secondary" type="submit">Cari</button></form>{% if can_access_sip %}<a class="btn btn-primary" href="{% url 'kendaraan:sip_create' %}">+ Buat SIP Kendaraan</a>{% endif %}</div><div class="card table-card"><table class="table"><thead><tr><th>No SIP</th><th>Tanggal</th><th>Kendaraan</th><th>Pegawai</th><th>Periode</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{% for o in object_list %}<tr><td><strong>{{ o.nomor_sip }}</strong></td><td>{{ o.tanggal_sip }}</td><td>{{ o.kendaraan }}</td><td>{{ o.pegawai }}</td><td>{{ o.tanggal_mulai }} s.d. {{ o.tanggal_akhir }}</td><td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td><td>{% if can_access_sip %}<a class="btn btn-secondary" href="{% url 'kendaraan:sip_update' o.pk %}">Edit</a>{% else %}-{% endif %}</td></tr>{% empty %}<tr><td colspan="7" class="empty-state">Belum ada data SIP kendaraan.</td></tr>{% endfor %}</tbody></table></div>{% endblock %}
+{% block content %}
+<div class="toolbar">
+  {% include 'includes/list_search.html' %}
+  {% if can_access_sip %}<a class="btn btn-primary" href="{% url 'kendaraan:sip_create' %}">+ Buat SIP Kendaraan</a>{% endif %}
+</div>
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>No SIP</th><th>Tanggal</th><th>Kendaraan</th><th>Pegawai</th><th>Periode</th><th>Jenis</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody>
+      {% for o in object_list %}
+      <tr>
+        <td><strong>{{ o.nomor_sip }}</strong></td>
+        <td>{{ o.tanggal_sip }}</td>
+        <td>{{ o.kendaraan }}</td>
+        <td>{{ o.pegawai }}</td>
+        <td>{{ o.tanggal_mulai }} s.d. {{ o.tanggal_akhir }}</td>
+        <td>{{ o.get_jenis_pemakaian_display|default:o.jenis_pemakaian|default:'-' }}</td>
+        <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
+        <td>{% if can_access_sip %}<a class="btn btn-secondary" href="{% url 'kendaraan:sip_update' o.pk %}">Edit</a>{% else %}-{% endif %}</td>
+      </tr>
+      {% empty %}<tr><td colspan="8" class="empty-state">Belum ada data SIP kendaraan.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'includes/pagination.html' %}
+</div>
+{% endblock %}

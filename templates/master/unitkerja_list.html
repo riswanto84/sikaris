@@ -2,20 +2,26 @@
 {% block page_title %}Master Unit Kerja{% endblock %}
 {% block content %}
 <div class="toolbar">
-  <form class="search-box" method="get">
-    <input class="search-input" name="q" value="{{ q }}" placeholder="Cari nama unit kerja atau keterangan...">
-    <button class="btn btn-secondary" type="submit">Cari</button>
-  </form>
+  {% include 'includes/list_search.html' %}
   <a class="btn btn-primary" href="{% url 'master:unitkerja_create' %}">+ Tambah Unit Kerja</a>
 </div>
 <div class="card table-card">
-<table class="table" id="unitTable">
-  <thead><tr><th>No</th><th>Nama Unit Kerja</th><th>Keterangan</th><th>Jumlah Pegawai</th><th>Aksi</th></tr></thead>
-  <tbody>
-  {% for o in object_list %}
-  <tr><td>{{ forloop.counter }}</td><td><strong>{{ o.nama_unit }}</strong></td><td>{{ o.keterangan|default:'-' }}</td><td>{{ o.pegawai.count }}</td><td><a class="btn btn-secondary" href="{% url 'master:unitkerja_update' o.pk %}">Edit</a></td></tr>
-  {% empty %}<tr><td colspan="5" class="empty-state">Belum ada data unit kerja.</td></tr>{% endfor %}
-  </tbody>
-</table>
+  <div class="table-responsive">
+    <table class="table" id="unitTable">
+      <thead><tr><th>No</th><th>Nama Unit Kerja</th><th>Keterangan</th><th>Jumlah Pegawai</th><th>Aksi</th></tr></thead>
+      <tbody>
+      {% for o in object_list %}
+      <tr>
+        <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+        <td><strong>{{ o.nama_unit }}</strong></td>
+        <td>{{ o.keterangan|default:'-' }}</td>
+        <td>{{ o.pegawai.count }}</td>
+        <td><a class="btn btn-secondary" href="{% url 'master:unitkerja_update' o.pk %}">Edit</a></td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="empty-state">Belum ada data unit kerja.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'includes/pagination.html' %}
 </div>
 {% endblock %}

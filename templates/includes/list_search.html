@@ -1,0 +1,11 @@
+<form class="search-box advanced-search" method="get">
+  <select class="search-select" name="search_field" aria-label="Pilih field pencarian">
+    <option value="ALL" {% if search_field == 'ALL' %}selected{% endif %}>Semua Field</option>
+    {% for field_name, field_label in search_fields %}
+      <option value="{{ field_name }}" {% if field_name == search_field %}selected{% endif %}>{{ field_label }}</option>
+    {% endfor %}
+  </select>
+  <input class="search-input" name="q" value="{{ q }}" placeholder="Masukkan kata kunci pencarian...">
+  <button class="btn btn-secondary" type="submit">Cari</button>
+  {% if q %}<a class="btn btn-light" href="{{ request.path }}">Reset</a>{% endif %}
+</form>

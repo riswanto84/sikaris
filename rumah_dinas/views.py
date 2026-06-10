@@ -1,18 +1,30 @@
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import CreateView, UpdateView
 
 from core.roles import BMNRequiredMixin
+from core.listing import SearchListMixin
 from .models import SIPRumahDinas
 from .forms import SIPRumahDinasForm
 
 
-class SIPRumahDinasListView(BMNRequiredMixin, ListView):
+class SIPRumahDinasListView(BMNRequiredMixin, SearchListMixin):
     model = SIPRumahDinas
     template_name = 'rumah_dinas/sip_list.html'
-    paginate_by = 15
-
-    def get_queryset(self):
-        return super().get_queryset().select_related('rumah_dinas', 'pegawai')
+    select_related = ['rumah_dinas', 'pegawai', 'pegawai__unit_kerja']
+    search_fields = [
+        ('nomor_sip', 'Nomor SIP'),
+        ('rumah_dinas__kode_rumah', 'Kode Rumah'),
+        ('rumah_dinas__nama_rumah', 'Nama Rumah'),
+        ('rumah_dinas__alamat', 'Alamat Rumah'),
+        ('rumah_dinas__kondisi', 'Kondisi Rumah'),
+        ('pegawai__nama', 'Nama Pegawai/Penghuni'),
+        ('pegawai__nip', 'NIP Pegawai'),
+        ('pegawai__jabatan', 'Jabatan Pegawai'),
+        ('pegawai__unit_kerja__nama_unit', 'Unit Kerja Pegawai'),
+        ('pejabat_penandatangan', 'Pejabat Penandatangan'),
+        ('status', 'Status SIP'),
+        ('catatan', 'Catatan'),
+    ]
 
 
 class SIPRumahDinasCreateView(BMNRequiredMixin, CreateView):

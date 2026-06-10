@@ -2,8 +2,27 @@
 {% block page_title %}Master Pegawai{% endblock %}
 {% block content %}
 <div class="toolbar">
-  <form class="search-box" method="get"><input class="search-input" name="q" value="{{ q }}" placeholder="Cari NIP, nama, jabatan, atau unit kerja..."><button class="btn btn-secondary" type="submit">Cari</button></form>
+  {% include 'includes/list_search.html' %}
   <a class="btn btn-primary" href="{% url 'master:pegawai_create' %}">+ Tambah Pegawai</a>
 </div>
-<div class="card table-card"><table class="table"><thead><tr><th>NIP</th><th>Nama</th><th>Jabatan</th><th>Unit</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{% for o in object_list %}<tr><td>{{ o.nip }}</td><td><strong>{{ o.nama }}</strong></td><td>{{ o.jabatan|default:'-' }}</td><td>{{ o.unit_kerja|default:'-' }}</td><td><span class="badge AKTIF">{{ o.status_pegawai }}</span></td><td><a class="btn btn-secondary" href="{% url 'master:pegawai_update' o.pk %}">Edit</a></td></tr>{% empty %}<tr><td colspan="6" class="empty-state">Belum ada data pegawai.</td></tr>{% endfor %}</tbody></table></div>
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>NIP</th><th>Nama</th><th>Jabatan</th><th>Unit</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody>
+      {% for o in object_list %}
+      <tr>
+        <td>{{ o.nip }}</td>
+        <td><strong>{{ o.nama }}</strong></td>
+        <td>{{ o.jabatan|default:'-' }}</td>
+        <td>{{ o.unit_kerja|default:'-' }}</td>
+        <td><span class="badge AKTIF">{{ o.status_pegawai }}</span></td>
+        <td><a class="btn btn-secondary" href="{% url 'master:pegawai_update' o.pk %}">Edit</a></td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="empty-state">Belum ada data pegawai.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'includes/pagination.html' %}
+</div>
 {% endblock %}

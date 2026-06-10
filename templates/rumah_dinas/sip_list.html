@@ -1,3 +1,30 @@
 {% extends 'base.html' %}
 {% block page_title %}SIP Rumah Dinas{% endblock %}
-{% block content %}<div class="toolbar"><input class="search-input" data-table-search="#sipRumahTable" placeholder="Filter cepat SIP rumah dinas..."><a class="btn btn-primary" href="{% url 'rumah_dinas:sip_create' %}">+ Buat SIP Rumah Dinas</a></div><div class="card table-card"><table class="table" id="sipRumahTable"><thead><tr><th>No SIP</th><th>Tanggal</th><th>Rumah</th><th>Pegawai</th><th>Periode</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{% for o in object_list %}<tr><td><strong>{{ o.nomor_sip }}</strong></td><td>{{ o.tanggal_sip }}</td><td>{{ o.rumah_dinas }}</td><td>{{ o.pegawai }}</td><td>{{ o.tanggal_mulai }} s.d. {{ o.tanggal_akhir }}</td><td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td><td><a class="btn btn-secondary" href="{% url 'rumah_dinas:sip_update' o.pk %}">Edit</a></td></tr>{% empty %}<tr><td colspan="7" class="empty-state">Belum ada data SIP rumah dinas.</td></tr>{% endfor %}</tbody></table></div>{% endblock %}
+{% block content %}
+<div class="toolbar">
+  {% include 'includes/list_search.html' %}
+  <a class="btn btn-primary" href="{% url 'rumah_dinas:sip_create' %}">+ Buat SIP Rumah Dinas</a>
+</div>
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table" id="sipRumahTable">
+      <thead><tr><th>No SIP</th><th>Tanggal</th><th>Rumah</th><th>Pegawai</th><th>Periode</th><th>Keluarga</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody>
+      {% for o in object_list %}
+      <tr>
+        <td><strong>{{ o.nomor_sip }}</strong></td>
+        <td>{{ o.tanggal_sip }}</td>
+        <td>{{ o.rumah_dinas }}</td>
+        <td>{{ o.pegawai }}</td>
+        <td>{{ o.tanggal_mulai }} s.d. {{ o.tanggal_akhir }}</td>
+        <td>{{ o.jumlah_anggota_keluarga }}</td>
+        <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
+        <td><a class="btn btn-secondary" href="{% url 'rumah_dinas:sip_update' o.pk %}">Edit</a></td>
+      </tr>
+      {% empty %}<tr><td colspan="8" class="empty-state">Belum ada data SIP rumah dinas.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'includes/pagination.html' %}
+</div>
+{% endblock %}

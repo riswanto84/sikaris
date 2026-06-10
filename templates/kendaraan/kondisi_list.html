@@ -1,3 +1,27 @@
 {% extends 'base.html' %}
 {% block page_title %}Riwayat Kondisi Kendaraan{% endblock %}
-{% block content %}<div class="toolbar"><input class="search-input" data-table-search="#kondisiTable" placeholder="Filter cepat riwayat kondisi..."><a class="btn btn-primary" href="{% url 'kendaraan:kondisi_create' %}">+ Update Kondisi</a></div><div class="card table-card"><table class="table" id="kondisiTable"><thead><tr><th>Kendaraan</th><th>Tanggal</th><th>Kondisi</th><th>Uraian</th><th>Petugas</th></tr></thead><tbody>{% for o in object_list %}<tr><td><strong>{{ o.kendaraan }}</strong></td><td>{{ o.tanggal }}</td><td><span class="badge {{ o.kondisi }}">{{ o.get_kondisi_display }}</span></td><td>{{ o.uraian_kondisi|default:'-' }}</td><td>{{ o.dicatat_oleh|default:'-' }}</td></tr>{% empty %}<tr><td colspan="5" class="empty-state">Belum ada data kondisi kendaraan.</td></tr>{% endfor %}</tbody></table></div>{% endblock %}
+{% block content %}
+<div class="toolbar">
+  {% include 'includes/list_search.html' %}
+  <a class="btn btn-primary" href="{% url 'kendaraan:kondisi_create' %}">+ Update Kondisi</a>
+</div>
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table" id="kondisiTable">
+      <thead><tr><th>Kendaraan</th><th>Tanggal</th><th>Kondisi</th><th>Uraian</th><th>Petugas</th></tr></thead>
+      <tbody>
+      {% for o in object_list %}
+      <tr>
+        <td><strong>{{ o.kendaraan }}</strong></td>
+        <td>{{ o.tanggal }}</td>
+        <td><span class="badge {{ o.kondisi }}">{{ o.get_kondisi_display }}</span></td>
+        <td>{{ o.uraian_kondisi|default:'-' }}</td>
+        <td>{{ o.dicatat_oleh|default:'-' }}</td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="empty-state">Belum ada data kondisi kendaraan.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'includes/pagination.html' %}
+</div>
+{% endblock %}

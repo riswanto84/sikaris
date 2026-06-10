@@ -95,4 +95,5 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.onrender.com",
     "https://domainanda.com",
     "https://www.domainanda.com",
+    "https://258b-111-95-143-240.ngrok-free.app"
 ]

@@ -2,12 +2,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import CreateView, UpdateView
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 
 from core.roles import BMNRequiredMixin, VehicleViewRequiredMixin, can_manage_master
+from core.listing import SearchListMixin
 from .models import (
     UnitKerja,
     Pegawai,
@@ -19,32 +19,13 @@ from .models import (
 from .forms import UnitKerjaForm, PegawaiForm, KendaraanForm, RumahDinasForm
 
 
-class SearchListMixin(LoginRequiredMixin, ListView):
-    paginate_by = 15
-    search_fields = []
-
-    def get_queryset(self):
-        qs = super().get_queryset()
-        q = self.request.GET.get('q')
-
-        if q and self.search_fields:
-            query = Q()
-            for field in self.search_fields:
-                query |= Q(**{f'{field}__icontains': q})
-            qs = qs.filter(query)
-
-        return qs
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['q'] = self.request.GET.get('q', '')
-        return ctx
-
-
 class UnitKerjaListView(BMNRequiredMixin, SearchListMixin):
     model = UnitKerja
     template_name = 'master/unitkerja_list.html'
-    search_fields = ['nama_unit', 'keterangan']
+    search_fields = [
+        ('nama_unit', 'Nama Unit Kerja'),
+        ('keterangan', 'Keterangan'),
+    ]
 
 
 class UnitKerjaCreateView(BMNRequiredMixin, CreateView):
@@ -64,7 +45,19 @@ class UnitKerjaUpdateView(BMNRequiredMixin, UpdateView):
 class PegawaiListView(BMNRequiredMixin, SearchListMixin):
     model = Pegawai
     template_name = 'master/pegawai_list.html'
-    search_fields = ['nip', 'nama', 'jabatan', 'unit_kerja__nama_unit']
+    select_related = ['unit_kerja']
+    search_fields = [
+        ('nip', 'NIP'),
+        ('nik', 'NIK'),
+        ('nama', 'Nama Pegawai'),
+        ('jabatan', 'Jabatan'),
+        ('pangkat', 'Pangkat'),
+        ('golongan', 'Golongan'),
+        ('unit_kerja__nama_unit', 'Unit Kerja'),
+        ('no_hp', 'No HP'),
+        ('email', 'Email'),
+        ('status_pegawai', 'Status Pegawai'),
+    ]
 
 
 class PegawaiCreateView(BMNRequiredMixin, CreateView):
@@ -104,7 +97,26 @@ def pegawai_foto_delete(request, pk):
 class KendaraanListView(VehicleViewRequiredMixin, SearchListMixin):
     model = Kendaraan
     template_name = 'master/kendaraan_list.html'
-    search_fields = ['nomor_polisi', 'merek', 'tipe', 'unit_kerja__nama_unit']
+    select_related = ['unit_kerja', 'pengguna']
+    search_fields = [
+        ('kode_kendaraan', 'Kode Kendaraan'),
+        ('nomor_polisi', 'Nomor Polisi'),
+        ('merek', 'Merek'),
+        ('tipe', 'Tipe'),
+        ('jenis_kendaraan', 'Jenis Kendaraan'),
+        ('warna', 'Warna'),
+        ('nomor_rangka', 'Nomor Rangka'),
+        ('nomor_mesin', 'Nomor Mesin'),
+        ('nomor_bpkb', 'Nomor BPKB'),
+        ('nomor_stnk', 'Nomor STNK'),
+        ('nup', 'NUP'),
+        ('kode_barang', 'Kode Barang'),
+        ('unit_kerja__nama_unit', 'Unit Kerja'),
+        ('pengguna__nama', 'Nama Pengguna'),
+        ('pengguna__nip', 'NIP Pengguna'),
+        ('kondisi', 'Kondisi'),
+        ('status_pemanfaatan', 'Status Pemanfaatan'),
+    ]
 
 
 class KendaraanPhotoMixin:
@@ -165,7 +177,22 @@ def kendaraan_foto_delete(request, pk):
 class RumahDinasListView(BMNRequiredMixin, SearchListMixin):
     model = RumahDinas
     template_name = 'master/rumah_list.html'
-    search_fields = ['kode_rumah', 'nama_rumah', 'alamat']
+    search_fields = [
+        ('kode_rumah', 'Kode Rumah'),
+        ('nama_rumah', 'Nama Rumah'),
+        ('jenis_rumah', 'Jenis Rumah'),
+        ('alamat', 'Alamat'),
+        ('provinsi', 'Provinsi'),
+        ('kabupaten_kota', 'Kabupaten/Kota'),
+        ('kecamatan', 'Kecamatan'),
+        ('kelurahan', 'Kelurahan'),
+        ('nup', 'NUP'),
+        ('kode_barang', 'Kode Barang'),
+        ('nomor_sertifikat', 'Nomor Sertifikat'),
+        ('status_tanah', 'Status Tanah'),
+        ('kondisi', 'Kondisi'),
+        ('status_pemanfaatan', 'Status Pemanfaatan'),
+    ]
 
 
 class RumahDinasPhotoMixin:
