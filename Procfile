@@ -1,1 +1,0 @@
-web: gunicorn sikaris.wsgi:application
