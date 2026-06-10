@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load rupiah %}
+{% block page_title %}Laporan & Monitoring{% endblock %}
+{% block content %}
+<div class="grid grid-4">
+  <div class="card stat"><div class="stat-icon">🚙</div><div class="label">Kendaraan</div><div class="value" data-counter>{{ kendaraan }}</div></div>
+  {% if can_access_house %}<div class="card stat"><div class="stat-icon">🏠</div><div class="label">Rumah Dinas</div><div class="value" data-counter>{{ rumah }}</div></div>{% endif %}
+  {% if can_access_master %}<div class="card stat"><div class="stat-icon">👥</div><div class="label">Pegawai</div><div class="value" data-counter>{{ pegawai }}</div></div>{% endif %}
+  {% if can_access_vehicle_maintenance %}<div class="card stat"><div class="stat-icon">🛠</div><div class="label">Service</div><div class="value" data-counter>{{ service }}</div></div>{% endif %}
+</div>
+<br>
+<div class="card">
+  <h3 class="card-title">Ringkasan SIP</h3>
+  <p>Total SIP Kendaraan: <strong>{{ sip_kendaraan }}</strong></p>
+  {% if can_access_house %}<p>Total SIP Rumah Dinas: <strong>{{ sip_rumah }}</strong></p>{% endif %}
+  <p class="hint">Fitur export Excel/PDF dapat dikembangkan dari halaman ini.</p>
+</div>
+{% endblock %}

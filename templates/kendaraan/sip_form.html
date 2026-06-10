@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block page_title %}
+Form SIP Kendaraan
+{% endblock %}
+
+{% block content %}
+<div class="card form-card">
+    <div class="form-header">
+        <div>
+            <h2>Form SIP Kendaraan</h2>
+            <p>Lengkapi data Surat Izin Pemakaian kendaraan. Dokumen SIP hanya diperbolehkan dalam format PDF.</p>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="message error">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="form-grid">
+            {% for field in form %}
+                <p class="{% if field.name == 'tujuan_pemakaian' or field.name == 'dasar_penerbitan' or field.name == 'catatan' or field.name == 'dokumen_sip' %}full{% endif %}">
+                    <label for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                    </label>
+
+                    {{ field }}
+
+                    {% if field.name == 'dokumen_sip' %}
+                        <small class="hint">
+                            Hanya file PDF yang diperbolehkan.
+                        </small>
+                    {% endif %}
+
+                    {% if field.help_text %}
+                        <small class="hint">{{ field.help_text }}</small>
+                    {% endif %}
+
+                    {% for error in field.errors %}
+                        <small class="error-text">{{ error }}</small>
+                    {% endfor %}
+                </p>
+            {% endfor %}
+        </div>
+
+        {% if object and object.dokumen_sip %}
+            <div class="document-section">
+                <div class="document-header">
+                    <div>
+                        <h3>Preview Dokumen SIP Kendaraan</h3>
+                        <p>Dokumen SIP kendaraan yang sudah diupload ditampilkan di bawah ini.</p>
+                    </div>
+                </div>
+
+                <div class="pdf-preview">
+                    <object
+                        data="{{ object.dokumen_sip.url }}#toolbar=1&navpanes=0&scrollbar=1"
+                        type="application/pdf"
+                        width="100%"
+                        height="100%">
+
+                        <iframe
+                            src="{{ object.dokumen_sip.url }}#toolbar=1&navpanes=0&scrollbar=1"
+                            width="100%"
+                            height="100%"
+                            style="border: none;">
+                        </iframe>
+                    </object>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="form-actions">
+            <button class="btn btn-primary" type="submit">
+                Simpan
+            </button>
+
+            <a class="btn btn-secondary" href="{% url 'kendaraan:sip_list' %}">
+                Kembali
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .document-section {
+        margin-top: 28px;
+        padding-top: 24px;
+        border-top: 1px solid #e5ebf3;
+    }
+
+    .document-header {
+        margin-bottom: 16px;
+    }
+
+    .document-header h3 {
+        margin: 0;
+        font-size: 20px;
+        color: #0f172a;
+        font-weight: 900;
+    }
+
+    .document-header p {
+        margin: 6px 0 0;
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .pdf-preview {
+        width: 100%;
+        height: 720px;
+        border: 1px solid #dbe5f0;
+        border-radius: 18px;
+        overflow: hidden;
+        background: #f8fafc;
+        box-shadow: 0 10px 24px rgba(16, 42, 91, 0.08);
+    }
+
+    .pdf-preview object,
+    .pdf-preview iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+        background: #ffffff;
+    }
+
+    input[type="file"] {
+        padding: 14px;
+        background: #f8fbff;
+        cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+        .pdf-preview {
+            height: 520px;
+        }
+    }
+</style>
+{% endblock %}

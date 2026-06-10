@@ -1,0 +1,96 @@
+from django import forms
+from django.core.exceptions import ValidationError
+
+from .models import SIPRumahDinas
+
+
+def validate_pdf_file(uploaded_file):
+    if not uploaded_file:
+        return
+
+    filename = uploaded_file.name.lower()
+
+    if not filename.endswith('.pdf'):
+        raise ValidationError('Dokumen SIP Rumah Dinas hanya boleh berupa file PDF.')
+
+    content_type = getattr(uploaded_file, 'content_type', '')
+
+    if content_type and content_type not in ['application/pdf', 'application/x-pdf']:
+        raise ValidationError('Format file tidak valid. Upload dokumen dalam format PDF.')
+
+
+class BootstrapModelForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        for field in self.fields.values():
+            field.widget.attrs.update({'class': 'form-control'})
+
+
+class SIPRumahDinasForm(BootstrapModelForm):
+    class Meta:
+        model = SIPRumahDinas
+
+        # dokumen_bast sengaja tidak ditampilkan
+        exclude = ['dibuat_oleh', 'dokumen_bast']
+
+        labels = {
+            'nomor_sip': 'Nomor SIP',
+            'tanggal_sip': 'Tanggal SIP',
+            'rumah_dinas': 'Rumah Dinas',
+            'pegawai': 'Pegawai',
+            'tanggal_mulai': 'Tanggal Mulai',
+            'tanggal_akhir': 'Tanggal Akhir',
+            'dasar_penerbitan': 'Dasar Penerbitan',
+            'pejabat_penandatangan': 'Pejabat Penandatangan',
+            'jumlah_anggota_keluarga': 'Jumlah Anggota Keluarga',
+            'status': 'Status',
+            'dokumen_sip': 'Dokumen SIP Rumah Dinas (PDF)',
+            'catatan': 'Catatan',
+        }
+
+        widgets = {
+            'tanggal_sip': forms.DateInput(
+                format='%Y-%m-%d',
+                attrs={
+                    'type': 'date',
+                    'class': 'form-control'
+                }
+            ),
+            'tanggal_mulai': forms.DateInput(
+                format='%Y-%m-%d',
+                attrs={
+                    'type': 'date',
+                    'class': 'form-control'
+                }
+            ),
+            'tanggal_akhir': forms.DateInput(
+                format='%Y-%m-%d',
+                attrs={
+                    'type': 'date',
+                    'class': 'form-control'
+                }
+            ),
+            'dokumen_sip': forms.ClearableFileInput(attrs={
+                'accept': 'application/pdf,.pdf',
+                'class': 'form-control'
+            }),
+        }
+
+    def clean_dokumen_sip(self):
+        dokumen = self.cleaned_data.get('dokumen_sip')
+
+        if not dokumen:
+            return dokumen
+
+        validate_pdf_file(dokumen)
+        return dokumen
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        for field_name in ['tanggal_sip', 'tanggal_mulai', 'tanggal_akhir']:
+            value = getattr(self.instance, field_name, None)
+
+            if self.instance and self.instance.pk and value:
+                self.fields[field_name].initial = value.strftime('%Y-%m-%d')

@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% load rupiah %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div data-dashboard-live>
+    <div class="welcome-panel card">
+        <div>
+            <h2>Selamat datang, {{ request.user.get_full_name|default:request.user.username }} 👋</h2>
+            <p>Berikut ringkasan data kendaraan dan rumah dinas Kementerian Sosial.</p>
+        </div>
+        <div class="date-chip">📅 {% now "l, j F Y" %}</div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="summary-card">
+            <div class="summary-icon blue">🚘</div>
+            <div>
+                <div class="summary-label">Total Kendaraan</div>
+                <div class="summary-value" data-counter data-stat="total_kendaraan">{{ total_kendaraan }}</div>
+                <a href="{% url 'master:kendaraan_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon green">✅</div>
+            <div>
+                <div class="summary-label">Kendaraan Baik</div>
+                <div class="summary-value good" data-counter data-stat="kendaraan_baik">{{ kendaraan_baik }}</div>
+                <a href="{% url 'master:kendaraan_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon amber">⚠</div>
+            <div>
+                <div class="summary-label">Kendaraan Rusak Ringan</div>
+                <div class="summary-value warn" data-counter data-stat="kendaraan_rusak_ringan">{{ kendaraan_rusak_ringan }}</div>
+                <a href="{% url 'kendaraan:kondisi_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon red">⛔</div>
+            <div>
+                <div class="summary-label">Kendaraan Rusak Berat</div>
+                <div class="summary-value danger" data-counter data-stat="kendaraan_rusak_berat">{{ kendaraan_rusak_berat }}</div>
+                <a href="{% url 'kendaraan:kondisi_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+
+        {% if can_access_sip %}
+        <div class="summary-card">
+            <div class="summary-icon purple">🧾</div>
+            <div>
+                <div class="summary-label">SIP Kendaraan Aktif</div>
+                <div class="summary-value" data-counter data-stat="sip_kendaraan_aktif">{{ sip_kendaraan_aktif }}</div>
+                <a href="{% url 'kendaraan:sip_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon orange">🗓</div>
+            <div>
+                <div class="summary-label">SIP Kendaraan Akan Berakhir</div>
+                <div class="summary-value warn" data-counter data-stat="sip_kendaraan_akan_berakhir">{{ sip_kendaraan_akan_berakhir }}</div>
+                <a href="{% url 'kendaraan:sip_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if can_access_house %}
+        <div class="summary-card">
+            <div class="summary-icon teal">🏠</div>
+            <div>
+                <div class="summary-label">Total Rumah Dinas</div>
+                <div class="summary-value" data-counter data-stat="total_rumah">{{ total_rumah }}</div>
+                <a href="{% url 'master:rumah_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon lime">📑</div>
+            <div>
+                <div class="summary-label">SIP Rumah Dinas Aktif</div>
+                <div class="summary-value" data-counter data-stat="sip_rumah_aktif">{{ sip_rumah_aktif }}</div>
+                <a href="{% url 'rumah_dinas:sip_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="dashboard-main-grid">
+        <div class="dashboard-left-column">
+            <div class="panel-grid two-col">
+                <div class="panel-card">
+                    <div class="panel-title">Grafik Kondisi Kendaraan</div>
+                    <div class="chart-row">
+                        <div class="ring-chart ring-vehicles">
+                            <div class="ring-center">
+                                <strong>{{ total_kendaraan }}</strong>
+                                <span>Total</span>
+                            </div>
+                        </div>
+                        <div class="chart-legend">
+                            <div><span class="dot good"></span> Baik <b>{{ kendaraan_baik }}</b></div>
+                            <div><span class="dot warn"></span> Rusak Ringan <b>{{ kendaraan_rusak_ringan }}</b></div>
+                            <div><span class="dot danger"></span> Rusak Berat <b>{{ kendaraan_rusak_berat }}</b></div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if can_access_house %}
+                <div class="panel-card">
+                    <div class="panel-title">Grafik Kondisi Rumah Dinas</div>
+                    <div class="chart-row">
+                        <div class="ring-chart ring-houses">
+                            <div class="ring-center">
+                                <strong>{{ total_rumah }}</strong>
+                                <span>Total</span>
+                            </div>
+                        </div>
+                        <div class="chart-legend">
+                            <div><span class="dot good"></span> Baik <b>{{ rumah_baik }}</b></div>
+                            <div><span class="dot warn"></span> Rusak Ringan <b>{{ rumah_rusak_ringan }}</b></div>
+                            <div><span class="dot danger"></span> Rusak Berat <b>{{ rumah_rusak_berat }}</b></div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if can_access_vehicle_maintenance %}
+            <div class="panel-card mt-20">
+                <div class="panel-title">Ringkasan Service Bulan Ini</div>
+                <div class="mini-stats-grid">
+                    <div class="mini-stat-card"><span class="mini-stat-icon blue">🔧</span><div><strong data-counter data-stat="service_bulan_ini">{{ service_bulan_ini }}</strong><small>Total Service</small></div></div>
+                    <div class="mini-stat-card"><span class="mini-stat-icon green">💵</span><div><strong>{{ 0|rupiah }}</strong><small>Total Biaya</small></div></div>
+                    <div class="mini-stat-card"><span class="mini-stat-icon amber">🗓</span><div><strong>{{ service_terakhir|length }}</strong><small>Service Tercatat</small></div></div>
+                    <div class="mini-stat-card"><span class="mini-stat-icon red">❗</span><div><strong>{{ kendaraan_rusak_ringan|add:kendaraan_rusak_berat }}</strong><small>Perlu Tindakan</small></div></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="panel-card mt-20">
+                <div class="panel-header">
+                    <div class="panel-title">Aktivitas Terbaru</div>
+                    <a href="{% url 'laporan:index' %}" class="mini-link">Lihat semua</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table modern-table compact">
+                        <thead>
+                            <tr><th>Waktu</th><th>Aktivitas</th><th>Detail</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for s in service_terakhir %}
+                            <tr>
+                                <td>{{ s.tanggal_service }}</td>
+                                <td>Menambahkan Service Kendaraan</td>
+                                <td>{{ s.kendaraan }} - {{ s.get_jenis_service_display }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="empty-state">Belum ada aktivitas terbaru.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-right-column">
+            <div class="panel-card">
+                <div class="panel-header">
+                    <div class="panel-title">SIP Akan Berakhir (30 Hari ke Depan)</div>
+                    <a href="{% url 'kendaraan:sip_list' %}" class="mini-link">Lihat semua</a>
+                </div>
+                <div class="tab-pills">
+                    <button class="tab-pill active">Kendaraan ({{ sip_akan_berakhir|length }})</button>
+                    {% if can_access_house %}<button class="tab-pill">Rumah Dinas</button>{% endif %}
+                </div>
+                <div class="list-stack">
+                    {% for s in sip_akan_berakhir %}
+                    <div class="list-item">
+                        <div class="list-icon blue">🚘</div>
+                        <div class="list-main">
+                            <strong>{{ s.kendaraan.nomor_polisi }}</strong>
+                            <span>{{ s.pegawai.nama }}</span>
+                        </div>
+                        <div class="list-meta">
+                            <span>{{ s.tanggal_akhir }}</span>
+                            <small class="pill-warning">segera berakhir</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-inline">Tidak ada SIP yang akan berakhir.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="panel-card mt-20">
+                <div class="panel-header">
+                    <div class="panel-title">Kendaraan Perlu Tindakan</div>
+                    <a href="{% url 'kendaraan:kondisi_list' %}" class="mini-link">Lihat semua</a>
+                </div>
+                <div class="list-stack">
+                    {% for k in kendaraan_terbaru %}
+                    <div class="list-item">
+                        <div class="list-icon blue">🚗</div>
+                        <div class="list-main">
+                            <strong>{{ k.nomor_polisi }}</strong>
+                            <span>{{ k.merek }} {{ k.tipe|default:'' }}</span>
+                        </div>
+                        <div class="list-meta">
+                            <span class="status-pill {{ k.kondisi|lower }}">{{ k.get_kondisi_display }}</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-inline">Belum ada data kendaraan.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

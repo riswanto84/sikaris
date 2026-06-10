@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% block page_title %}Form Master Pegawai{% endblock %}
+{% block content %}
+<div class="card form-card">
+  <div class="form-header">
+    <div>
+      <h2>Form Master Pegawai</h2>
+      <p>Lengkapi data pegawai dan upload foto profil pegawai.</p>
+    </div>
+  </div>
+
+  <form id="pegawai-main-form" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="message error">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="pegawai-form-layout">
+      <div class="pegawai-form-fields">
+        <div class="form-grid">
+          {% for field in form %}
+            {% if field.name != 'foto' %}
+            <p class="{% if field.name == 'alamat' %}full{% endif %}">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<small class="hint">{{ field.help_text }}</small>{% endif %}
+              {% for error in field.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+            </p>
+            {% endif %}
+          {% endfor %}
+
+          <p class="full">
+            <label for="{{ form.foto.id_for_label }}">Foto Profil</label>
+            {{ form.foto }}
+            {% if form.foto.help_text %}<small class="hint">{{ form.foto.help_text }}</small>{% endif %}
+            {% for error in form.foto.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+          </p>
+        </div>
+      </div>
+
+      {% if object %}
+      <aside class="profile-photo-panel">
+        <h3>Foto Profil Pegawai</h3>
+
+        {% if object.foto %}
+          <div class="profile-photo-card">
+            <a href="{{ object.foto.url }}" target="_blank">
+              <img src="{{ object.foto.url }}" alt="Foto {{ object.nama }}">
+            </a>
+            <div class="profile-photo-info">
+              <strong>{{ object.nama }}</strong>
+              <span>{{ object.nip }}</span>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            form="delete-pegawai-photo-form"
+            class="btn-delete-photo"
+            onclick="return confirm('Yakin ingin menghapus foto profil pegawai ini?')">
+            Hapus Foto
+          </button>
+        {% else %}
+          <div class="empty-profile-photo">
+            <div class="empty-avatar">👤</div>
+            <p>Belum ada foto profil pegawai.</p>
+          </div>
+        {% endif %}
+      </aside>
+      {% endif %}
+    </div>
+
+    <div id="pegawai-preview-wrapper" class="preview-wrapper" style="display:none;">
+      <h3>Preview Foto Baru</h3>
+      <p>Foto berikut akan menggantikan foto profil setelah tombol Simpan ditekan.</p>
+      <div class="profile-photo-card preview-card-single">
+        <img id="pegawai-preview-img" src="" alt="Preview foto pegawai">
+        <div class="profile-photo-info">
+          <strong id="pegawai-preview-name">Foto baru</strong>
+          <span>Belum disimpan</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Simpan</button>
+      <a class="btn btn-secondary" href="{% url 'master:pegawai_list' %}">Kembali</a>
+    </div>
+  </form>
+
+  {% if object and object.foto %}
+  <form id="delete-pegawai-photo-form" method="post" action="{% url 'master:pegawai_foto_delete' object.pk %}" style="display:none;">
+    {% csrf_token %}
+  </form>
+  {% endif %}
+</div>
+
+<style>
+.pegawai-form-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 24px;
+    align-items: start;
+}
+
+.profile-photo-panel {
+    border: 1px solid #dbe5f0;
+    border-radius: 18px;
+    padding: 18px;
+    background: #f8fbff;
+    box-shadow: 0 10px 24px rgba(16, 42, 91, 0.06);
+    position: sticky;
+    top: 20px;
+}
+
+.profile-photo-panel h3 {
+    margin: 0 0 14px;
+    font-size: 18px;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.profile-photo-card {
+    border: 1px solid #dbe5f0;
+    border-radius: 16px;
+    background: #ffffff;
+    overflow: hidden;
+    box-shadow: 0 10px 24px rgba(16, 42, 91, 0.08);
+}
+
+.profile-photo-card img {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    display: block;
+    background: #f1f5f9;
+}
+
+.profile-photo-info {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.profile-photo-info strong {
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.profile-photo-info span {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.btn-delete-photo {
+    width: 100%;
+    margin-top: 14px;
+    border: 0;
+    background: #fee2e2;
+    color: #991b1b;
+    font-weight: 900;
+    border-radius: 14px;
+    padding: 12px 14px;
+    cursor: pointer;
+}
+
+.btn-delete-photo:hover {
+    background: #fecaca;
+}
+
+.empty-profile-photo {
+    border: 1px dashed #bfd0e5;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 28px 18px;
+    text-align: center;
+    color: #64748b;
+}
+
+.empty-avatar {
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    background: #eaf2ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    margin: 0 auto 12px;
+}
+
+.preview-wrapper {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid #e5ebf3;
+}
+
+.preview-wrapper h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #0f172a;
+    font-weight: 900;
+}
+
+.preview-wrapper p {
+    margin: 6px 0 14px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.preview-card-single {
+    max-width: 280px;
+}
+
+@media (max-width: 1100px) {
+    .pegawai-form-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-photo-panel {
+        position: static;
+        max-width: 360px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const fotoInput = document.querySelector('input[name="foto"]');
+    const previewWrapper = document.getElementById('pegawai-preview-wrapper');
+    const previewImg = document.getElementById('pegawai-preview-img');
+    const previewName = document.getElementById('pegawai-preview-name');
+
+    if (!fotoInput || !previewWrapper || !previewImg) {
+        return;
+    }
+
+    fotoInput.addEventListener('change', function () {
+        const file = fotoInput.files && fotoInput.files[0];
+
+        if (!file || !file.type.startsWith('image/')) {
+            previewWrapper.style.display = 'none';
+            previewImg.src = '';
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = function (event) {
+            previewImg.src = event.target.result;
+            if (previewName) {
+                previewName.textContent = file.name;
+            }
+            previewWrapper.style.display = 'block';
+        };
+
+        reader.readAsDataURL(file);
+    });
+});
+</script>
+{% endblock %}

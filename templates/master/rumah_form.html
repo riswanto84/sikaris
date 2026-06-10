@@ -1,0 +1,447 @@
+{% extends 'base.html' %}
+{% load l10n %}
+
+{% block page_title %}Form Master Rumah Dinas{% endblock %}
+
+{% block content %}
+<div class="card form-card">
+  <div class="form-header">
+    <div>
+      <h2>Form Master Rumah Dinas</h2>
+      <p>Lengkapi data rumah dinas, upload foto, dan pastikan latitude serta longitude sudah benar.</p>
+    </div>
+  </div>
+
+  <form id="rumah-main-form" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="message error">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="form-grid">
+      {% for field in form %}
+      <p class="{% if field.name == 'alamat' or field.name == 'foto_rumah_dinas' or field.name == 'keterangan' %}full{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+
+        {{ field }}
+
+        {% if field.help_text %}
+          <small class="hint">{{ field.help_text }}</small>
+        {% endif %}
+
+        {% for error in field.errors %}
+          <small class="error-text">{{ error }}</small>
+        {% endfor %}
+      </p>
+      {% endfor %}
+    </div>
+
+    <div id="preview-wrapper" class="preview-wrapper" style="display:none;">
+      <h3>Preview Foto Baru</h3>
+      <p>Foto berikut akan diupload setelah tombol Simpan ditekan.</p>
+      <div id="preview-grid" class="asset-photo-grid"></div>
+    </div>
+
+    {% if object %}
+    <div class="photo-section">
+      <div class="photo-section-header">
+        <div>
+          <h3>Foto Rumah Dinas Tersimpan</h3>
+          <p>Foto yang sudah diupload akan tampil di bawah ini.</p>
+        </div>
+      </div>
+
+      {% if foto_rumah_list %}
+      <div class="asset-photo-grid">
+        {% for item in foto_rumah_list %}
+        <div class="asset-photo-card">
+          <a href="{{ item.foto.url }}" target="_blank">
+            <img src="{{ item.foto.url }}" alt="Foto rumah dinas {{ object.kode_rumah }}">
+          </a>
+
+          <div class="asset-photo-meta">
+            <div>
+              <strong>{{ object.kode_rumah }}</strong>
+              <span>{{ item.created_at|date:"d M Y H:i" }}</span>
+            </div>
+
+            <button
+              type="submit"
+              form="delete-rumah-photo-{{ item.pk }}"
+              class="photo-delete-btn"
+              onclick="return confirm('Yakin ingin menghapus foto ini?')">
+              Hapus
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-photo-state">
+        Belum ada foto rumah dinas yang diupload.
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- GOOGLE MAPS RUMAH DINAS -->
+    <div class="map-section">
+      <div class="map-header">
+        <div>
+          <h3>Lokasi Rumah Dinas</h3>
+          <p>Peta ditampilkan berdasarkan Latitude dan Longitude pada form. Jika koordinat baru diisi, klik tombol refresh peta.</p>
+        </div>
+      </div>
+
+      <div
+        id="mapPreview"
+        class="map-preview"
+        data-lat="{% if object and object.latitude %}{{ object.latitude|unlocalize }}{% endif %}"
+        data-lng="{% if object and object.longitude %}{{ object.longitude|unlocalize }}{% endif %}">
+        <div>
+          Peta belum dapat ditampilkan.<br>
+          Isi Latitude dan Longitude terlebih dahulu.
+        </div>
+      </div>
+
+      <div class="map-actions">
+        <button type="button" class="btn btn-secondary" onclick="refreshMapPreview()">
+          Tampilkan / Refresh Peta
+        </button>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Simpan</button>
+      <a class="btn btn-secondary" href="{% url 'master:rumah_list' %}">Kembali</a>
+    </div>
+  </form>
+
+  {% if object and foto_rumah_list %}
+    {% for item in foto_rumah_list %}
+    <form
+      id="delete-rumah-photo-{{ item.pk }}"
+      method="post"
+      action="{% url 'master:rumah_foto_delete' item.pk %}"
+      style="display:none;">
+      {% csrf_token %}
+    </form>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<style>
+  .photo-section,
+  .preview-wrapper,
+  .map-section {
+      margin-top: 32px;
+      padding-top: 28px;
+      border-top: 1px solid #e5ebf3;
+  }
+
+  .photo-section-header,
+  .map-header {
+      margin-bottom: 16px;
+  }
+
+  .photo-section-header h3,
+  .preview-wrapper h3,
+  .map-header h3 {
+      margin: 0;
+      font-size: 24px;
+      color: #0f172a;
+      font-weight: 900;
+  }
+
+  .photo-section-header p,
+  .preview-wrapper p,
+  .map-header p {
+      margin: 8px 0 0;
+      color: #64748b;
+      font-size: 15px;
+  }
+
+  .asset-photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 18px;
+  }
+
+  .asset-photo-card {
+      border: 1px solid #dbe5f0;
+      border-radius: 18px;
+      background: #ffffff;
+      overflow: hidden;
+      box-shadow: 0 10px 24px rgba(16, 42, 91, 0.08);
+  }
+
+  .asset-photo-card img {
+      width: 100%;
+      height: 190px;
+      object-fit: cover;
+      display: block;
+      background: #f1f5f9;
+  }
+
+  .asset-photo-meta {
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: #64748b;
+  }
+
+  .asset-photo-meta div {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+  }
+
+  .asset-photo-meta strong {
+      font-size: 14px;
+      color: #0f172a;
+      font-weight: 900;
+  }
+
+  .asset-photo-meta span {
+      font-size: 12px;
+      color: #64748b;
+  }
+
+  .photo-delete-btn {
+      border: 0;
+      background: #fee2e2;
+      color: #991b1b;
+      font-weight: 900;
+      border-radius: 999px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      white-space: nowrap;
+  }
+
+  .photo-delete-btn:hover {
+      background: #fecaca;
+  }
+
+  .empty-photo-state {
+      border: 1px dashed #bfd0e5;
+      background: #f8fbff;
+      color: #64748b;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      font-size: 15px;
+  }
+
+  .preview-label {
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #64748b;
+      background: #ffffff;
+      border-top: 1px solid #e5ebf3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+  }
+
+  .map-preview {
+      width: 100%;
+      height: 520px;
+      border: 1px solid #dbe5f0;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #f8fafc;
+      box-shadow: 0 10px 24px rgba(16, 42, 91, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-weight: 700;
+      text-align: center;
+      padding: 24px;
+  }
+
+  .map-preview iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #ffffff;
+  }
+
+  .map-actions {
+      margin-top: 14px;
+  }
+
+  input[type="file"][multiple] {
+      padding: 14px;
+      background: #f8fbff;
+      cursor: pointer;
+  }
+
+  @media (max-width: 768px) {
+      .asset-photo-grid {
+          grid-template-columns: 1fr;
+      }
+
+      .map-preview {
+          height: 360px;
+      }
+
+      .photo-section-header h3,
+      .preview-wrapper h3,
+      .map-header h3 {
+          font-size: 21px;
+      }
+  }
+</style>
+
+<script>
+  function normalizeCoordinate(value) {
+      if (!value) {
+          return '';
+      }
+
+      return String(value)
+          .trim()
+          .replace(/\s/g, '')
+          .replace(',', '.');
+  }
+
+  function isValidCoordinate(lat, lng) {
+      const latNumber = Number(lat);
+      const lngNumber = Number(lng);
+
+      return (
+          !Number.isNaN(latNumber) &&
+          !Number.isNaN(lngNumber) &&
+          latNumber >= -90 &&
+          latNumber <= 90 &&
+          lngNumber >= -180 &&
+          lngNumber <= 180
+      );
+  }
+
+  function refreshMapPreview() {
+      const mapContainer = document.getElementById('mapPreview');
+
+      if (!mapContainer) {
+          return;
+      }
+
+      const latitudeField = document.getElementById('id_latitude');
+      const longitudeField = document.getElementById('id_longitude');
+
+      let lat = latitudeField && latitudeField.value
+          ? normalizeCoordinate(latitudeField.value)
+          : normalizeCoordinate(mapContainer.dataset.lat);
+
+      let lng = longitudeField && longitudeField.value
+          ? normalizeCoordinate(longitudeField.value)
+          : normalizeCoordinate(mapContainer.dataset.lng);
+
+      if (!isValidCoordinate(lat, lng)) {
+          mapContainer.innerHTML = `
+              <div>
+                  Peta belum dapat ditampilkan.<br>
+                  Isi Latitude dan Longitude terlebih dahulu.
+              </div>
+          `;
+          return;
+      }
+
+      //const coordinate = encodeURIComponent(`${lat},${lng}`);
+      //const mapUrl = `https://maps.google.com/maps?q=${coordinate}&z=18&output=embed`;
+      const mapUrl = `https://maps.google.com/maps?hl=id&ll=${lat},${lng}&z=18&t=m&output=embed`;
+
+      mapContainer.innerHTML = `
+          <iframe
+              src="${mapUrl}"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              title="Peta Lokasi Rumah Dinas">
+          </iframe>
+      `;
+  }
+
+  function initPhotoPreview() {
+      const fileInput = document.querySelector('input[name="foto_rumah_dinas"]');
+      const previewWrapper = document.getElementById('preview-wrapper');
+      const previewGrid = document.getElementById('preview-grid');
+
+      if (!fileInput || !previewWrapper || !previewGrid) {
+          return;
+      }
+
+      fileInput.addEventListener('change', function () {
+          previewGrid.innerHTML = '';
+
+          const files = Array.from(fileInput.files || []);
+
+          if (files.length === 0) {
+              previewWrapper.style.display = 'none';
+              return;
+          }
+
+          previewWrapper.style.display = 'block';
+
+          files.forEach(function (file) {
+              if (!file.type.startsWith('image/')) {
+                  return;
+              }
+
+              const reader = new FileReader();
+
+              reader.onload = function (event) {
+                  const card = document.createElement('div');
+                  card.className = 'asset-photo-card';
+
+                  const img = document.createElement('img');
+                  img.src = event.target.result;
+                  img.alt = file.name;
+
+                  const label = document.createElement('div');
+                  label.className = 'preview-label';
+                  label.textContent = file.name;
+
+                  card.appendChild(img);
+                  card.appendChild(label);
+                  previewGrid.appendChild(card);
+              };
+
+              reader.readAsDataURL(file);
+          });
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+      refreshMapPreview();
+      initPhotoPreview();
+
+      const latitudeField = document.getElementById('id_latitude');
+      const longitudeField = document.getElementById('id_longitude');
+
+      if (latitudeField) {
+          latitudeField.addEventListener('change', refreshMapPreview);
+          latitudeField.addEventListener('blur', refreshMapPreview);
+          latitudeField.addEventListener('keyup', function () {
+              clearTimeout(window.mapRefreshTimer);
+              window.mapRefreshTimer = setTimeout(refreshMapPreview, 700);
+          });
+      }
+
+      if (longitudeField) {
+          longitudeField.addEventListener('change', refreshMapPreview);
+          longitudeField.addEventListener('blur', refreshMapPreview);
+          longitudeField.addEventListener('keyup', function () {
+              clearTimeout(window.mapRefreshTimer);
+              window.mapRefreshTimer = setTimeout(refreshMapPreview, 700);
+          });
+      }
+  });
+</script>
+{% endblock %}

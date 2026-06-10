@@ -1,0 +1,4 @@
+{% extends 'base.html' %}
+{% load rupiah %}
+{% block page_title %}Perbaikan Rumah Dinas{% endblock %}
+{% block content %}<div class="toolbar"><input class="search-input" data-table-search="#perbaikanTable" placeholder="Filter cepat perbaikan rumah..."><a class="btn btn-primary" href="{% url 'rumah_dinas:perbaikan_create' %}">+ Input Perbaikan</a></div><div class="card table-card"><table class="table" id="perbaikanTable"><thead><tr><th>Rumah</th><th>Tanggal</th><th>Kerusakan</th><th>Status</th><th>Biaya</th></tr></thead><tbody>{% for o in object_list %}<tr><td><strong>{{ o.rumah_dinas }}</strong></td><td>{{ o.tanggal_laporan }}</td><td>{{ o.jenis_kerusakan }}</td><td><span class="badge DIAJUKAN">{{ o.status }}</span></td><td>{{ o.realisasi_biaya|rupiah }}</td></tr>{% empty %}<tr><td colspan="5" class="empty-state">Belum ada data perbaikan rumah.</td></tr>{% endfor %}</tbody></table></div>{% endblock %}

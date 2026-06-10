@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% load rupiah %}
+{% block page_title %}Master Kendaraan{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <form class="search-box" method="get"><input class="search-input" name="q" value="{{ q }}" placeholder="Cari nopol, merek, tipe, atau unit kerja..."><button class="btn btn-secondary" type="submit">Cari</button></form>
+  {% if can_access_master %}<a class="btn btn-primary" href="{% url 'master:kendaraan_create' %}">+ Tambah Kendaraan</a>{% endif %}
+</div>
+<div class="card table-card"><table class="table"><thead><tr><th>No Polisi</th><th>Merek/Tipe</th><th>Tahun</th><th>Unit Kerja</th><th>Nilai Perolehan</th><th>Kondisi</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{% for o in object_list %}<tr><td><strong>{{ o.nomor_polisi }}</strong></td><td>{{ o.merek }} {{ o.tipe|default:'' }}</td><td>{{ o.tahun_perolehan|default:'-' }}</td><td>{{ o.unit_kerja|default:'-' }}</td><td>{{ o.nilai_perolehan|rupiah }}</td><td><span class="badge {{ o.kondisi }}">{{ o.get_kondisi_display }}</span></td><td>{{ o.get_status_pemanfaatan_display }}</td><td>{% if can_access_master %}<a class="btn btn-secondary" href="{% url 'master:kendaraan_update' o.pk %}">Edit</a>{% else %}-{% endif %}</td></tr>{% empty %}<tr><td colspan="8" class="empty-state">Belum ada data kendaraan.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

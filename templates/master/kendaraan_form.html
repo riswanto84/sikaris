@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block page_title %}Form Master Kendaraan{% endblock %}
+{% block content %}
+<div class="card form-card">
+  <div class="form-header">
+    <div>
+      <h2>Form Master Kendaraan</h2>
+      <p>Lengkapi data kendaraan, upload beberapa foto sekaligus, lalu simpan perubahan.</p>
+    </div>
+  </div>
+
+  <form id="kendaraan-main-form" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="message error">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="form-grid">
+      {% for field in form %}
+      <p class="{% if field.name == 'foto_kendaraan' %}full{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="hint">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+      </p>
+      {% endfor %}
+    </div>
+
+    <div id="preview-wrapper" class="preview-wrapper" style="display:none;">
+      <h3>Preview Foto Baru</h3>
+      <p>Foto berikut akan diupload setelah tombol Simpan ditekan.</p>
+      <div id="preview-grid" class="asset-photo-grid"></div>
+    </div>
+
+    {% if object %}
+    <div class="photo-section">
+      <div class="photo-section-header">
+        <div>
+          <h3>Foto Kendaraan Tersimpan</h3>
+          <p>Foto yang sudah diupload akan tampil di bawah ini.</p>
+        </div>
+      </div>
+
+      {% if foto_kendaraan_list %}
+      <div class="asset-photo-grid">
+        {% for item in foto_kendaraan_list %}
+        <div class="asset-photo-card">
+          <a href="{{ item.foto.url }}" target="_blank">
+            <img src="{{ item.foto.url }}" alt="Foto kendaraan {{ object.nomor_polisi }}">
+          </a>
+          <div class="asset-photo-meta">
+            <div>
+              <strong>{{ object.nomor_polisi }}</strong>
+              <span>{{ item.created_at|date:"d M Y H:i" }}</span>
+            </div>
+            <button
+              type="submit"
+              form="delete-kendaraan-photo-{{ item.pk }}"
+              class="photo-delete-btn"
+              onclick="return confirm('Yakin ingin menghapus foto ini?')">
+              Hapus
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-photo-state">Belum ada foto kendaraan yang diupload.</div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Simpan</button>
+      <a class="btn btn-secondary" href="{% url 'master:kendaraan_list' %}">Kembali</a>
+    </div>
+  </form>
+
+  {% if object and foto_kendaraan_list %}
+    {% for item in foto_kendaraan_list %}
+    <form id="delete-kendaraan-photo-{{ item.pk }}" method="post" action="{% url 'master:kendaraan_foto_delete' item.pk %}" style="display:none;">
+      {% csrf_token %}
+    </form>
+    {% endfor %}
+  {% endif %}
+</div>
+
+{% include 'master/partials/multifoto_style_script.html' with input_name='foto_kendaraan' %}
+{% endblock %}

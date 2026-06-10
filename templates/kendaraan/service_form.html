@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block page_title %}
+Form Service Kendaraan
+{% endblock %}
+
+{% block content %}
+<div class="card form-card">
+  <div class="form-header">
+    <div>
+      <h2>Form Service Kendaraan</h2>
+      <p>Lengkapi data service kendaraan. Foto kendaraan dan bukti kuitansi akan tampil pada halaman ini.</p>
+    </div>
+  </div>
+
+  <div class="service-layout">
+    <form method="post" enctype="multipart/form-data" class="service-form">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="message error">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div class="form-grid">
+        {% for field in form %}
+        <p class="{% if field.name == 'uraian_pekerjaan' or field.name == 'sparepart_diganti' or field.name == 'kuitansi_files' %}full{% endif %}">
+          <label for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+
+          {{ field }}
+
+          {% if field.help_text %}
+            <small class="hint">{{ field.help_text }}</small>
+          {% endif %}
+
+          {% for error in field.errors %}
+            <small class="error-text">{{ error }}</small>
+          {% endfor %}
+        </p>
+        {% endfor %}
+      </div>
+
+      {% if kuitansi_list %}
+      <div class="receipt-section">
+        <div class="receipt-header">
+          <div>
+            <h3>Bukti Kuitansi Tersimpan</h3>
+            <p>File bukti kuitansi service kendaraan yang sudah diupload.</p>
+          </div>
+        </div>
+
+        <div class="receipt-grid">
+          {% for item in kuitansi_list %}
+          <div class="receipt-card">
+            {% if item.is_pdf %}
+              <a href="{{ item.file.url }}" target="_blank" class="receipt-pdf-link">
+                <div class="receipt-pdf">
+                  <span>PDF</span>
+                </div>
+              </a>
+            {% else %}
+              <a href="{{ item.file.url }}" target="_blank">
+                <img src="{{ item.file.url }}" alt="Bukti kuitansi service">
+              </a>
+            {% endif %}
+
+            <div class="receipt-meta">
+              <div>
+                <strong>Kuitansi</strong>
+                <span>{{ item.created_at|date:"d M Y H:i" }}</span>
+              </div>
+
+              <button
+                type="submit"
+                form="delete-kuitansi-{{ item.pk }}"
+                class="receipt-delete-btn"
+                onclick="return confirm('Yakin ingin menghapus bukti kuitansi ini?')">
+                Hapus
+              </button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">
+          Simpan
+        </button>
+
+        <a class="btn btn-secondary" href="{% url 'kendaraan:service_list' %}">
+          Kembali
+        </a>
+      </div>
+    </form>
+
+    <aside class="vehicle-photo-panel">
+      <h3>Foto Kendaraan</h3>
+      <p>Foto kendaraan yang dipilih akan tampil di sini.</p>
+
+      <div id="vehiclePhotoBox" class="vehicle-photo-box">
+        {% if foto_kendaraan_aktif %}
+          <img src="{{ foto_kendaraan_aktif }}" alt="Foto kendaraan">
+        {% else %}
+          <div class="vehicle-photo-empty">
+            <div class="vehicle-photo-icon">🚘</div>
+            <span>Belum ada foto kendaraan</span>
+          </div>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+
+  {% if kuitansi_list %}
+    {% for item in kuitansi_list %}
+    <form
+      id="delete-kuitansi-{{ item.pk }}"
+      method="post"
+      action="{% url 'kendaraan:kuitansi_service_delete' item.pk %}"
+      style="display:none;">
+      {% csrf_token %}
+    </form>
+    {% endfor %}
+  {% endif %}
+</div>
+
+{{ kendaraan_foto_map|json_script:"kendaraan-foto-map" }}
+
+<style>
+  .service-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 24px;
+      align-items: start;
+  }
+
+  .service-form {
+      min-width: 0;
+  }
+
+  .vehicle-photo-panel {
+      border: 1px solid #dbe5f0;
+      border-radius: 20px;
+      background: #f8fbff;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(16, 42, 91, 0.08);
+      position: sticky;
+      top: 24px;
+  }
+
+  .vehicle-photo-panel h3 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 900;
+      color: #0f172a;
+  }
+
+  .vehicle-photo-panel p {
+      margin: 6px 0 16px;
+      color: #64748b;
+      font-size: 14px;
+  }
+
+  .vehicle-photo-box {
+      width: 100%;
+      min-height: 230px;
+      border: 1px solid #dbe5f0;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+  }
+
+  .vehicle-photo-box img {
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+      display: block;
+  }
+
+  .vehicle-photo-empty {
+      min-height: 230px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      text-align: center;
+      gap: 10px;
+      padding: 20px;
+  }
+
+  .vehicle-photo-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #eaf2ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+  }
+
+  .receipt-section {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid #e5ebf3;
+  }
+
+  .receipt-header h3 {
+      margin: 0;
+      font-size: 22px;
+      color: #0f172a;
+      font-weight: 900;
+  }
+
+  .receipt-header p {
+      margin: 6px 0 16px;
+      color: #64748b;
+      font-size: 14px;
+  }
+
+  .receipt-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+  }
+
+  .receipt-card {
+      border: 1px solid #dbe5f0;
+      border-radius: 18px;
+      background: #ffffff;
+      overflow: hidden;
+      box-shadow: 0 10px 24px rgba(16, 42, 91, 0.08);
+  }
+
+  .receipt-card img {
+      width: 100%;
+      height: 190px;
+      object-fit: cover;
+      display: block;
+      background: #f1f5f9;
+  }
+
+  .receipt-pdf-link {
+      text-decoration: none;
+  }
+
+  .receipt-pdf {
+      height: 190px;
+      background: #fee2e2;
+      color: #991b1b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 36px;
+  }
+
+  .receipt-meta {
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+  }
+
+  .receipt-meta div {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+  }
+
+  .receipt-meta strong {
+      color: #0f172a;
+      font-size: 14px;
+      font-weight: 900;
+  }
+
+  .receipt-meta span {
+      color: #64748b;
+      font-size: 12px;
+  }
+
+  .receipt-delete-btn {
+      border: 0;
+      background: #fee2e2;
+      color: #991b1b;
+      font-weight: 900;
+      border-radius: 999px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      white-space: nowrap;
+  }
+
+  .receipt-delete-btn:hover {
+      background: #fecaca;
+  }
+
+  @media (max-width: 1100px) {
+      .service-layout {
+          grid-template-columns: 1fr;
+      }
+
+      .vehicle-photo-panel {
+          position: static;
+      }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+      const kendaraanSelect = document.getElementById('id_kendaraan');
+      const photoBox = document.getElementById('vehiclePhotoBox');
+      const fotoMapElement = document.getElementById('kendaraan-foto-map');
+
+      if (!kendaraanSelect || !photoBox || !fotoMapElement) {
+          return;
+      }
+
+      const fotoMap = JSON.parse(fotoMapElement.textContent || '{}');
+
+      function renderEmptyPhoto() {
+          photoBox.innerHTML = `
+              <div class="vehicle-photo-empty">
+                  <div class="vehicle-photo-icon">🚘</div>
+                  <span>Belum ada foto kendaraan</span>
+              </div>
+          `;
+      }
+
+      function updateVehiclePhoto() {
+          const kendaraanId = kendaraanSelect.value;
+          const fotoUrl = fotoMap[kendaraanId];
+
+          if (fotoUrl) {
+              photoBox.innerHTML = `
+                  <img src="${fotoUrl}" alt="Foto kendaraan">
+              `;
+          } else {
+              renderEmptyPhoto();
+          }
+      }
+
+      kendaraanSelect.addEventListener('change', updateVehiclePhoto);
+      updateVehiclePhoto();
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block page_title %}Form Master Data{% endblock %}
+{% block content %}
+<div class="card form-card">
+  <div class="form-header">
+    <div>
+      <h2>Form Master Data</h2>
+      <p>Lengkapi data dengan benar, lalu simpan perubahan.</p>
+    </div>
+  </div>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="message error">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-grid">
+      {% for field in form %}
+      <p class="{% if field.name == 'alamat' or field.name == 'keterangan' or field.name == 'foto' %}full{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="hint">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+      </p>
+      {% endfor %}
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Simpan</button>
+      <a class="btn btn-secondary" href="javascript:history.back()">Kembali</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
