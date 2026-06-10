@@ -13,6 +13,34 @@
   <h3 class="card-title">Ringkasan SIP</h3>
   <p>Total SIP Kendaraan: <strong>{{ sip_kendaraan }}</strong></p>
   {% if can_access_house %}<p>Total SIP Rumah Dinas: <strong>{{ sip_rumah }}</strong></p>{% endif %}
-  <p class="hint">Fitur export Excel/PDF dapat dikembangkan dari halaman ini.</p>
+  <p class="hint">Gunakan tombol di bawah untuk mengunduh laporan dalam format Excel atau PDF.</p>
+</div>
+<br>
+<div class="grid grid-2">
+  <div class="card">
+    <h3 class="card-title">🚙 Export Laporan Kendaraan</h3>
+    <p class="hint">
+      Berisi data kendaraan, kondisi baik/rusak, status pemanfaatan, SIP kendaraan, pemakai SIP,
+      periode SIP, riwayat pengguna sebelumnya, dan riwayat service kendaraan.
+    </p>
+    <div class="toolbar" style="justify-content:flex-start;margin-bottom:0;">
+      <a class="btn btn-primary" href="{% url 'laporan:kendaraan_excel' %}">⬇️ Download Excel</a>
+      <a class="btn btn-secondary" href="{% url 'laporan:kendaraan_pdf' %}">📄 Download PDF</a>
+    </div>
+  </div>
+
+  {% if can_access_house %}
+  <div class="card">
+    <h3 class="card-title">🏠 Export Laporan Rumah Dinas</h3>
+    <p class="hint">
+      Berisi data rumah dinas, kondisi baik/rusak, status pemanfaatan, SIP rumah dinas,
+      pemakai/penghuni, periode SIP, riwayat pengguna sebelumnya, jabatan, dan unit kerja pemakai.
+    </p>
+    <div class="toolbar" style="justify-content:flex-start;margin-bottom:0;">
+      <a class="btn btn-primary" href="{% url 'laporan:rumah_excel' %}">⬇️ Download Excel</a>
+      <a class="btn btn-secondary" href="{% url 'laporan:rumah_pdf' %}">📄 Download PDF</a>
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

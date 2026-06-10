@@ -31,6 +31,10 @@ STATUS_PEMANFAATAN_RUMAH = [
 
 
 JENIS_KENDARAAN_CHOICES = [
+    ('MOBIL', 'Mobil'),
+    ('SEPEDA_MOTOR', 'Sepeda Motor'),
+    ('MOTOR_RODA_3', 'Motor Roda 3'),
+    ('KENDARAAN_LAINNYA', 'Kendaraan Lainnya'),
     ('OPERASIONAL', 'Operasional'),
     ('DINAS_JABATAN', 'Dinas Jabatan'),
     ('KENDARAAN_SEWA', 'Kendaraan Sewa'),
