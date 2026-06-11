@@ -28,6 +28,7 @@ except Exception:  # pragma: no cover - fallback bila dependency PDF belum terpa
     svg2rlg = None
 
 from core.roles import can_view_reports, can_manage_master
+from core.access import scope_queryset_by_user
 from master.models import Kendaraan, RumahDinas, Pegawai
 from kendaraan.models import SIPKendaraan, ServiceKendaraan, RiwayatKondisiKendaraan
 from rumah_dinas.models import SIPRumahDinas
@@ -339,12 +340,12 @@ def _pdf_response(lines, filename, title='Laporan SIKARIS'):
 @user_passes_test(can_view_reports, login_url='login')
 def laporan_index(request):
     return render(request, 'laporan/index.html', {
-        'kendaraan': Kendaraan.objects.count(),
-        'rumah': RumahDinas.objects.count(),
-        'pegawai': Pegawai.objects.count(),
-        'sip_kendaraan': SIPKendaraan.objects.count(),
-        'sip_rumah': SIPRumahDinas.objects.count(),
-        'service': ServiceKendaraan.objects.count(),
+        'kendaraan': scope_queryset_by_user(Kendaraan.objects.all(), request.user, 'kendaraan').count(),
+        'rumah': scope_queryset_by_user(RumahDinas.objects.all(), request.user, 'rumah').count(),
+        'pegawai': scope_queryset_by_user(Pegawai.objects.all(), request.user, 'pegawai').count(),
+        'sip_kendaraan': scope_queryset_by_user(SIPKendaraan.objects.all(), request.user, 'sip_kendaraan').count(),
+        'sip_rumah': scope_queryset_by_user(SIPRumahDinas.objects.all(), request.user, 'sip_rumah').count(),
+        'service': scope_queryset_by_user(ServiceKendaraan.objects.all(), request.user, 'service_kendaraan').count(),
     })
 
 
@@ -370,9 +371,9 @@ def export_kendaraan_excel(request):
     ]
     ws.append(headers)
 
-    kendaraan_qs = Kendaraan.objects.select_related('unit_kerja', 'pengguna').prefetch_related(
+    kendaraan_qs = scope_queryset_by_user(Kendaraan.objects.select_related('unit_kerja', 'pengguna').prefetch_related(
         'sip_kendaraan__pegawai', 'service', 'riwayat_kondisi'
-    ).order_by('nomor_polisi')
+    ), request.user, 'kendaraan').order_by('nomor_polisi')
 
     for k in kendaraan_qs:
         sip = _get_latest_sip_kendaraan(k)
@@ -398,7 +399,7 @@ def export_kendaraan_excel(request):
         'Tanggal Mulai', 'Tanggal Akhir', 'Jenis Pemakaian', 'Tujuan Pemakaian',
         'Lokasi Penggunaan', 'Status SIP', 'Pejabat Penandatangan', 'Catatan'
     ])
-    for sip in SIPKendaraan.objects.select_related('kendaraan', 'pegawai').order_by('-tanggal_sip'):
+    for sip in scope_queryset_by_user(SIPKendaraan.objects.select_related('kendaraan', 'pegawai'), request.user, 'sip_kendaraan').order_by('-tanggal_sip'):
         ws_sip.append([
             sip.nomor_sip, _date(sip.tanggal_sip), sip.kendaraan.nomor_polisi,
             _text(sip.kendaraan), sip.pegawai.nama, sip.pegawai.nip,
@@ -414,9 +415,9 @@ def export_kendaraan_excel(request):
         'Jabatan', 'Unit Kerja', 'Tanggal Mulai', 'Tanggal Akhir', 'Status SIP',
         'Jenis Pemakaian', 'Lokasi Penggunaan', 'Tujuan Pemakaian'
     ])
-    for sip in SIPKendaraan.objects.select_related(
+    for sip in scope_queryset_by_user(SIPKendaraan.objects.select_related(
         'kendaraan', 'pegawai__unit_kerja'
-    ).order_by('kendaraan__nomor_polisi', '-tanggal_mulai', '-tanggal_sip'):
+    ), request.user, 'sip_kendaraan').order_by('kendaraan__nomor_polisi', '-tanggal_mulai', '-tanggal_sip'):
         ws_pengguna.append([
             sip.kendaraan.nomor_polisi, _text(sip.kendaraan), sip.nomor_sip, _date(sip.tanggal_sip),
             sip.pegawai.nama, sip.pegawai.nip, _text(sip.pegawai.jabatan), _text(sip.pegawai.unit_kerja),
@@ -431,7 +432,7 @@ def export_kendaraan_excel(request):
         'Uraian Pekerjaan', 'Sparepart Diganti', 'Biaya Jasa', 'Biaya Sparepart', 'Total Biaya',
         'Kondisi Sebelum', 'Kondisi Sesudah'
     ])
-    for s in ServiceKendaraan.objects.select_related('kendaraan').order_by('-tanggal_service'):
+    for s in scope_queryset_by_user(ServiceKendaraan.objects.select_related('kendaraan'), request.user, 'service_kendaraan').order_by('-tanggal_service'):
         ws_service.append([
             _date(s.tanggal_service), s.kendaraan.nomor_polisi, _text(s.kendaraan),
             _display(s, 'jenis_service'), _text(s.kilometer), _text(s.bengkel),
@@ -445,7 +446,7 @@ def export_kendaraan_excel(request):
     ws_kondisi.append([
         'Tanggal', 'Nomor Polisi', 'Kendaraan', 'Kondisi', 'Uraian Kondisi', 'Dicatat Oleh'
     ])
-    for rk in RiwayatKondisiKendaraan.objects.select_related('kendaraan', 'dicatat_oleh').order_by('-tanggal'):
+    for rk in scope_queryset_by_user(RiwayatKondisiKendaraan.objects.select_related('kendaraan', 'dicatat_oleh'), request.user, 'kondisi_kendaraan').order_by('-tanggal'):
         ws_kondisi.append([
             _date(rk.tanggal), rk.kendaraan.nomor_polisi, _text(rk.kendaraan),
             _display(rk, 'kondisi'), _text(rk.uraian_kondisi), _text(rk.dicatat_oleh),
@@ -463,9 +464,9 @@ def export_kendaraan_pdf(request):
     lines.append(f'Dicetak: {timezone.localtime().strftime("%d-%m-%Y %H:%M") }')
     lines.append('')
 
-    kendaraan_qs = Kendaraan.objects.select_related('unit_kerja', 'pengguna').prefetch_related(
+    kendaraan_qs = scope_queryset_by_user(Kendaraan.objects.select_related('unit_kerja', 'pengguna').prefetch_related(
         'sip_kendaraan__pegawai', 'service', 'riwayat_kondisi'
-    ).order_by('nomor_polisi')
+    ), request.user, 'kendaraan').order_by('nomor_polisi')
 
     for no, k in enumerate(kendaraan_qs, start=1):
         sip = _get_latest_sip_kendaraan(k)
@@ -536,7 +537,7 @@ def export_rumah_excel(request):
         'Pejabat Penandatangan', 'Catatan SIP', 'Riwayat Pengguna Sebelumnya'
     ])
 
-    rumah_qs = RumahDinas.objects.prefetch_related('sip_rumah__pegawai__unit_kerja').order_by('kode_rumah')
+    rumah_qs = scope_queryset_by_user(RumahDinas.objects.prefetch_related('sip_rumah__pegawai__unit_kerja'), request.user, 'rumah').order_by('kode_rumah')
     for r in rumah_qs:
         sip = _get_latest_sip_rumah(r)
         pegawai = sip.pegawai if sip else None
@@ -564,7 +565,7 @@ def export_rumah_excel(request):
         'Pemakai', 'NIP Pemakai', 'Jabatan', 'Unit Kerja', 'Tanggal Mulai', 'Tanggal Akhir',
         'Status SIP', 'Jumlah Anggota Keluarga', 'Pejabat Penandatangan', 'Dasar Penerbitan', 'Catatan'
     ])
-    for sip in SIPRumahDinas.objects.select_related('rumah_dinas', 'pegawai__unit_kerja').order_by('-tanggal_sip'):
+    for sip in scope_queryset_by_user(SIPRumahDinas.objects.select_related('rumah_dinas', 'pegawai__unit_kerja'), request.user, 'sip_rumah').order_by('-tanggal_sip'):
         ws_sip.append([
             sip.nomor_sip, _date(sip.tanggal_sip), sip.rumah_dinas.kode_rumah,
             sip.rumah_dinas.nama_rumah, sip.rumah_dinas.alamat, _display(sip.rumah_dinas, 'kondisi'),
@@ -581,9 +582,9 @@ def export_rumah_excel(request):
         'NIP', 'Jabatan', 'Unit Kerja', 'Tanggal Mulai', 'Tanggal Akhir', 'Status SIP',
         'Jumlah Anggota Keluarga', 'Pejabat Penandatangan', 'Catatan'
     ])
-    for sip in SIPRumahDinas.objects.select_related(
+    for sip in scope_queryset_by_user(SIPRumahDinas.objects.select_related(
         'rumah_dinas', 'pegawai__unit_kerja'
-    ).order_by('rumah_dinas__kode_rumah', '-tanggal_mulai', '-tanggal_sip'):
+    ), request.user, 'sip_rumah').order_by('rumah_dinas__kode_rumah', '-tanggal_mulai', '-tanggal_sip'):
         ws_pengguna.append([
             sip.rumah_dinas.kode_rumah, sip.rumah_dinas.nama_rumah, sip.rumah_dinas.alamat,
             sip.nomor_sip, _date(sip.tanggal_sip), sip.pegawai.nama, sip.pegawai.nip,
@@ -604,7 +605,7 @@ def export_rumah_pdf(request):
     lines.append(f'Dicetak: {timezone.localtime().strftime("%d-%m-%Y %H:%M") }')
     lines.append('')
 
-    rumah_qs = RumahDinas.objects.prefetch_related('sip_rumah__pegawai__unit_kerja').order_by('kode_rumah')
+    rumah_qs = scope_queryset_by_user(RumahDinas.objects.prefetch_related('sip_rumah__pegawai__unit_kerja'), request.user, 'rumah').order_by('kode_rumah')
     for no, r in enumerate(rumah_qs, start=1):
         sip = _get_latest_sip_rumah(r)
         lines.append(f'{no}. {r.kode_rumah} - {r.nama_rumah}')

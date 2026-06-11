@@ -6,6 +6,7 @@ from django.views.generic import CreateView, UpdateView
 
 from core.roles import BMNRequiredMixin, MaintenanceRequiredMixin, VehicleViewRequiredMixin
 from core.listing import SearchListMixin
+from core.access import UnitScopedQuerysetMixin, UnitScopedFormMixin, scope_queryset_by_user
 from master.models import Kendaraan
 
 from .models import (
@@ -22,7 +23,7 @@ from .forms import (
 )
 
 
-def get_kendaraan_foto_map():
+def get_kendaraan_foto_map(user=None):
     """
     Membuat mapping:
     {
@@ -35,7 +36,10 @@ def get_kendaraan_foto_map():
     """
     kendaraan_foto_map = {}
 
-    kendaraan_list = Kendaraan.objects.prefetch_related('galeri_foto').all()
+    kendaraan_qs = Kendaraan.objects.prefetch_related('galeri_foto').all()
+    if user is not None:
+        kendaraan_qs = scope_queryset_by_user(kendaraan_qs, user, 'kendaraan')
+    kendaraan_list = kendaraan_qs
 
     for kendaraan in kendaraan_list:
         foto_pertama = kendaraan.galeri_foto.first()
@@ -46,7 +50,8 @@ def get_kendaraan_foto_map():
     return kendaraan_foto_map
 
 
-class SIPKendaraanListView(VehicleViewRequiredMixin, SearchListMixin):
+class SIPKendaraanListView(VehicleViewRequiredMixin, UnitScopedQuerysetMixin, SearchListMixin):
+    scope_type = 'sip_kendaraan'
     model = SIPKendaraan
     template_name = 'kendaraan/sip_list.html'
     select_related = ['kendaraan', 'pegawai', 'kendaraan__unit_kerja', 'pegawai__unit_kerja']
@@ -69,7 +74,7 @@ class SIPKendaraanListView(VehicleViewRequiredMixin, SearchListMixin):
     ]
 
 
-class SIPKendaraanCreateView(BMNRequiredMixin, CreateView):
+class SIPKendaraanCreateView(BMNRequiredMixin, UnitScopedFormMixin, CreateView):
     model = SIPKendaraan
     form_class = SIPKendaraanForm
     template_name = 'kendaraan/sip_form.html'
@@ -80,14 +85,16 @@ class SIPKendaraanCreateView(BMNRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class SIPKendaraanUpdateView(BMNRequiredMixin, UpdateView):
+class SIPKendaraanUpdateView(BMNRequiredMixin, UnitScopedQuerysetMixin, UnitScopedFormMixin, UpdateView):
+    scope_type = 'sip_kendaraan'
     model = SIPKendaraan
     form_class = SIPKendaraanForm
     template_name = 'kendaraan/sip_form.html'
     success_url = reverse_lazy('kendaraan:sip_list')
 
 
-class ServiceKendaraanListView(MaintenanceRequiredMixin, SearchListMixin):
+class ServiceKendaraanListView(MaintenanceRequiredMixin, UnitScopedQuerysetMixin, SearchListMixin):
+    scope_type = 'service_kendaraan'
     model = ServiceKendaraan
     template_name = 'kendaraan/service_list.html'
     select_related = ['kendaraan', 'kendaraan__unit_kerja', 'dicatat_oleh']
@@ -107,7 +114,7 @@ class ServiceKendaraanListView(MaintenanceRequiredMixin, SearchListMixin):
     ]
 
 
-class ServiceKendaraanCreateView(MaintenanceRequiredMixin, CreateView):
+class ServiceKendaraanCreateView(MaintenanceRequiredMixin, UnitScopedFormMixin, CreateView):
     model = ServiceKendaraan
     form_class = ServiceKendaraanForm
     template_name = 'kendaraan/service_form.html'
@@ -130,14 +137,15 @@ class ServiceKendaraanCreateView(MaintenanceRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
 
-        ctx['kendaraan_foto_map'] = get_kendaraan_foto_map()
+        ctx['kendaraan_foto_map'] = get_kendaraan_foto_map(self.request.user)
         ctx['foto_kendaraan_aktif'] = None
         ctx['kuitansi_list'] = []
 
         return ctx
 
 
-class ServiceKendaraanUpdateView(MaintenanceRequiredMixin, UpdateView):
+class ServiceKendaraanUpdateView(MaintenanceRequiredMixin, UnitScopedQuerysetMixin, UnitScopedFormMixin, UpdateView):
+    scope_type = 'service_kendaraan'
     model = ServiceKendaraan
     form_class = ServiceKendaraanForm
     template_name = 'kendaraan/service_form.html'
@@ -158,7 +166,7 @@ class ServiceKendaraanUpdateView(MaintenanceRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
 
-        ctx['kendaraan_foto_map'] = get_kendaraan_foto_map()
+        ctx['kendaraan_foto_map'] = get_kendaraan_foto_map(self.request.user)
 
         if self.object and self.object.kendaraan:
             foto_pertama = self.object.kendaraan.galeri_foto.first()
@@ -174,7 +182,7 @@ class ServiceKendaraanUpdateView(MaintenanceRequiredMixin, UpdateView):
 @login_required
 @require_POST
 def kuitansi_service_delete(request, pk):
-    kuitansi = get_object_or_404(BuktiKuitansiServiceKendaraan, pk=pk)
+    kuitansi = get_object_or_404(BuktiKuitansiServiceKendaraan.objects.filter(service__in=scope_queryset_by_user(ServiceKendaraan.objects.all(), request.user, 'service_kendaraan')), pk=pk)
     service_id = kuitansi.service_id
 
     kuitansi.file.delete(save=False)
@@ -183,7 +191,8 @@ def kuitansi_service_delete(request, pk):
     return redirect('kendaraan:service_update', pk=service_id)
 
 
-class RiwayatKondisiListView(MaintenanceRequiredMixin, SearchListMixin):
+class RiwayatKondisiListView(MaintenanceRequiredMixin, UnitScopedQuerysetMixin, SearchListMixin):
+    scope_type = 'kondisi_kendaraan'
     model = RiwayatKondisiKendaraan
     template_name = 'kendaraan/kondisi_list.html'
     select_related = ['kendaraan', 'kendaraan__unit_kerja', 'dicatat_oleh']
@@ -199,7 +208,7 @@ class RiwayatKondisiListView(MaintenanceRequiredMixin, SearchListMixin):
     ]
 
 
-class RiwayatKondisiCreateView(MaintenanceRequiredMixin, CreateView):
+class RiwayatKondisiCreateView(MaintenanceRequiredMixin, UnitScopedFormMixin, CreateView):
     model = RiwayatKondisiKendaraan
     form_class = RiwayatKondisiKendaraanForm
     template_name = 'kendaraan/form.html'

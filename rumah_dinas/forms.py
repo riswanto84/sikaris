@@ -1,4 +1,5 @@
 from django import forms
+from core.access import filter_form_fields_by_user
 from django.core.exceptions import ValidationError
 
 from .models import SIPRumahDinas
@@ -21,7 +22,10 @@ def validate_pdf_file(uploaded_file):
 
 class BootstrapModelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        if self.user is not None:
+            filter_form_fields_by_user(self, self.user)
 
         for field in self.fields.values():
             field.widget.attrs.update({'class': 'form-control'})

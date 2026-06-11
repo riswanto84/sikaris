@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block page_title %}Manajemen Role{% endblock %}
+{% block content %}
+<div class="toolbar">
+  {% include 'includes/list_search.html' %}
+  <a class="btn btn-primary" href="{% url 'role_create' %}">+ Tambah Role</a>
+</div>
+
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nama Role</th>
+          <th>Jumlah User</th>
+          <th>Keterangan</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for o in object_list %}
+        <tr>
+          <td><strong>{{ o.name }}</strong></td>
+          <td>{{ o.user_set.count }}</td>
+          <td>
+            {% if o.name == 'Admin System' %}Akses pengaturan user dan role.
+            {% elif o.name == 'Biro Umum' %}CRUD semua data seluruh satker/unit kerja.
+            {% elif o.name == 'Pengelola BMN' %}Pengelolaan master data dan SIP sesuai unit kerja.
+            {% elif o.name == 'Pemeliharaan Kendaraan' %}Pengelolaan service dan riwayat kondisi kendaraan sesuai unit kerja.
+            {% else %}Role tambahan.
+            {% endif %}
+          </td>
+          <td>
+            <a class="btn btn-secondary" href="{% url 'role_update' o.pk %}">Edit</a>
+            {% if o.name != 'Admin System' and o.name != 'Biro Umum' and o.name != 'Pengelola BMN' and o.name != 'Pemeliharaan Kendaraan' %}
+              <a class="btn btn-secondary" href="{% url 'role_delete' o.pk %}">Hapus</a>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="empty-state">Belum ada data role.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'includes/pagination.html' %}
+</div>
+{% endblock %}

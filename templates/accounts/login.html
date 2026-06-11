@@ -1,2 +1,60 @@
 {% load static %}
-<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Login | SIKARIS</title><link rel="icon" href="{% static 'img/favicon.svg' %}"><link rel="stylesheet" href="{% static 'css/app.css' %}"></head><body class="login-body"><main><section class="login-card"><header class="login-header"><img src="{% static 'img/logo-kemensos.svg' %}" alt="Logo Kementerian Sosial"><div style="font-weight:900;color:#0f2a56;margin-top:8px">KEMENTERIAN SOSIAL REPUBLIK INDONESIA</div><h1 class="login-title">SIKARIS</h1><div class="login-sub">Sistem Informasi Kendaraan dan Rumah Dinas</div></header>{% if form.errors %}<div class="message" style="background:#fee2e2;color:#991b1b;margin-bottom:16px">Username atau password salah. Silakan periksa kembali data login Anda.</div>{% endif %}<form method="post" action="{% url 'login' %}">{% csrf_token %}<p><label for="id_username">Username</label><input class="form-control" type="text" name="username" id="id_username" autocomplete="username" required autofocus></p><p><label for="id_password">Password</label><input class="form-control" type="password" name="password" id="id_password" autocomplete="current-password" required></p><button class="login-btn" type="submit">Login</button></form><div class="message" style="margin-top:20px;background:#eef6ff;color:#334155"><strong>User demo:</strong> adminsystem / bmn / pemeliharaan<br><strong>Password:</strong> Password123!</div></section><div class="login-footer">© Kementerian Sosial Republik Indonesia</div></main></body></html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login | SIKARIS</title>
+    <link rel="icon" href="{% static 'img/favicon.svg' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="login-body">
+<main>
+    <section class="login-card">
+        <header class="login-header">
+            <img src="{% static 'img/logo-kemensos.svg' %}" alt="Logo Kementerian Sosial">
+            <div style="font-weight:900;color:#0f2a56;margin-top:8px">KEMENTERIAN SOSIAL REPUBLIK INDONESIA</div>
+            <h1 class="login-title">SIKARIS</h1>
+            <div class="login-sub">Sistem Informasi Kendaraan dan Rumah Dinas</div>
+        </header>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message {{ message.tags }}" style="margin-bottom:16px">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        {% if form.non_field_errors %}
+            <div class="message" style="background:#fee2e2;color:#991b1b;margin-bottom:16px">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <p>
+                <label for="id_username">Username</label>
+                {{ form.username }}
+                {% for error in form.username.errors %}<small style="color:#991b1b">{{ error }}</small>{% endfor %}
+            </p>
+            <p>
+                <label for="id_password">Password</label>
+                {{ form.password }}
+                {% for error in form.password.errors %}<small style="color:#991b1b">{{ error }}</small>{% endfor %}
+            </p>
+            <p>
+                <label for="id_captcha">Captcha: {{ captcha_question }} = ?</label>
+                {{ form.captcha }}
+                {% for error in form.captcha.errors %}<small style="color:#991b1b">{{ error }}</small>{% endfor %}
+            </p>
+            <button class="login-btn" type="submit">Login</button>
+        </form>
+
+        <div class="message" style="margin-top:20px;background:#eef6ff;color:#334155">
+            Masukkan username, password, dan hasil captcha dengan benar untuk masuk ke aplikasi.
+        </div>
+    </section>
+    <div class="login-footer">© Kementerian Sosial Republik Indonesia</div>
+</main>
+</body>
+</html>

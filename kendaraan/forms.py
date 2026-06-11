@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from core.access import filter_form_fields_by_user
 
 from .models import (
     SIPKendaraan,
@@ -81,7 +82,10 @@ class MultipleFileField(forms.FileField):
 
 class BootstrapModelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        if self.user is not None:
+            filter_form_fields_by_user(self, self.user)
 
         for field in self.fields.values():
             if isinstance(field.widget, forms.CheckboxInput):

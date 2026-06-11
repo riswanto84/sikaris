@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import user_passes_test
 ADMIN_SYSTEM = 'Admin System'
 PENGELOLA_BMN = 'Pengelola BMN'
 PEMELIHARAAN_KENDARAAN = 'Pemeliharaan Kendaraan'
+BIRO_UMUM = 'Biro Umum'
 
 
 def has_group(user, group_name):
@@ -23,23 +24,28 @@ def is_pemeliharaan_kendaraan(user):
 
 
 def can_manage_master(user):
-    return is_admin_system(user) or is_pengelola_bmn(user)
+    from core.access import is_biro_umum_user
+    return is_admin_system(user) or is_pengelola_bmn(user) or is_biro_umum_user(user)
 
 
 def can_manage_sip(user):
-    return is_admin_system(user) or is_pengelola_bmn(user)
+    from core.access import is_biro_umum_user
+    return is_admin_system(user) or is_pengelola_bmn(user) or is_biro_umum_user(user)
 
 
 def can_manage_vehicle_maintenance(user):
-    return is_admin_system(user) or is_pemeliharaan_kendaraan(user)
+    from core.access import is_biro_umum_user
+    return is_admin_system(user) or is_pemeliharaan_kendaraan(user) or is_biro_umum_user(user)
 
 
 def can_view_vehicle(user):
-    return is_admin_system(user) or is_pengelola_bmn(user) or is_pemeliharaan_kendaraan(user)
+    from core.access import is_biro_umum_user
+    return is_admin_system(user) or is_pengelola_bmn(user) or is_pemeliharaan_kendaraan(user) or is_biro_umum_user(user)
 
 
 def can_view_reports(user):
-    return is_admin_system(user) or is_pengelola_bmn(user) or is_pemeliharaan_kendaraan(user)
+    from core.access import is_biro_umum_user
+    return is_admin_system(user) or is_pengelola_bmn(user) or is_pemeliharaan_kendaraan(user) or is_biro_umum_user(user)
 
 
 class RoleRequiredMixin(UserPassesTestMixin):
@@ -60,15 +66,15 @@ class AdminSystemRequiredMixin(RoleRequiredMixin):
 
 
 class BMNRequiredMixin(RoleRequiredMixin):
-    allowed_roles = [ADMIN_SYSTEM, PENGELOLA_BMN]
+    allowed_roles = [ADMIN_SYSTEM, PENGELOLA_BMN, BIRO_UMUM]
 
 
 class MaintenanceRequiredMixin(RoleRequiredMixin):
-    allowed_roles = [ADMIN_SYSTEM, PEMELIHARAAN_KENDARAAN]
+    allowed_roles = [ADMIN_SYSTEM, PEMELIHARAAN_KENDARAAN, BIRO_UMUM]
 
 
 class VehicleViewRequiredMixin(RoleRequiredMixin):
-    allowed_roles = [ADMIN_SYSTEM, PENGELOLA_BMN, PEMELIHARAAN_KENDARAAN]
+    allowed_roles = [ADMIN_SYSTEM, PENGELOLA_BMN, PEMELIHARAAN_KENDARAAN, BIRO_UMUM]
 
 
 def bmn_required(view_func):

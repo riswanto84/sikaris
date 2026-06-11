@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Verifikasi OTP | SIKARIS</title>
+    <link rel="icon" href="{% static 'img/favicon.svg' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="login-body">
+<main>
+    <section class="login-card">
+        <header class="login-header">
+            <img src="{% static 'img/logo-kemensos.svg' %}" alt="Logo Kementerian Sosial">
+            <div style="font-weight:900;color:#0f2a56;margin-top:8px">KEMENTERIAN SOSIAL REPUBLIK INDONESIA</div>
+            <h1 class="login-title">Verifikasi OTP</h1>
+            <div class="login-sub">Masukkan kode OTP yang dikirim ke email Anda.</div>
+        </header>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message {{ message.tags }}" style="margin-bottom:16px">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" action="{% url 'verify_otp' %}">
+            {% csrf_token %}
+            <p>
+                <label for="id_otp_code">Kode OTP Email</label>
+                {{ form.otp_code }}
+                {% for error in form.otp_code.errors %}<small style="color:#991b1b">{{ error }}</small>{% endfor %}
+            </p>
+            <button class="login-btn" type="submit">Verifikasi & Masuk</button>
+        </form>
+
+        <div class="message" style="margin-top:20px;background:#eef6ff;color:#334155">
+            Kode OTP berlaku selama 5 menit. Jika kedaluwarsa, silakan login ulang.
+        </div>
+    </section>
+    <div class="login-footer">© Kementerian Sosial Republik Indonesia</div>
+</main>
+</body>
+</html>

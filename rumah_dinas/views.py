@@ -3,11 +3,13 @@ from django.views.generic import CreateView, UpdateView
 
 from core.roles import BMNRequiredMixin
 from core.listing import SearchListMixin
+from core.access import UnitScopedQuerysetMixin, UnitScopedFormMixin
 from .models import SIPRumahDinas
 from .forms import SIPRumahDinasForm
 
 
-class SIPRumahDinasListView(BMNRequiredMixin, SearchListMixin):
+class SIPRumahDinasListView(BMNRequiredMixin, UnitScopedQuerysetMixin, SearchListMixin):
+    scope_type = 'sip_rumah'
     model = SIPRumahDinas
     template_name = 'rumah_dinas/sip_list.html'
     select_related = ['rumah_dinas', 'pegawai', 'pegawai__unit_kerja']
@@ -27,7 +29,7 @@ class SIPRumahDinasListView(BMNRequiredMixin, SearchListMixin):
     ]
 
 
-class SIPRumahDinasCreateView(BMNRequiredMixin, CreateView):
+class SIPRumahDinasCreateView(BMNRequiredMixin, UnitScopedFormMixin, CreateView):
     model = SIPRumahDinas
     form_class = SIPRumahDinasForm
     template_name = 'rumah_dinas/form.html'
@@ -38,7 +40,8 @@ class SIPRumahDinasCreateView(BMNRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class SIPRumahDinasUpdateView(BMNRequiredMixin, UpdateView):
+class SIPRumahDinasUpdateView(BMNRequiredMixin, UnitScopedQuerysetMixin, UnitScopedFormMixin, UpdateView):
+    scope_type = 'sip_rumah'
     model = SIPRumahDinas
     form_class = SIPRumahDinasForm
     template_name = 'rumah_dinas/form.html'

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block page_title %}{% if object %}Edit User{% else %}Tambah User{% endif %}{% endblock %}
+{% block content %}
+<div class="card form-card">
+  <div class="form-header">
+    <div>
+      <h2>{% if object %}Edit User{% else %}Tambah User{% endif %}</h2>
+      <p>Kelola akun login aplikasi SIKARIS. Untuk user unit kerja, gunakan username yang sama dengan NIP pegawai atau isi email yang sama dengan email pegawai.</p>
+    </div>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="message error">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-grid">
+      {% for field in form %}
+      <p class="{% if field.name == 'groups' %}full{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="hint">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+      </p>
+      {% endfor %}
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Simpan</button>
+      <a class="btn btn-secondary" href="{% url 'user_list' %}">Kembali</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

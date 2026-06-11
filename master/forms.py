@@ -1,5 +1,6 @@
 from django import forms
 from .models import UnitKerja, Pegawai, Kendaraan, RumahDinas
+from core.access import filter_form_fields_by_user, is_biro_umum_user, get_user_unit_id
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -20,7 +21,10 @@ class MultipleImageField(forms.FileField):
 
 class BootstrapModelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        if self.user is not None:
+            filter_form_fields_by_user(self, self.user)
 
         for name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):

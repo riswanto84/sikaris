@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 
 from core.roles import BMNRequiredMixin, VehicleViewRequiredMixin, can_manage_master
 from core.listing import SearchListMixin
+from core.access import UnitScopedQuerysetMixin, UnitScopedFormMixin, BiroUmumOnlyMixin, scope_queryset_by_user
 from .models import (
     UnitKerja,
     Pegawai,
@@ -19,7 +20,8 @@ from .models import (
 from .forms import UnitKerjaForm, PegawaiForm, KendaraanForm, RumahDinasForm
 
 
-class UnitKerjaListView(BMNRequiredMixin, SearchListMixin):
+class UnitKerjaListView(BMNRequiredMixin, UnitScopedQuerysetMixin, SearchListMixin):
+    scope_type = 'unit'
     model = UnitKerja
     template_name = 'master/unitkerja_list.html'
     search_fields = [
@@ -28,21 +30,23 @@ class UnitKerjaListView(BMNRequiredMixin, SearchListMixin):
     ]
 
 
-class UnitKerjaCreateView(BMNRequiredMixin, CreateView):
+class UnitKerjaCreateView(BMNRequiredMixin, BiroUmumOnlyMixin, UnitScopedFormMixin, CreateView):
     model = UnitKerja
     form_class = UnitKerjaForm
     template_name = 'master/form.html'
     success_url = reverse_lazy('master:unitkerja_list')
 
 
-class UnitKerjaUpdateView(BMNRequiredMixin, UpdateView):
+class UnitKerjaUpdateView(BMNRequiredMixin, UnitScopedQuerysetMixin, UnitScopedFormMixin, UpdateView):
+    scope_type = 'unit'
     model = UnitKerja
     form_class = UnitKerjaForm
     template_name = 'master/form.html'
     success_url = reverse_lazy('master:unitkerja_list')
 
 
-class PegawaiListView(BMNRequiredMixin, SearchListMixin):
+class PegawaiListView(BMNRequiredMixin, UnitScopedQuerysetMixin, SearchListMixin):
+    scope_type = 'pegawai'
     model = Pegawai
     template_name = 'master/pegawai_list.html'
     select_related = ['unit_kerja']
@@ -60,14 +64,15 @@ class PegawaiListView(BMNRequiredMixin, SearchListMixin):
     ]
 
 
-class PegawaiCreateView(BMNRequiredMixin, CreateView):
+class PegawaiCreateView(BMNRequiredMixin, UnitScopedFormMixin, CreateView):
     model = Pegawai
     form_class = PegawaiForm
     template_name = 'master/pegawai_form.html'
     success_url = reverse_lazy('master:pegawai_list')
 
 
-class PegawaiUpdateView(BMNRequiredMixin, UpdateView):
+class PegawaiUpdateView(BMNRequiredMixin, UnitScopedQuerysetMixin, UnitScopedFormMixin, UpdateView):
+    scope_type = 'pegawai'
     model = Pegawai
     form_class = PegawaiForm
     template_name = 'master/pegawai_form.html'
@@ -81,7 +86,7 @@ def pegawai_foto_delete(request, pk):
         messages.error(request, 'Anda tidak memiliki hak akses untuk menghapus foto pegawai.')
         return redirect('dashboard')
 
-    pegawai = get_object_or_404(Pegawai, pk=pk)
+    pegawai = get_object_or_404(scope_queryset_by_user(Pegawai.objects.all(), request.user, 'pegawai'), pk=pk)
 
     if pegawai.foto:
         pegawai.foto.delete(save=False)
@@ -94,7 +99,8 @@ def pegawai_foto_delete(request, pk):
     return redirect('master:pegawai_update', pk=pegawai.pk)
 
 
-class KendaraanListView(VehicleViewRequiredMixin, SearchListMixin):
+class KendaraanListView(VehicleViewRequiredMixin, UnitScopedQuerysetMixin, SearchListMixin):
+    scope_type = 'kendaraan'
     model = Kendaraan
     template_name = 'master/kendaraan_list.html'
     select_related = ['unit_kerja', 'pengguna']
@@ -148,12 +154,13 @@ class KendaraanPhotoMixin:
         return ctx
 
 
-class KendaraanCreateView(BMNRequiredMixin, KendaraanPhotoMixin, CreateView):
+class KendaraanCreateView(BMNRequiredMixin, UnitScopedFormMixin, KendaraanPhotoMixin, CreateView):
     model = Kendaraan
     form_class = KendaraanForm
 
 
-class KendaraanUpdateView(BMNRequiredMixin, KendaraanPhotoMixin, UpdateView):
+class KendaraanUpdateView(BMNRequiredMixin, UnitScopedQuerysetMixin, UnitScopedFormMixin, KendaraanPhotoMixin, UpdateView):
+    scope_type = 'kendaraan'
     model = Kendaraan
     form_class = KendaraanForm
 
@@ -165,7 +172,7 @@ def kendaraan_foto_delete(request, pk):
         messages.error(request, 'Anda tidak memiliki hak akses untuk menghapus foto kendaraan.')
         return redirect('dashboard')
 
-    foto = get_object_or_404(FotoKendaraan, pk=pk)
+    foto = get_object_or_404(FotoKendaraan.objects.filter(kendaraan__in=scope_queryset_by_user(Kendaraan.objects.all(), request.user, 'kendaraan')), pk=pk)
     kendaraan_id = foto.kendaraan_id
     foto.foto.delete(save=False)
     foto.delete()
@@ -174,7 +181,8 @@ def kendaraan_foto_delete(request, pk):
     return redirect('master:kendaraan_update', pk=kendaraan_id)
 
 
-class RumahDinasListView(BMNRequiredMixin, SearchListMixin):
+class RumahDinasListView(BMNRequiredMixin, UnitScopedQuerysetMixin, SearchListMixin):
+    scope_type = 'rumah'
     model = RumahDinas
     template_name = 'master/rumah_list.html'
     search_fields = [
@@ -224,12 +232,13 @@ class RumahDinasPhotoMixin:
         return ctx
 
 
-class RumahDinasCreateView(BMNRequiredMixin, RumahDinasPhotoMixin, CreateView):
+class RumahDinasCreateView(BMNRequiredMixin, BiroUmumOnlyMixin, UnitScopedFormMixin, RumahDinasPhotoMixin, CreateView):
     model = RumahDinas
     form_class = RumahDinasForm
 
 
-class RumahDinasUpdateView(BMNRequiredMixin, RumahDinasPhotoMixin, UpdateView):
+class RumahDinasUpdateView(BMNRequiredMixin, UnitScopedQuerysetMixin, UnitScopedFormMixin, RumahDinasPhotoMixin, UpdateView):
+    scope_type = 'rumah'
     model = RumahDinas
     form_class = RumahDinasForm
 
@@ -241,7 +250,7 @@ def rumah_foto_delete(request, pk):
         messages.error(request, 'Anda tidak memiliki hak akses untuk menghapus foto rumah dinas.')
         return redirect('dashboard')
 
-    foto = get_object_or_404(FotoRumahDinas, pk=pk)
+    foto = get_object_or_404(FotoRumahDinas.objects.filter(rumah_dinas__in=scope_queryset_by_user(RumahDinas.objects.all(), request.user, 'rumah')), pk=pk)
     rumah_id = foto.rumah_dinas_id
     foto.foto.delete(save=False)
     foto.delete()
