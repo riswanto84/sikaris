@@ -19,6 +19,10 @@ def is_biro_umum_user(user):
         return True
     if user.groups.filter(name__iexact=BIRO_UMUM_GROUP).exists():
         return True
+    profile = getattr(user, 'profile', None)
+    profile_unit_name = _norm(getattr(getattr(profile, 'unit_kerja', None), 'nama_unit', ''))
+    if BIRO_UMUM_KEYWORD in profile_unit_name:
+        return True
     pegawai = get_user_pegawai(user)
     unit_name = _norm(getattr(getattr(pegawai, 'unit_kerja', None), 'nama_unit', ''))
     return BIRO_UMUM_KEYWORD in unit_name
@@ -48,7 +52,24 @@ def get_user_pegawai(user):
     return qs.filter(candidates).first()
 
 
+def get_user_profile_unit_kerja(user):
+    """Ambil unit kerja dari field Manajemen User bila tersedia."""
+    if not user or not user.is_authenticated:
+        return None
+    profile = getattr(user, 'profile', None)
+    return getattr(profile, 'unit_kerja', None)
+
+
 def get_user_unit_kerja(user):
+    """Unit kerja user untuk pembatasan akses.
+
+    Prioritas utama adalah field Unit Kerja/Satker pada menu Manajemen User.
+    Jika belum diisi, sistem tetap memakai mekanisme lama: mencocokkan user dengan data pegawai
+    berdasarkan NIP/email agar data lama tetap kompatibel.
+    """
+    profile_unit = get_user_profile_unit_kerja(user)
+    if profile_unit:
+        return profile_unit
     pegawai = get_user_pegawai(user)
     return getattr(pegawai, 'unit_kerja', None)
 
@@ -64,8 +85,9 @@ def require_user_unit_or_all(user):
     unit_id = get_user_unit_id(user)
     if not unit_id:
         raise PermissionDenied(
-            'User belum terhubung dengan data pegawai/unit kerja. '
-            'Samakan username user dengan NIP pegawai atau isi email user sama dengan email pegawai.'
+            'User belum memiliki Unit Kerja/Satker. '
+            'Admin System perlu mengisi field Unit Kerja/Satker pada menu Manajemen User. '
+            'Alternatif lama: samakan username user dengan NIP pegawai atau isi email user sama dengan email pegawai.'
         )
     return unit_id
 
@@ -75,7 +97,7 @@ def scope_queryset_by_user(qs, user, scope_type):
 
     scope_type:
       unit, pegawai, kendaraan, rumah, sip_kendaraan, sip_rumah,
-      service_kendaraan, kondisi_kendaraan
+      service_kendaraan, kondisi_kendaraan, perbaikan_rumah
     """
     if is_biro_umum_user(user):
         return qs
@@ -98,6 +120,11 @@ def scope_queryset_by_user(qs, user, scope_type):
         return qs.filter(kendaraan__unit_kerja_id=unit_id)
     if scope_type == 'kondisi_kendaraan':
         return qs.filter(kendaraan__unit_kerja_id=unit_id)
+    if scope_type == 'perbaikan_rumah':
+        return qs.filter(
+            Q(rumah_dinas__sip_rumah__pegawai__unit_kerja_id=unit_id) |
+            Q(pelapor__unit_kerja_id=unit_id)
+        ).distinct()
 
     return qs.none()
 

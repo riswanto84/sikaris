@@ -7,6 +7,7 @@
         <div>
             <h2>Selamat datang, {{ request.user.get_full_name|default:request.user.username }} 👋</h2>
             <p>Berikut ringkasan data kendaraan dan rumah dinas Kementerian Sosial.</p>
+            <p class="muted small-text">Cakupan dashboard: <strong>{{ dashboard_scope_label }}</strong></p>
         </div>
         <div class="date-chip">📅 {% now "l, j F Y" %}</div>
     </div>
@@ -129,7 +130,7 @@
                 <div class="panel-title">Ringkasan Service Bulan Ini</div>
                 <div class="mini-stats-grid">
                     <div class="mini-stat-card"><span class="mini-stat-icon blue">🔧</span><div><strong data-counter data-stat="service_bulan_ini">{{ service_bulan_ini }}</strong><small>Total Service</small></div></div>
-                    <div class="mini-stat-card"><span class="mini-stat-icon green">💵</span><div><strong>{{ 0|rupiah }}</strong><small>Total Biaya</small></div></div>
+                    <div class="mini-stat-card"><span class="mini-stat-icon green">💵</span><div><strong>{{ service_bulan_ini_biaya|rupiah }}</strong><small>Total Biaya</small></div></div>
                     <div class="mini-stat-card"><span class="mini-stat-icon amber">🗓</span><div><strong>{{ service_terakhir|length }}</strong><small>Service Tercatat</small></div></div>
                     <div class="mini-stat-card"><span class="mini-stat-icon red">❗</span><div><strong>{{ kendaraan_rusak_ringan|add:kendaraan_rusak_berat }}</strong><small>Perlu Tindakan</small></div></div>
                 </div>
@@ -189,6 +190,26 @@
                     <div class="empty-inline">Tidak ada SIP yang akan berakhir.</div>
                     {% endfor %}
                 </div>
+                {% if can_access_house %}
+                <div class="panel-title mt-20">SIP Rumah Dinas Akan Berakhir</div>
+                <div class="list-stack">
+                    {% for s in sip_rumah_akan_berakhir_list %}
+                    <div class="list-item">
+                        <div class="list-icon teal">🏠</div>
+                        <div class="list-main">
+                            <strong>{{ s.rumah_dinas.kode_rumah }}</strong>
+                            <span>{{ s.pegawai.nama }}</span>
+                        </div>
+                        <div class="list-meta">
+                            <span>{{ s.tanggal_akhir }}</span>
+                            <small class="pill-warning">segera berakhir</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-inline">Tidak ada SIP rumah dinas yang akan berakhir.</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
 
             <div class="panel-card mt-20">

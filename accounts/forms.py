@@ -3,6 +3,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import Group
 
+from master.models import UnitKerja
+from .models import UserProfile
+
 
 class CaptchaLoginForm(AuthenticationForm):
     """Login form dengan captcha angka sederhana.
@@ -47,6 +50,12 @@ class UserCreateForm(UserCreationForm):
         widget=forms.CheckboxSelectMultiple,
         help_text='Pilih role user. Contoh: Admin System, Biro Umum, Pengelola BMN, Pemeliharaan Kendaraan.',
     )
+    unit_kerja = forms.ModelChoiceField(
+        label='Unit Kerja / Satker',
+        queryset=UnitKerja.objects.all().order_by('nama_unit'),
+        required=False,
+        help_text='Untuk user unit kerja, pilih unit kerja agar akses kendaraan dan rumah dinas dibatasi hanya pada unit tersebut. Kosongkan hanya untuk Admin System/Biro Umum/superuser.',
+    )
     is_active = forms.BooleanField(label='Aktif', required=False, initial=True)
     is_staff = forms.BooleanField(
         label='Staff status', required=False,
@@ -61,14 +70,14 @@ class UserCreateForm(UserCreationForm):
         model = get_user_model()
         fields = (
             'username', 'email', 'first_name', 'last_name',
-            'groups', 'is_active', 'is_staff', 'is_superuser',
+            'groups', 'unit_kerja', 'is_active', 'is_staff', 'is_superuser',
             'password1', 'password2',
         )
         labels = {
             'username': 'Username',
         }
         help_texts = {
-            'username': 'Untuk user unit kerja, disarankan sama dengan NIP pegawai agar pembatasan unit kerja otomatis berjalan.',
+            'username': 'Bisa diisi NIP/email pegawai, tetapi pembatasan akses utama sekarang memakai field Unit Kerja/Satker di bawah.',
         }
 
     def __init__(self, *args, **kwargs):
@@ -82,6 +91,10 @@ class UserCreateForm(UserCreationForm):
         if commit:
             user.save()
             self.save_m2m()
+            UserProfile.objects.update_or_create(
+                user=user,
+                defaults={'unit_kerja': self.cleaned_data.get('unit_kerja')},
+            )
         return user
 
 
@@ -102,12 +115,18 @@ class UserUpdateForm(forms.ModelForm):
         required=False,
         widget=forms.CheckboxSelectMultiple,
     )
+    unit_kerja = forms.ModelChoiceField(
+        label='Unit Kerja / Satker',
+        queryset=UnitKerja.objects.all().order_by('nama_unit'),
+        required=False,
+        help_text='Untuk user unit kerja, pilih unit kerja agar akses kendaraan dan rumah dinas dibatasi hanya pada unit tersebut. Kosongkan hanya untuk Admin System/Biro Umum/superuser.',
+    )
 
     class Meta:
         model = get_user_model()
         fields = (
             'username', 'email', 'first_name', 'last_name',
-            'groups', 'is_active', 'is_staff', 'is_superuser',
+            'groups', 'unit_kerja', 'is_active', 'is_staff', 'is_superuser',
             'password1', 'password2',
         )
         labels = {
@@ -115,17 +134,21 @@ class UserUpdateForm(forms.ModelForm):
             'email': 'Email',
             'first_name': 'Nama Depan',
             'last_name': 'Nama Belakang',
+            'unit_kerja': 'Unit Kerja / Satker',
             'is_active': 'Aktif',
             'is_staff': 'Staff status',
             'is_superuser': 'Superuser',
         }
         help_texts = {
-            'username': 'Untuk user unit kerja, disarankan sama dengan NIP pegawai agar pembatasan unit kerja otomatis berjalan.',
+            'username': 'Bisa diisi NIP/email pegawai, tetapi pembatasan akses utama sekarang memakai field Unit Kerja/Satker di bawah.',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['groups'].initial = self.instance.groups.all()
+        profile = getattr(self.instance, 'profile', None)
+        if profile:
+            self.fields['unit_kerja'].initial = profile.unit_kerja
         for field in self.fields.values():
             if not isinstance(field.widget, forms.CheckboxInput) and not isinstance(field.widget, forms.CheckboxSelectMultiple):
                 field.widget.attrs.update({'class': 'form-control'})
@@ -147,6 +170,10 @@ class UserUpdateForm(forms.ModelForm):
         if commit:
             user.save()
             self.save_m2m()
+            UserProfile.objects.update_or_create(
+                user=user,
+                defaults={'unit_kerja': self.cleaned_data.get('unit_kerja')},
+            )
         return user
 
 

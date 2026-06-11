@@ -56,7 +56,9 @@ class UserListView(AdminSystemRequiredMixin, SearchListMixin):
         ('first_name', 'Nama Depan'),
         ('last_name', 'Nama Belakang'),
         ('groups__name', 'Role'),
+        ('profile__unit_kerja__nama_unit', 'Unit Kerja'),
     ]
+    select_related = ['profile__unit_kerja']
     prefetch_related = ['groups']
 
     def get_queryset(self):
