@@ -16,7 +16,70 @@
       </p>
       {% endfor %}
     </div>
+
+    <div class="map-preview-card" id="tanahMapPreviewCard">
+      <div class="map-preview-header">
+        <div>
+          <h3>Preview Google Maps</h3>
+          <p>Preview akan tampil otomatis jika field Latitude dan Longitude sudah terisi.</p>
+        </div>
+        <a class="btn btn-secondary btn-sm" id="tanahMapOpenLink" href="#" target="_blank" rel="noopener" style="display:none;">Buka di Google Maps</a>
+      </div>
+      <div id="tanahMapEmpty" class="map-empty-state">Latitude dan longitude belum terisi.</div>
+      <iframe id="tanahMapFrame" class="map-preview-frame" title="Preview lokasi tanah negara" loading="lazy" referrerpolicy="no-referrer-when-downgrade" style="display:none;"></iframe>
+    </div>
+
     <div class="form-actions"><button class="btn btn-primary" type="submit">Simpan</button><a class="btn btn-secondary" href="{% url 'tanah_negara:list' %}">Kembali</a></div>
   </form>
 </div>
+<style>
+.map-preview-card{margin-top:22px;border:1px solid #dbe5f0;border-radius:18px;padding:18px;background:#f8fbff}
+.map-preview-header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+.map-preview-header h3{margin:0;color:#0f172a;font-size:20px}.map-preview-header p{margin:4px 0 0;color:#64748b}
+.map-preview-frame{width:100%;height:360px;border:0;border-radius:16px;background:#fff}.map-empty-state{padding:34px;border:1px dashed #b8c7da;border-radius:16px;text-align:center;color:#64748b;background:#fff}
+@media(max-width:768px){.map-preview-header{align-items:flex-start;flex-direction:column}.map-preview-frame{height:300px}}
+</style>
+<script>
+(function(){
+  function normalizeCoord(value){
+    return (value || '').toString().trim().replace(',', '.');
+  }
+  function validCoord(value){
+    if(!value) return false;
+    var n = Number(value);
+    return !Number.isNaN(n) && Number.isFinite(n);
+  }
+  function updateTanahMapPreview(){
+    var latInput = document.getElementById('id_latitude');
+    var lngInput = document.getElementById('id_longitude');
+    var frame = document.getElementById('tanahMapFrame');
+    var empty = document.getElementById('tanahMapEmpty');
+    var link = document.getElementById('tanahMapOpenLink');
+    if(!latInput || !lngInput || !frame || !empty || !link) return;
+    var lat = normalizeCoord(latInput.value);
+    var lng = normalizeCoord(lngInput.value);
+    if(validCoord(lat) && validCoord(lng)){
+      var query = encodeURIComponent(lat + ',' + lng);
+      frame.src = 'https://maps.google.com/maps?hl=id&ll=' + query + '&q=' + query + '&z=18&t=m&output=embed';
+      link.href = 'https://www.google.com/maps/search/?api=1&query=' + query;
+      frame.style.display = 'block';
+      link.style.display = 'inline-flex';
+      empty.style.display = 'none';
+    } else {
+      frame.removeAttribute('src');
+      frame.style.display = 'none';
+      link.style.display = 'none';
+      link.href = '#';
+      empty.style.display = 'block';
+    }
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    var latInput = document.getElementById('id_latitude');
+    var lngInput = document.getElementById('id_longitude');
+    if(latInput) latInput.addEventListener('input', updateTanahMapPreview);
+    if(lngInput) lngInput.addEventListener('input', updateTanahMapPreview);
+    updateTanahMapPreview();
+  });
+})();
+</script>
 {% endblock %}

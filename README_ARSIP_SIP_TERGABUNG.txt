@@ -35,5 +35,4 @@ media/arsip_sip/laporan_sync_arsip_sip.csv
 
 Catatan:
 - Folder media/arsip_sip sengaja dimasukkan ke ZIP agar dokumen arsip ikut terbawa ke aplikasi.
-- File PDF/JPG/JPEG/PNG dari Arsip.zip disertakan. File __MACOSX dan resource fork dari arsip Mac tidak disertakan.
-- Command sync_arsip_sip otomatis menghubungkan file PDF SIP ke field dokumen_sip. File STNK berupa gambar tetap tersimpan sebagai arsip pendukung di media/arsip_sip/kendaraan/.
+- File __MACOSX dan resource fork dari arsip Mac tidak disertakan.

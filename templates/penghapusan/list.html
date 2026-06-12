@@ -9,7 +9,7 @@
   </div>
 </div>
 <div class="message info">
-  Unit kerja mengajukan usulan penghapusan BMN kepada Biro Umum. Biro Umum melakukan verifikasi, memberi catatan, persetujuan/penolakan, dan mencatat SK/BA penghapusan.
+  Unit kerja mengajukan usulan penghapusan BMN kepada Biro Umum. Kolom lama proses berfungsi sebagai pengingat pemohon dan verifikator Biro Umum agar usulan tidak tertunda.
 </div>
 <div class="card table-card">
   <div class="table-responsive">
@@ -24,6 +24,7 @@
           <th>Nilai</th>
           <th>Alasan</th>
           <th>Status</th>
+          <th>Lama Proses/Pengingat</th>
           <th>Aksi</th>
         </tr>
       </thead>
@@ -39,6 +40,12 @@
           <td>{{ o.get_alasan_penghapusan_display }}</td>
           <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
           <td>
+            <strong>{{ o.lama_proses_hari }} hari</strong><br>
+            <span class="status-badge {{ o.status_pengingat_class }}">{{ o.status_pengingat_label }}</span>
+            {% if o.pesan_pengingat_pemohon %}<br><small>{{ o.pesan_pengingat_pemohon }}</small>{% endif %}
+            {% if o.pesan_pengingat_verifikator %}<br><small>{{ o.pesan_pengingat_verifikator }}</small>{% endif %}
+          </td>
+          <td>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <a class="btn btn-secondary" href="{% url 'penghapusan:detail' o.pk %}">Detail</a>
               <a class="btn btn-secondary" href="{% url 'penghapusan:update' o.pk %}">Edit</a>
@@ -47,7 +54,7 @@
           </td>
         </tr>
       {% empty %}
-        <tr><td colspan="9" class="empty-state">Belum ada permohonan penghapusan BMN.</td></tr>
+        <tr><td colspan="10" class="empty-state">Belum ada permohonan penghapusan BMN.</td></tr>
       {% endfor %}
       </tbody>
     </table>

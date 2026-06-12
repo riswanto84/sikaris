@@ -34,7 +34,7 @@
             <div>
                 <div class="summary-label">Kendaraan Rusak Ringan</div>
                 <div class="summary-value warn" data-counter data-stat="kendaraan_rusak_ringan">{{ kendaraan_rusak_ringan }}</div>
-                <a href="{% url 'kendaraan:kondisi_list' %}" class="mini-link">Lihat detail →</a>
+                <a href="{% url 'master:kendaraan_list' %}" class="mini-link">Lihat detail →</a>
             </div>
         </div>
         <div class="summary-card">
@@ -42,7 +42,7 @@
             <div>
                 <div class="summary-label">Kendaraan Rusak Berat</div>
                 <div class="summary-value danger" data-counter data-stat="kendaraan_rusak_berat">{{ kendaraan_rusak_berat }}</div>
-                <a href="{% url 'kendaraan:kondisi_list' %}" class="mini-link">Lihat detail →</a>
+                <a href="{% url 'master:kendaraan_list' %}" class="mini-link">Lihat detail →</a>
             </div>
         </div>
 

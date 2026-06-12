@@ -48,6 +48,8 @@ class TanahNegaraForm(forms.ModelForm):
             'kode_kab_kota': 'Kode Kab/Kota',
             'kode_provinsi': 'Kode Provinsi',
             'kode_pos': 'Kode Pos',
+            'latitude': 'Latitude',
+            'longitude': 'Longitude',
             'sbsk': 'SBSK',
             'optimalisasi': 'Optimalisasi',
             'penghuni': 'Penghuni',
@@ -68,6 +70,8 @@ class TanahNegaraForm(forms.ModelForm):
             'tanggal_buku_pertama': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
             'tanggal_perolehan': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
             'tanggal_psp': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
+            'latitude': forms.NumberInput(attrs={'step': '0.00000001', 'placeholder': 'Contoh: -6.20000000'}),
+            'longitude': forms.NumberInput(attrs={'step': '0.00000001', 'placeholder': 'Contoh: 106.81666667'}),
             'dokumen_sertifikat': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*,.pdf,.jpg,.jpeg,.png'}),
             'keterangan': forms.Textarea(attrs={'rows': 4}),
             'alamat': forms.Textarea(attrs={'rows': 3}),
@@ -78,6 +82,10 @@ class TanahNegaraForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if 'latitude' in self.fields:
+            self.fields['latitude'].help_text = 'Isi titik koordinat lintang. Preview peta akan otomatis muncul jika latitude dan longitude terisi.'
+        if 'longitude' in self.fields:
+            self.fields['longitude'].help_text = 'Isi titik koordinat bujur. Contoh format: 106.81666667.'
         for f in self.fields.values():
             f.widget.attrs.update({'class': 'form-control'})
         for field_name in ['tanggal_sertifikat', 'tanggal_buku_pertama', 'tanggal_perolehan', 'tanggal_psp']:

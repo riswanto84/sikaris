@@ -31,4 +31,50 @@
     {% endfor %}
   </div>
 </div>
+
+{% if dokumen_sip_url %}
+<div class="card detail-card detail-preview-card">
+  <div class="detail-header">
+    <h2>Preview Dokumen SIP</h2>
+    <p>Pratinjau dokumen SIP dalam format PDF.</p>
+  </div>
+  {% if dokumen_sip_is_pdf %}
+    <div class="pdf-preview-frame">
+      <iframe src="{{ dokumen_sip_url }}#toolbar=1&navpanes=0&scrollbar=1" title="Preview Dokumen SIP"></iframe>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      Dokumen SIP sudah tersedia, tetapi bukan format PDF.
+      <br>
+      <a href="{{ dokumen_sip_url }}" target="_blank" rel="noopener">Buka dokumen</a>
+    </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if google_maps_embed_url %}
+<div class="card detail-card detail-preview-card">
+  <div class="detail-header">
+    <h2>Preview Lokasi Google Maps</h2>
+    <p>Pratinjau lokasi berdasarkan koordinat latitude dan longitude.</p>
+  </div>
+  <div class="maps-preview-frame">
+    <iframe src="{{ google_maps_embed_url }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Preview Google Maps"></iframe>
+  </div>
+  {% if google_maps_open_url %}
+  <div class="form-actions" style="margin-top:14px">
+    <a class="btn btn-secondary" href="{{ google_maps_open_url }}" target="_blank" rel="noopener">Buka di Google Maps</a>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<style>
+  .detail-preview-card{margin-top:18px}
+  .pdf-preview-frame,.maps-preview-frame{width:100%;border:1px solid #dbe5f0;border-radius:18px;overflow:hidden;background:#f8fafc}
+  .pdf-preview-frame{height:760px}
+  .maps-preview-frame{height:460px}
+  .pdf-preview-frame iframe,.maps-preview-frame iframe{width:100%;height:100%;border:0;display:block}
+  @media (max-width: 768px){.pdf-preview-frame{height:520px}.maps-preview-frame{height:360px}}
+</style>
 {% endblock %}

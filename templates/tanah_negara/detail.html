@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load l10n %}
 {% block page_title %}Detail Tanah Negara{% endblock %}
 {% block content %}
 <div class="card">
@@ -25,6 +26,21 @@
     <tr><th>Provinsi</th><td>{{ object.provinsi|default:'-' }}</td><th>Kode Pos</th><td>{{ object.kode_pos|default:'-' }}</td></tr>
     <tr><th>Latitude</th><td>{{ object.latitude|default:'-' }}</td><th>Longitude</th><td>{{ object.longitude|default:'-' }}</td></tr>
   </tbody></table></div>
+
+  {% if object.latitude and object.longitude %}
+  {% with lat=object.latitude|unlocalize lng=object.longitude|unlocalize %}
+  <h3>Preview Google Maps</h3>
+  <div class="map-preview-card detail-map-card">
+    <iframe class="map-preview-frame" src="https://maps.google.com/maps?hl=id&ll={{ lat }},{{ lng }}&q={{ lat }},{{ lng }}&z=18&t=m&output=embed" title="Preview lokasi tanah negara" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <div class="form-actions" style="margin-top:12px">
+      <a class="btn btn-secondary" href="https://www.google.com/maps/search/?api=1&query={{ lat }},{{ lng }}" target="_blank" rel="noopener">Buka di Google Maps</a>
+    </div>
+  </div>
+  {% endwith %}
+  {% else %}
+  <h3>Preview Google Maps</h3>
+  <div class="message info">Koordinat latitude dan longitude belum tersedia, sehingga preview Google Maps belum dapat ditampilkan.</div>
+  {% endif %}
 
   <h3>Dokumen dan Sertifikasi</h3>
   <div class="table-responsive"><table class="table"><tbody>
@@ -62,5 +78,5 @@
   {% endif %}
   <div class="form-actions"><a class="btn btn-secondary" href="{% url 'tanah_negara:list' %}">Kembali</a></div>
 </div>
-<style>.pdf-preview{width:100%;height:720px;border:1px solid #dbe5f0;border-radius:18px;overflow:hidden}.pdf-preview iframe{width:100%;height:100%;border:0}.card h3{margin:24px 0 12px;color:#0f172a}</style>
+<style>.pdf-preview{width:100%;height:720px;border:1px solid #dbe5f0;border-radius:18px;overflow:hidden}.pdf-preview iframe{width:100%;height:100%;border:0}.card h3{margin:24px 0 12px;color:#0f172a}.map-preview-card{border:1px solid #dbe5f0;border-radius:18px;padding:16px;background:#f8fbff}.map-preview-frame{width:100%;height:420px;border:0;border-radius:16px;background:#fff}.detail-map-card .form-actions{justify-content:flex-start}@media(max-width:768px){.map-preview-frame{height:320px}}</style>
 {% endblock %}

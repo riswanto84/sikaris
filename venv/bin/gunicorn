@@ -1,4 +1,4 @@
-#!/Users/riswantoaris/Documents/sikaris/venv/bin/python3
+#!/Users/riswantoaris/Documents/sikaris/venv/bin/python
 import sys
 from gunicorn.app.wsgiapp import run
 if __name__ == '__main__':

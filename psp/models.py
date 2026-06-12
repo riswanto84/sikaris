@@ -87,6 +87,83 @@ class PermohonanPSPBMN(TimeStampedModel):
             return 'Kendaraan di atas Rp100 juta'
         return 'Dokumen dasar PSP'
 
+
+
+    @property
+    def tanggal_akhir_proses(self):
+        """Tanggal acuan akhir proses untuk menghitung lama proses."""
+        return (
+            self.tanggal_penetapan_psp
+            or self.tanggal_verifikasi
+            or timezone.now().date()
+        )
+
+    @property
+    def lama_proses_hari(self):
+        if not self.tanggal_permohonan:
+            return 0
+        try:
+            return max((self.tanggal_akhir_proses - self.tanggal_permohonan).days, 0)
+        except Exception:
+            return 0
+
+    @property
+    def status_pengingat_class(self):
+        """Kelas visual SLA: aman, perhatian, terlambat."""
+        if self.status in ['SELESAI', 'DITOLAK']:
+            return 'success'
+        if self.status == 'PERLU_PERBAIKAN':
+            return 'warning' if self.lama_proses_hari <= 7 else 'danger'
+        if self.status == 'DIAJUKAN':
+            if self.lama_proses_hari >= 7:
+                return 'danger'
+            if self.lama_proses_hari >= 3:
+                return 'warning'
+            return 'success'
+        if self.status in ['DIVERIFIKASI_BIRO', 'DISETUJUI']:
+            if self.lama_proses_hari >= 14:
+                return 'danger'
+            if self.lama_proses_hari >= 7:
+                return 'warning'
+            return 'success'
+        return 'success'
+
+    @property
+    def status_pengingat_label(self):
+        if self.status in ['SELESAI', 'DITOLAK']:
+            return 'Selesai'
+        if self.status == 'PERLU_PERBAIKAN':
+            return 'Menunggu perbaikan Satker'
+        if self.status == 'DIAJUKAN':
+            if self.lama_proses_hari >= 7:
+                return 'Terlambat diverifikasi'
+            if self.lama_proses_hari >= 3:
+                return 'Perlu segera diverifikasi'
+            return 'Menunggu verifikasi Biro Umum'
+        if self.status in ['DIVERIFIKASI_BIRO', 'DISETUJUI']:
+            if self.lama_proses_hari >= 14:
+                return 'Proses melewati batas pantau'
+            if self.lama_proses_hari >= 7:
+                return 'Perlu tindak lanjut'
+            return 'Dalam proses Biro Umum'
+        return 'Dalam proses'
+
+    @property
+    def pesan_pengingat_pemohon(self):
+        if self.status == 'PERLU_PERBAIKAN':
+            return 'Pemohon/Satker perlu segera memperbaiki atau melengkapi dokumen PSP sesuai catatan Biro Umum.'
+        if self.status == 'DIAJUKAN':
+            return 'Permohonan PSP sudah dikirim ke Biro Umum. Pantau status dan lengkapi dokumen bila diminta.'
+        return ''
+
+    @property
+    def pesan_pengingat_verifikator(self):
+        if self.status == 'DIAJUKAN' and self.lama_proses_hari >= 3:
+            return 'Pengingat untuk Biro Umum: permohonan PSP sudah menunggu verifikasi beberapa hari.'
+        if self.status in ['DIVERIFIKASI_BIRO', 'DISETUJUI'] and self.lama_proses_hari >= 7:
+            return 'Pengingat untuk Biro Umum: permohonan PSP perlu tindak lanjut penetapan/dokumen.'
+        return ''
+
     def save(self, *args, **kwargs):
         if not self.nomor_permohonan:
             super().save(*args, **kwargs)

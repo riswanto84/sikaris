@@ -9,7 +9,7 @@
   </div>
 </div>
 <div class="message info">
-  Unit kerja mengajukan permohonan Penetapan Status Penggunaan (PSP) BMN kepada Biro Umum. Sistem melakukan validasi dokumen dasar dan dokumen tambahan khusus kendaraan bernilai di atas Rp100 juta.
+  Unit kerja mengajukan permohonan Penetapan Status Penggunaan (PSP) BMN kepada Biro Umum. Kolom lama proses berfungsi sebagai pengingat pemohon dan verifikator Biro Umum agar usulan PSP segera diverifikasi/ditindaklanjuti.
 </div>
 <div class="card table-card">
   <div class="table-responsive">
@@ -24,6 +24,7 @@
           <th>Nilai PSP</th>
           <th>Kategori Validasi</th>
           <th>Status</th>
+          <th>Lama Proses/Pengingat</th>
           <th>Aksi</th>
         </tr>
       </thead>
@@ -39,6 +40,12 @@
           <td>{{ o.kategori_nilai_display }}</td>
           <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
           <td>
+            <strong>{{ o.lama_proses_hari }} hari</strong><br>
+            <span class="status-badge {{ o.status_pengingat_class }}">{{ o.status_pengingat_label }}</span>
+            {% if o.pesan_pengingat_pemohon %}<br><small>{{ o.pesan_pengingat_pemohon }}</small>{% endif %}
+            {% if o.pesan_pengingat_verifikator %}<br><small>{{ o.pesan_pengingat_verifikator }}</small>{% endif %}
+          </td>
+          <td>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <a class="btn btn-secondary" href="{% url 'psp:detail' o.pk %}">Detail</a>
               <a class="btn btn-secondary" href="{% url 'psp:update' o.pk %}">Edit</a>
@@ -47,7 +54,7 @@
           </td>
         </tr>
       {% empty %}
-        <tr><td colspan="9" class="empty-state">Belum ada permohonan PSP BMN.</td></tr>
+        <tr><td colspan="10" class="empty-state">Belum ada permohonan PSP BMN.</td></tr>
       {% endfor %}
       </tbody>
     </table>

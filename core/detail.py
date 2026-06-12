@@ -1,5 +1,6 @@
 from decimal import Decimal
 from django.urls import reverse
+from urllib.parse import urlencode
 
 
 def format_number_id(value, decimals=2):
@@ -12,6 +13,21 @@ def format_number_id(value, decimals=2):
     if number == number.to_integral():
         return f'{int(number):,}'.replace(',', '.')
     return f'{number:,.{decimals}f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
+
+
+def normalize_coordinate_for_maps(value):
+    if value in [None, '']:
+        return None
+    try:
+        coord = Decimal(str(value).strip().replace(',', '.'))
+        return format(coord, 'f')
+    except Exception:
+        text = str(value).strip().replace(',', '.')
+        try:
+            Decimal(text)
+            return text
+        except Exception:
+            return None
 
 
 def format_rupiah(value):
@@ -97,11 +113,56 @@ class GenericDetailMixin:
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+
+        # Preview dokumen SIP PDF di halaman detail SIP Kendaraan/Rumah Negara.
+        # Berlaku otomatis untuk object yang memiliki field dokumen_sip.
+        dokumen_sip = getattr(self.object, 'dokumen_sip', None)
+        dokumen_sip_url = None
+        dokumen_sip_is_pdf = False
+        if dokumen_sip:
+            try:
+                dokumen_sip_url = dokumen_sip.url
+                dokumen_sip_is_pdf = str(dokumen_sip.name).lower().endswith('.pdf')
+            except Exception:
+                dokumen_sip_url = None
+                dokumen_sip_is_pdf = False
+
+        # Preview Google Maps di halaman detail Rumah Negara/Tanah Negara
+        # selama object memiliki latitude dan longitude.
+        latitude = getattr(self.object, 'latitude', None)
+        longitude = getattr(self.object, 'longitude', None)
+        google_maps_embed_url = None
+        google_maps_open_url = None
+        if latitude not in [None, ''] and longitude not in [None, '']:
+            # Koordinat harus memakai titik sebagai desimal untuk URL Google Maps.
+            # Jika memakai format lokal Indonesia, misalnya -6,23914800, Google Maps
+            # akan salah membaca koma sebagai pemisah koordinat dan peta bisa bergeser ke lokasi global.
+            lat = normalize_coordinate_for_maps(latitude)
+            lng = normalize_coordinate_for_maps(longitude)
+            if lat and lng:
+                query = f'{lat},{lng}'
+                google_maps_embed_url = 'https://maps.google.com/maps?' + urlencode({
+                    'hl': 'id',
+                    'll': query,
+                    'q': query,
+                    'z': 18,
+                    't': 'm',
+                    'output': 'embed',
+                })
+                google_maps_open_url = 'https://www.google.com/maps/search/?' + urlencode({
+                    'api': 1,
+                    'query': query,
+                })
+
         ctx.update({
             'detail_title': self.detail_title,
             'detail_rows': self.get_detail_rows(),
             'back_url': self.get_named_url(self.back_url_name),
             'edit_url': self.get_named_url(self.edit_url_name),
             'delete_url': self.get_named_url(self.delete_url_name),
+            'dokumen_sip_url': dokumen_sip_url,
+            'dokumen_sip_is_pdf': dokumen_sip_is_pdf,
+            'google_maps_embed_url': google_maps_embed_url,
+            'google_maps_open_url': google_maps_open_url,
         })
         return ctx

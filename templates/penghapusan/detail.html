@@ -12,6 +12,14 @@
     <div class="mini-stat-card"><div><small>Unit Kerja</small><strong>{{ object.unit_kerja|default:'-' }}</strong></div></div>
     <div class="mini-stat-card"><div><small>Tanggal Usul</small><strong>{{ object.tanggal_permohonan|date:'d/m/Y' }}</strong></div></div>
     <div class="mini-stat-card"><div><small>Nilai</small><strong>{{ object.nilai_perolehan|rupiah }}</strong></div></div>
+    <div class="mini-stat-card"><div><small>Lama Proses</small><strong>{{ object.lama_proses_hari }} hari</strong></div></div>
+  </div>
+  <div style="height:18px"></div>
+  <div class="message {{ object.status_pengingat_class }}">
+    <strong>{{ object.status_pengingat_label }}</strong><br>
+    Lama proses dihitung sejak tanggal permohonan sampai tanggal proses terakhir atau hari ini.
+    {% if object.pesan_pengingat_pemohon %}<br>{{ object.pesan_pengingat_pemohon }}{% endif %}
+    {% if object.pesan_pengingat_verifikator %}<br>{{ object.pesan_pengingat_verifikator }}{% endif %}
   </div>
   <div style="height:18px"></div>
   <div class="card" style="padding:18px">
@@ -46,6 +54,7 @@
       <tbody>
         <tr><th>Catatan Biro Umum</th><td>{{ object.catatan_biro_umum|default:'-'|linebreaksbr }}</td></tr>
         <tr><th>Diverifikasi Oleh</th><td>{{ object.diverifikasi_oleh|default:'-' }}{% if object.tanggal_verifikasi %} - {{ object.tanggal_verifikasi|date:'d/m/Y' }}{% endif %}</td></tr>
+        <tr><th>Lama Proses/Pengingat</th><td><strong>{{ object.lama_proses_hari }} hari</strong><br><span class="status-badge {{ object.status_pengingat_class }}">{{ object.status_pengingat_label }}</span></td></tr>
         <tr><th>Persetujuan</th><td>{{ object.nomor_persetujuan|default:'-' }}{% if object.tanggal_persetujuan %} - {{ object.tanggal_persetujuan|date:'d/m/Y' }}{% endif %}</td></tr>
         <tr><th>SK Penghapusan</th><td>{{ object.nomor_sk_penghapusan|default:'-' }}{% if object.tanggal_sk_penghapusan %} - {{ object.tanggal_sk_penghapusan|date:'d/m/Y' }}{% endif %}</td></tr>
       </tbody>
