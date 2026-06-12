@@ -56,6 +56,8 @@ class Kendaraan(TimeStampedModel):
     status_pemanfaatan = models.CharField(max_length=30, choices=STATUS_PEMANFAATAN_KENDARAAN, default='TERSEDIA')
     kilometer_terakhir = models.PositiveIntegerField(default=0)
     foto = models.ImageField(upload_to='kendaraan/', blank=True, null=True)
+    dokumen_stnk = models.FileField(upload_to='kendaraan/dokumen/stnk/', blank=True, null=True)
+    dokumen_bpkb = models.FileField(upload_to='kendaraan/dokumen/bpkb/', blank=True, null=True)
     class Meta:
         ordering = ['nomor_polisi']
     def __str__(self): return f'{self.nomor_polisi} - {self.merek}'

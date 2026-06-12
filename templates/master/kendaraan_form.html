@@ -71,6 +71,33 @@
     </div>
     {% endif %}
 
+    {% if object and object.dokumen_stnk or object.dokumen_bpkb %}
+    <div class="photo-section">
+      <div class="photo-section-header">
+        <div>
+          <h3>Dokumen Kendaraan Tersimpan</h3>
+          <p>STNK dan BPKB yang sudah diupload dapat dibuka dari sini.</p>
+        </div>
+      </div>
+      <div class="document-card-grid">
+        {% if object.dokumen_stnk %}
+        <div class="document-card">
+          <strong>STNK</strong>
+          <span>{{ object.dokumen_stnk.name }}</span>
+          <a class="btn btn-secondary" href="{{ object.dokumen_stnk.url }}" target="_blank" rel="noopener">Buka PDF</a>
+        </div>
+        {% endif %}
+        {% if object.dokumen_bpkb %}
+        <div class="document-card">
+          <strong>BPKB</strong>
+          <span>{{ object.dokumen_bpkb.name }}</span>
+          <a class="btn btn-secondary" href="{{ object.dokumen_bpkb.url }}" target="_blank" rel="noopener">Buka PDF</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">Simpan</button>
       <a class="btn btn-secondary" href="{% url 'master:kendaraan_list' %}">Kembali</a>

@@ -127,6 +127,25 @@ class GenericDetailMixin:
                 dokumen_sip_url = None
                 dokumen_sip_is_pdf = False
 
+        # Preview dokumen kendaraan PDF pada halaman Detail Kendaraan.
+        kendaraan_document_previews = []
+        for field_name, label in [
+            ('dokumen_stnk', 'Preview Dokumen STNK'),
+            ('dokumen_bpkb', 'Preview Dokumen BPKB'),
+        ]:
+            file_obj = getattr(self.object, field_name, None)
+            if file_obj:
+                try:
+                    file_url = file_obj.url
+                    is_pdf = str(file_obj.name).lower().endswith('.pdf')
+                    kendaraan_document_previews.append({
+                        'label': label,
+                        'url': file_url,
+                        'is_pdf': is_pdf,
+                    })
+                except Exception:
+                    pass
+
         # Preview Google Maps di halaman detail Rumah Negara/Tanah Negara
         # selama object memiliki latitude dan longitude.
         latitude = getattr(self.object, 'latitude', None)
@@ -162,6 +181,7 @@ class GenericDetailMixin:
             'delete_url': self.get_named_url(self.delete_url_name),
             'dokumen_sip_url': dokumen_sip_url,
             'dokumen_sip_is_pdf': dokumen_sip_is_pdf,
+            'kendaraan_document_previews': kendaraan_document_previews,
             'google_maps_embed_url': google_maps_embed_url,
             'google_maps_open_url': google_maps_open_url,
         })

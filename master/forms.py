@@ -20,6 +20,27 @@ class MultipleImageField(forms.FileField):
 
 
 class BootstrapModelForm(forms.ModelForm):
+    def _validate_pdf_file(self, uploaded_file, field_label):
+        if not uploaded_file:
+            return uploaded_file
+
+        filename = (uploaded_file.name or '').lower()
+        content_type = getattr(uploaded_file, 'content_type', '')
+
+        if not filename.endswith('.pdf'):
+            raise forms.ValidationError(f'{field_label} harus berformat PDF.')
+
+        if content_type and content_type not in ['application/pdf', 'application/x-pdf', 'application/octet-stream']:
+            raise forms.ValidationError(f'{field_label} harus berformat PDF.')
+
+        return uploaded_file
+
+    def clean_dokumen_stnk(self):
+        return self._validate_pdf_file(self.cleaned_data.get('dokumen_stnk'), 'Dokumen STNK')
+
+    def clean_dokumen_bpkb(self):
+        return self._validate_pdf_file(self.cleaned_data.get('dokumen_bpkb'), 'Dokumen BPKB')
+
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
@@ -76,6 +97,26 @@ class KendaraanForm(BootstrapModelForm):
         )
     )
 
+    dokumen_stnk = forms.FileField(
+        required=False,
+        label='Upload STNK (PDF)',
+        widget=forms.ClearableFileInput(attrs={
+            'accept': 'application/pdf,.pdf',
+            'class': 'form-control'
+        }),
+        help_text='Upload dokumen STNK dalam format PDF.'
+    )
+
+    dokumen_bpkb = forms.FileField(
+        required=False,
+        label='Upload BPKB (PDF)',
+        widget=forms.ClearableFileInput(attrs={
+            'accept': 'application/pdf,.pdf',
+            'class': 'form-control'
+        }),
+        help_text='Upload dokumen BPKB dalam format PDF.'
+    )
+
     foto_kendaraan = MultipleImageField(
         required=False,
         label='Upload Foto Kendaraan',
@@ -98,6 +139,8 @@ class KendaraanForm(BootstrapModelForm):
             'nomor_mesin': 'Nomor Mesin',
             'nomor_bpkb': 'Nomor BPKB',
             'nomor_stnk': 'Nomor STNK',
+            'dokumen_stnk': 'Dokumen STNK (PDF)',
+            'dokumen_bpkb': 'Dokumen BPKB (PDF)',
             'masa_berlaku_stnk': 'Masa Berlaku STNK',
             'jatuh_tempo_pajak': 'Jatuh Tempo Pajak',
             'nup': 'NUP',
@@ -121,8 +164,38 @@ class KendaraanForm(BootstrapModelForm):
             }),
         }
 
+    def _validate_pdf_file(self, uploaded_file, field_label):
+        if not uploaded_file:
+            return uploaded_file
+
+        filename = (uploaded_file.name or '').lower()
+        content_type = getattr(uploaded_file, 'content_type', '')
+
+        if not filename.endswith('.pdf'):
+            raise forms.ValidationError(f'{field_label} harus berformat PDF.')
+
+        if content_type and content_type not in ['application/pdf', 'application/x-pdf', 'application/octet-stream']:
+            raise forms.ValidationError(f'{field_label} harus berformat PDF.')
+
+        return uploaded_file
+
+    def clean_dokumen_stnk(self):
+        return self._validate_pdf_file(self.cleaned_data.get('dokumen_stnk'), 'Dokumen STNK')
+
+    def clean_dokumen_bpkb(self):
+        return self._validate_pdf_file(self.cleaned_data.get('dokumen_bpkb'), 'Dokumen BPKB')
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.order_fields([
+            'kode_kendaraan', 'nomor_polisi', 'merek', 'tipe', 'jenis_kendaraan',
+            'tahun_pembuatan', 'tahun_perolehan', 'warna', 'nomor_rangka', 'nomor_mesin',
+            'nomor_bpkb', 'dokumen_bpkb', 'nomor_stnk', 'dokumen_stnk',
+            'masa_berlaku_stnk', 'jatuh_tempo_pajak', 'nup', 'kode_barang',
+            'nilai_perolehan', 'unit_kerja', 'pengguna', 'kondisi', 'status_pemanfaatan',
+            'kilometer_terakhir', 'foto_kendaraan'
+        ])
 
         if self.instance and self.instance.pk:
             if self.instance.masa_berlaku_stnk:

@@ -240,3 +240,9 @@ a{text-decoration:none;color:inherit}
   .sikaris-select-panel{position:fixed;left:18px;right:18px;top:auto;bottom:18px;max-height:70vh;}
   .sikaris-select-options{max-height:52vh;}
 }
+
+
+.document-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:12px}
+.document-card{border:1px solid #dbe5f0;background:#f8fbff;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.document-card strong{font-size:14px;color:#0f172a}
+.document-card span{font-size:12px;color:#64748b;word-break:break-all}

@@ -52,6 +52,31 @@
 </div>
 {% endif %}
 
+{% if kendaraan_document_previews %}
+  {% for doc in kendaraan_document_previews %}
+  <div class="card detail-card detail-preview-card">
+    <div class="detail-header">
+      <h2>{{ doc.label }}</h2>
+      <p>Pratinjau dokumen kendaraan dalam format PDF.</p>
+    </div>
+    {% if doc.is_pdf %}
+      <div class="pdf-preview-frame">
+        <iframe src="{{ doc.url }}#toolbar=1&navpanes=0&scrollbar=1" title="{{ doc.label }}"></iframe>
+      </div>
+      <div class="form-actions" style="margin-top:14px">
+        <a class="btn btn-secondary" href="{{ doc.url }}" target="_blank" rel="noopener">Buka PDF</a>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        Dokumen tersedia, tetapi bukan format PDF.
+        <br>
+        <a href="{{ doc.url }}" target="_blank" rel="noopener">Buka dokumen</a>
+      </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+{% endif %}
+
 {% if google_maps_embed_url %}
 <div class="card detail-card detail-preview-card">
   <div class="detail-header">
