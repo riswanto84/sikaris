@@ -32,6 +32,55 @@
   </div>
 </div>
 
+
+{% if asset_photo_previews %}
+<div class="card detail-card detail-preview-card">
+  <div class="detail-header">
+    <h2>Foto Aset</h2>
+    <p>Foto yang tersimpan pada data master.</p>
+  </div>
+  <div class="asset-photo-preview-grid">
+    {% for foto in asset_photo_previews %}
+    <a class="asset-photo-preview-card" href="{{ foto.url }}" target="_blank" rel="noopener">
+      <img src="{{ foto.url }}" alt="Foto aset">
+      <div>{{ foto.caption|default:'Foto aset' }}</div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if rumah_photo_previews or rumah_location_context %}
+<div class="card detail-card detail-preview-card">
+  <div class="detail-header">
+    <h2>Data Master Rumah Negara</h2>
+    <p>Foto, latitude, longitude, dan peta dari data master rumah negara terkait SIP ini.</p>
+  </div>
+  {% if rumah_location_context %}
+  <div class="detail-grid" style="margin-bottom:14px">
+    <div class="detail-item"><div class="detail-label">Latitude</div><div class="detail-value">{{ rumah_location_context.latitude }}</div></div>
+    <div class="detail-item"><div class="detail-label">Longitude</div><div class="detail-value">{{ rumah_location_context.longitude }}</div></div>
+  </div>
+  <div class="maps-preview-frame">
+    <iframe src="{{ rumah_location_context.embed_url }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Preview Google Maps Rumah Negara"></iframe>
+  </div>
+  <div class="form-actions" style="margin-top:14px">
+    <a class="btn btn-secondary" href="{{ rumah_location_context.open_url }}" target="_blank" rel="noopener">Buka di Google Maps</a>
+  </div>
+  {% endif %}
+  {% if rumah_photo_previews %}
+  <div class="asset-photo-preview-grid">
+    {% for foto in rumah_photo_previews %}
+    <a class="asset-photo-preview-card" href="{{ foto.url }}" target="_blank" rel="noopener">
+      <img src="{{ foto.url }}" alt="Foto rumah negara">
+      <div>{{ foto.caption|default:'Foto rumah negara' }}</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
 {% if dokumen_sip_url %}
 <div class="card detail-card detail-preview-card">
   <div class="detail-header">
@@ -57,7 +106,7 @@
   <div class="card detail-card detail-preview-card">
     <div class="detail-header">
       <h2>{{ doc.label }}</h2>
-      <p>Pratinjau dokumen kendaraan dalam format PDF.</p>
+      <p>Pratinjau dokumen dalam format PDF.</p>
     </div>
     {% if doc.is_pdf %}
       <div class="pdf-preview-frame">
@@ -75,6 +124,37 @@
     {% endif %}
   </div>
   {% endfor %}
+{% endif %}
+
+
+{% if service_kuitansi_list %}
+<div class="card detail-card detail-preview-card">
+  <div class="detail-header">
+    <h2>Bukti Kuitansi Service Kendaraan</h2>
+    <p>Dokumen bukti kuitansi yang diunggah pada riwayat service kendaraan.</p>
+  </div>
+  <div class="receipt-preview-grid">
+    {% for item in service_kuitansi_list %}
+      <div class="receipt-preview-card">
+        {% if item.is_pdf %}
+          <div class="pdf-preview-frame receipt-pdf-frame">
+            <iframe src="{{ item.file.url }}#toolbar=1&navpanes=0&scrollbar=1" title="Bukti Kuitansi Service"></iframe>
+          </div>
+        {% else %}
+          <a href="{{ item.file.url }}" target="_blank" rel="noopener">
+            <img src="{{ item.file.url }}" alt="Bukti kuitansi service kendaraan">
+          </a>
+        {% endif %}
+        <div class="receipt-preview-meta">
+          <strong>Bukti Kuitansi</strong>
+          <span>{{ item.created_at|date:'d/m/Y H:i' }}</span>
+          {% if item.keterangan %}<span>{{ item.keterangan }}</span>{% endif %}
+          <a class="btn btn-secondary" href="{{ item.file.url }}" target="_blank" rel="noopener">Buka File</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
 {% endif %}
 
 {% if google_maps_embed_url %}
@@ -101,5 +181,12 @@
   .maps-preview-frame{height:460px}
   .pdf-preview-frame iframe,.maps-preview-frame iframe{width:100%;height:100%;border:0;display:block}
   @media (max-width: 768px){.pdf-preview-frame{height:520px}.maps-preview-frame{height:360px}}
+
+  .receipt-preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+  .receipt-preview-card{border:1px solid #dbe5f0;border-radius:18px;background:#fff;overflow:hidden}
+  .receipt-preview-card img{width:100%;height:320px;object-fit:contain;background:#f8fafc;display:block}
+  .receipt-pdf-frame{height:520px;border:0;border-radius:0}
+  .receipt-preview-meta{padding:12px 14px;display:grid;gap:6px;font-size:13px;color:#64748b}
+  .receipt-preview-meta strong{color:#0f172a}
 </style>
 {% endblock %}

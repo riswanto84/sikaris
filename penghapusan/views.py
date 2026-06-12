@@ -11,7 +11,7 @@ from django.views.generic import CreateView, UpdateView, DetailView, DeleteView
 from core.access import is_biro_umum_user, get_user_unit_kerja, require_user_unit_or_all
 from core.listing import SearchListMixin
 from .forms import PermohonanPenghapusanBMNForm
-from .models import PermohonanPenghapusanBMN
+from .models import PermohonanPenghapusanBMN, FotoKondisiPenghapusanBMN
 
 
 class PermohonanPenghapusanAccessMixin(LoginRequiredMixin):
@@ -86,6 +86,15 @@ class PermohonanPenghapusanListView(PermohonanPenghapusanAccessMixin, SearchList
         return qs
 
 
+
+def _save_foto_kondisi_files(request, permohonan):
+    for foto in request.FILES.getlist('foto_kondisi_files'):
+        FotoKondisiPenghapusanBMN.objects.create(
+            permohonan=permohonan,
+            foto=foto,
+            diupload_oleh=request.user if request.user.is_authenticated else None,
+        )
+
 class PermohonanPenghapusanCreateView(PermohonanPenghapusanAccessMixin, CreateView):
     model = PermohonanPenghapusanBMN
     form_class = PermohonanPenghapusanBMNForm
@@ -107,8 +116,10 @@ class PermohonanPenghapusanCreateView(PermohonanPenghapusanAccessMixin, CreateVi
         form.instance.dibuat_oleh = user
         form.instance.diperbarui_oleh = user
         self._fill_asset_snapshot(form.instance)
+        response = super().form_valid(form)
+        _save_foto_kondisi_files(self.request, self.object)
         messages.success(self.request, 'Permohonan penghapusan BMN berhasil diajukan.')
-        return super().form_valid(form)
+        return response
 
     def _fill_asset_snapshot(self, obj):
         if obj.jenis_aset == 'KENDARAAN' and obj.kendaraan:
@@ -158,13 +169,20 @@ class PermohonanPenghapusanUpdateView(PermohonanPenghapusanAccessMixin, UpdateVi
                 form.instance.diverifikasi_oleh = user
         else:
             form.instance.status = 'DIAJUKAN'
+        response = super().form_valid(form)
+        _save_foto_kondisi_files(self.request, self.object)
         messages.success(self.request, 'Permohonan penghapusan BMN berhasil diperbarui.')
-        return super().form_valid(form)
+        return response
 
 
 class PermohonanPenghapusanDetailView(PermohonanPenghapusanAccessMixin, DetailView):
     model = PermohonanPenghapusanBMN
     template_name = 'penghapusan/detail.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['foto_kondisi_list'] = self.object.foto_kondisi_list.all()
+        return ctx
 
 
 class PermohonanPenghapusanDeleteView(PermohonanPenghapusanAccessMixin, SafeDeleteMixin, DeleteView):

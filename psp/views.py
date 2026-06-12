@@ -11,14 +11,13 @@ from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from core.access import get_user_unit_kerja, is_biro_umum_user, require_user_unit_or_all
 from core.listing import SearchListMixin
 from .forms import PermohonanPSPBMNForm
-from .models import PermohonanPSPBMN
+from .models import PermohonanPSPBMN, FotoBarangPSP
 
 
 class PermohonanPSPAccessMixin(LoginRequiredMixin):
     def get_scoped_queryset(self):
         qs = PermohonanPSPBMN.objects.select_related(
-            'unit_kerja', 'pemohon', 'kendaraan', 'rumah_negara', 'tanah_negara',
-            'dibuat_oleh', 'diverifikasi_oleh'
+            'unit_kerja', 'pemohon', 'dibuat_oleh', 'diverifikasi_oleh'
         )
         if is_biro_umum_user(self.request.user):
             return qs
@@ -51,18 +50,15 @@ class SafeDeleteMixin:
 class PermohonanPSPListView(PermohonanPSPAccessMixin, SearchListMixin):
     model = PermohonanPSPBMN
     template_name = 'psp/list.html'
-    select_related = ['unit_kerja', 'pemohon', 'kendaraan', 'rumah_negara', 'tanah_negara']
+    select_related = ['unit_kerja', 'pemohon']
     search_fields = [
         ('nomor_permohonan', 'Nomor Permohonan'),
         ('unit_kerja__nama_unit', 'Unit Kerja'),
         ('pemohon__nama', 'Nama Pemohon'),
         ('pemohon__nip', 'NIP Pemohon'),
         ('jenis_barang', 'Jenis Barang'),
-        ('kode_barang', 'Kode Barang'),
-        ('nup', 'NUP'),
-        ('nama_barang', 'Nama Barang'),
         ('status', 'Status'),
-        ('nomor_penetapan_psp', 'Nomor Penetapan PSP'),
+        ('nomor_sk_psp', 'Nomor SK PSP'),
     ]
 
     def get_queryset(self):
@@ -80,6 +76,15 @@ class PermohonanPSPListView(PermohonanPSPAccessMixin, SearchListMixin):
             qs = qs.filter(query)
         return qs
 
+
+
+def _save_foto_barang_files(request, permohonan):
+    for foto in request.FILES.getlist('foto_barang_files'):
+        FotoBarangPSP.objects.create(
+            permohonan=permohonan,
+            foto=foto,
+            diupload_oleh=request.user if request.user.is_authenticated else None,
+        )
 
 class PermohonanPSPCreateView(PermohonanPSPAccessMixin, CreateView):
     model = PermohonanPSPBMN
@@ -99,9 +104,11 @@ class PermohonanPSPCreateView(PermohonanPSPAccessMixin, CreateView):
             form.instance.status = 'DIAJUKAN'
         form.instance.dibuat_oleh = user
         form.instance.diperbarui_oleh = user
-        self._fill_asset_snapshot(form.instance)
+        form.instance.nama_barang = form.instance.nama_barang or form.instance.get_jenis_barang_display()
+        response = super().form_valid(form)
+        _save_foto_barang_files(self.request, self.object)
         messages.success(self.request, 'Permohonan PSP BMN berhasil diajukan.')
-        return super().form_valid(form)
+        return response
 
     def _fill_asset_snapshot(self, obj):
         if obj.jenis_barang == 'KENDARAAN' and obj.kendaraan:
@@ -146,18 +153,25 @@ class PermohonanPSPUpdateView(PermohonanPSPAccessMixin, UpdateView):
         user = self.request.user
         form.instance.diperbarui_oleh = user
         if is_biro_umum_user(user):
-            if form.instance.status in ['DIVERIFIKASI_BIRO', 'DISETUJUI', 'DITOLAK', 'SELESAI'] and not form.instance.tanggal_verifikasi:
+            if form.instance.status in ['DIVERIFIKASI_BIRO', 'DISETUJUI', 'PROSES_PSP', 'DITOLAK', 'SELESAI'] and not form.instance.tanggal_verifikasi:
                 form.instance.tanggal_verifikasi = timezone.now().date()
                 form.instance.diverifikasi_oleh = user
         else:
             form.instance.status = 'DIAJUKAN'
+        response = super().form_valid(form)
+        _save_foto_barang_files(self.request, self.object)
         messages.success(self.request, 'Permohonan PSP BMN berhasil diperbarui.')
-        return super().form_valid(form)
+        return response
 
 
 class PermohonanPSPDetailView(PermohonanPSPAccessMixin, DetailView):
     model = PermohonanPSPBMN
     template_name = 'psp/detail.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['foto_barang_list'] = self.object.foto_barang_list.all()
+        return ctx
 
 
 class PermohonanPSPDeleteView(PermohonanPSPAccessMixin, SafeDeleteMixin, DeleteView):

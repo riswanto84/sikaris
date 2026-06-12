@@ -85,6 +85,22 @@
     </div>
     {% endif %}
 
+
+    {% if object and object.dokumen_sertifikat %}
+    <div class="certificate-section">
+      <div class="certificate-header">
+        <div>
+          <h3>Preview Sertifikat Rumah Negara</h3>
+          <p>Dokumen sertifikat yang sudah diupload dalam format PDF.</p>
+        </div>
+        <a class="btn btn-secondary" href="{{ object.dokumen_sertifikat.url }}" target="_blank" rel="noopener">Buka PDF</a>
+      </div>
+      <div class="certificate-pdf-frame">
+        <iframe src="{{ object.dokumen_sertifikat.url }}#toolbar=1&navpanes=0&scrollbar=1" title="Preview Sertifikat Rumah Negara"></iframe>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- GOOGLE MAPS RUMAH DINAS -->
     <div class="map-section">
       <div class="map-header">
@@ -134,6 +150,7 @@
 <style>
   .photo-section,
   .preview-wrapper,
+  .certificate-section,
   .map-section {
       margin-top: 32px;
       padding-top: 28px;
@@ -141,12 +158,14 @@
   }
 
   .photo-section-header,
+  .certificate-header,
   .map-header {
       margin-bottom: 16px;
   }
 
   .photo-section-header h3,
   .preview-wrapper h3,
+  .certificate-header h3,
   .map-header h3 {
       margin: 0;
       font-size: 24px;
@@ -156,6 +175,7 @@
 
   .photo-section-header p,
   .preview-wrapper p,
+  .certificate-header p,
   .map-header p {
       margin: 8px 0 0;
       color: #64748b;
@@ -248,6 +268,34 @@
       text-overflow: ellipsis;
   }
 
+
+
+  .certificate-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+  }
+
+  .certificate-pdf-frame {
+      width: 100%;
+      height: 680px;
+      border: 1px solid #dbe5f0;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #f8fafc;
+      box-shadow: 0 10px 24px rgba(16, 42, 91, 0.08);
+  }
+
+  .certificate-pdf-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+  }
+
   .map-preview {
       width: 100%;
       height: 520px;
@@ -288,7 +336,35 @@
           grid-template-columns: 1fr;
       }
 
-      .map-preview {
+    
+
+  .certificate-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+  }
+
+  .certificate-pdf-frame {
+      width: 100%;
+      height: 680px;
+      border: 1px solid #dbe5f0;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #f8fafc;
+      box-shadow: 0 10px 24px rgba(16, 42, 91, 0.08);
+  }
+
+  .certificate-pdf-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+  }
+
+  .map-preview {
           height: 360px;
       }
 

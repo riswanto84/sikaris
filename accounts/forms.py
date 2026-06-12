@@ -188,3 +188,34 @@ class RoleForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['name'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Nama role'})
+
+
+class ProfileUpdateForm(forms.ModelForm):
+    """Form edit profil pribadi dari menu kanan atas."""
+    unit_kerja = forms.ModelChoiceField(
+        label='Unit Kerja / Satker',
+        queryset=UnitKerja.objects.all().order_by('nama_unit'),
+        required=False,
+        disabled=True,
+        help_text='Unit kerja dikelola oleh Admin System dari Manajemen User.',
+    )
+
+    class Meta:
+        model = get_user_model()
+        fields = ('username', 'email', 'first_name', 'last_name', 'unit_kerja')
+        labels = {
+            'username': 'Username',
+            'email': 'Email',
+            'first_name': 'Nama Depan',
+            'last_name': 'Nama Belakang',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        profile = getattr(self.instance, 'profile', None)
+        if profile:
+            self.fields['unit_kerja'].initial = profile.unit_kerja
+        self.fields['username'].disabled = True
+        for field in self.fields.values():
+            if not isinstance(field.widget, forms.CheckboxInput) and not isinstance(field.widget, forms.CheckboxSelectMultiple):
+                field.widget.attrs.update({'class': 'form-control'})

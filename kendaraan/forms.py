@@ -196,6 +196,7 @@ class ServiceKendaraanForm(BootstrapModelForm):
             'dokumen_bukti',
             'foto_sebelum',
             'foto_sesudah',
+            'total_biaya',
         ]
 
         labels = {
@@ -208,7 +209,6 @@ class ServiceKendaraanForm(BootstrapModelForm):
             'sparepart_diganti': 'Sparepart Diganti',
             'biaya_jasa': 'Biaya Jasa',
             'biaya_sparepart': 'Biaya Sparepart',
-            'total_biaya': 'Total Biaya',
             'kondisi_sebelum': 'Kondisi Sebelum',
             'kondisi_sesudah': 'Kondisi Sesudah',
         }

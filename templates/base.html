@@ -42,6 +42,21 @@
         .topbar-right{display:flex;align-items:center;gap:14px}
         .notify-chip{position:relative;width:42px;height:42px;border-radius:14px;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
         .notify-chip strong{position:absolute;top:-6px;right:-4px;background:#ef4444;color:#fff;border-radius:999px;padding:2px 6px;font-size:10px;line-height:1}
+        .notification-menu{position:relative;display:inline-flex;align-items:center}
+        .notification-toggle{cursor:pointer;color:#0f172a;font-size:18px}
+        .notification-toggle.has-notif{box-shadow:0 12px 30px rgba(239,68,68,.14)}
+        .notification-dropdown{position:absolute;right:0;top:calc(100% + 10px);width:min(390px,92vw);background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 22px 54px rgba(15,23,42,.18);display:none;z-index:10000;overflow:hidden}
+        .notification-menu.open .notification-dropdown{display:block}
+        .notification-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+        .notification-head strong{font-size:14px;color:#0f172a}
+        .notification-head span{font-size:12px;color:#64748b;font-weight:800}
+        .notification-list{max-height:420px;overflow:auto;padding:6px}
+        .notification-item{display:flex;gap:10px;padding:11px 10px;border-radius:14px;color:#0f172a;text-decoration:none}
+        .notification-item:hover{background:#eef5ff}
+        .notification-ico{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#edf5ff;flex:0 0 34px}
+        .notification-body{min-width:0;flex:1}.notification-title{font-size:13px;font-weight:900;color:#0f172a;margin-bottom:3px}.notification-desc{font-size:12px;color:#64748b;line-height:1.35}
+        .notification-empty{padding:22px 16px;text-align:center;color:#64748b;font-size:13px}
+        .notification-more{padding:10px 16px;border-top:1px solid var(--line);font-size:12px;color:#64748b;background:#f8fbff}
         .profile-chip{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);padding:8px 12px;border-radius:16px;box-shadow:var(--shadow)}
         .avatar-circle{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#0ea5e9);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900}
         .profile-name{font-size:14px;font-weight:900;color:#0f172a}
@@ -220,6 +235,16 @@
   .sikaris-select-options{max-height:52vh;}
 }
 
+
+.profile-menu{position:relative;display:inline-flex;align-items:center}
+.profile-menu-toggle{border:1px solid var(--border);cursor:pointer;background:#fff}
+.profile-caret{font-size:12px;color:#64748b;margin-left:4px}
+.profile-dropdown{position:absolute;right:0;top:calc(100% + 8px);width:210px;background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 18px 40px rgba(15,23,42,.16);padding:8px;display:none;z-index:9999}
+.profile-menu.open .profile-dropdown{display:block}
+.profile-dropdown a,.profile-dropdown button{display:block;width:100%;text-align:left;border:0;background:#fff;color:#0f172a;padding:10px 12px;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;text-decoration:none}
+.profile-dropdown a:hover,.profile-dropdown button:hover{background:#eef5ff;color:#0f4fb8}
+.asset-photo-preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:14px}.asset-photo-preview-card{border:1px solid #dbe5f0;border-radius:16px;background:#fff;overflow:hidden}.asset-photo-preview-card img{width:100%;height:180px;object-fit:cover;display:block}.asset-photo-preview-card div{padding:10px 12px;font-size:12px;color:#64748b;font-weight:700}.small-muted{font-size:12px;color:#64748b}.multi-upload-note{font-size:12px;color:#64748b;margin-top:6px}.calculated-total-box{padding:12px 14px;border:1px solid #dbe5f0;border-radius:14px;background:#f8fbff;color:#0f172a;font-weight:900}.document-preview-list{display:grid;gap:8px;margin-top:8px}.document-preview-list a{color:#2563eb;font-weight:800}
+
 </style>
 </head>
 <body>
@@ -229,7 +254,7 @@
             <img src="{% static 'img/logo-kemensos.svg' %}" alt="Logo Kemensos">
             <div>
                 <div class="brand-title">SIKARIS</div>
-                <div class="brand-subtitle">Sistem Informasi Kendaraan<br>dan Rumah Negara</div>
+                <div class="brand-subtitle">Sistem Informasi Kendaraan<br>dan Rumah Dinas</div>
             </div>
         </div>
 
@@ -266,7 +291,6 @@
             <div class="nav-group">
                 <div class="nav-group-title">Pemeliharaan Kendaraan</div>
                 <a class="nav-link" href="{% url 'kendaraan:service_list' %}"><span class="nav-icon">🛠</span><span>Service Kendaraan</span></a>
-                <a class="nav-link" href="{% url 'kendaraan:kondisi_list' %}"><span class="nav-icon">⟳</span><span>Riwayat Kondisi</span></a>
             </div>
             {% endif %}
 
@@ -302,6 +326,8 @@
                 <div class="nav-group-title">Pengaturan</div>
                 <a class="nav-link" href="{% url 'user_list' %}"><span class="nav-icon">👤</span><span>Manajemen User</span></a>
                 <a class="nav-link" href="{% url 'role_list' %}"><span class="nav-icon">🔐</span><span>Manajemen Role</span></a>
+                <a class="nav-link" href="{% url 'login_history_list' %}"><span class="nav-icon">🕘</span><span>Riwayat Login</span></a>
+                <a class="nav-link" href="{% url 'visit_counter_list' %}"><span class="nav-icon">👁️</span><span>Counter Kunjungan</span></a>
             </div>
             {% endif %}
         </nav>
@@ -321,12 +347,52 @@
                 <h1 class="page-heading">{% block page_title %}Dashboard{% endblock %}</h1>
             </div>
             <div class="topbar-right">
-                <div class="notify-chip"><span>🔔</span><strong>8</strong></div>
-                <div class="profile-chip">
-                    <div class="avatar-circle">{{ request.user.username|slice:":1"|upper }}</div>
-                    <div>
-                        <div class="profile-name">{{ request.user.get_full_name|default:request.user.username }}</div>
-                        <div class="profile-role">{% if is_admin_system %}Admin System{% elif is_pengelola_bmn %}Pengelola BMN{% elif is_pemeliharaan_kendaraan %}Pemeliharaan Kendaraan{% else %}Pengguna{% endif %}</div>
+                <div class="notification-menu" id="notificationMenu">
+                    <button class="notify-chip notification-toggle{% if notification_count %} has-notif{% endif %}" type="button" id="notificationToggle" aria-haspopup="true" aria-expanded="false" title="Notifikasi">
+                        <span>🔔</span>
+                        {% if notification_count %}<strong>{{ notification_count }}</strong>{% endif %}
+                    </button>
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <div class="notification-head">
+                            <strong>Notifikasi</strong>
+                            <span>{{ notification_count }} item</span>
+                        </div>
+                        <div class="notification-list">
+                            {% if notification_items %}
+                                {% for item in notification_items %}
+                                    <a class="notification-item" href="{{ item.url }}">
+                                        <span class="notification-ico">{{ item.icon }}</span>
+                                        <span class="notification-body">
+                                            <span class="notification-title">{{ item.title }}</span>
+                                            <span class="notification-desc">{{ item.description }}</span>
+                                        </span>
+                                    </a>
+                                {% endfor %}
+                            {% else %}
+                                <div class="notification-empty">Belum ada notifikasi aktif.</div>
+                            {% endif %}
+                        </div>
+                        {% if notification_has_more %}
+                            <div class="notification-more">Masih ada notifikasi lain. Buka modul terkait untuk melihat seluruh data.</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="profile-menu">
+                    <button class="profile-chip profile-menu-toggle" type="button" id="profileMenuToggle" aria-haspopup="true" aria-expanded="false">
+                        <div class="avatar-circle">{{ request.user.username|slice:":1"|upper }}</div>
+                        <div>
+                            <div class="profile-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                            <div class="profile-role">{% if is_admin_system %}Admin System{% elif is_pengelola_bmn %}Pengelola BMN{% elif is_pemeliharaan_kendaraan %}Pemeliharaan Kendaraan{% else %}Pengguna{% endif %}</div>
+                        </div>
+                        <span class="profile-caret">▾</span>
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <a href="{% url 'profile_edit' %}">Edit Profile</a>
+                        <a href="{% url 'password_change' %}">Ubah Kata Sandi</a>
+                        <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit">Logout</button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -343,5 +409,25 @@
 </div>
 <script src="{% static 'js/app.js' %}?v=20260609fix3"></script>
 {% block extra_js %}{% endblock %}
+
+<script>
+(function(){
+  const wrap = document.querySelector('.profile-menu');
+  const btn = document.getElementById('profileMenuToggle');
+  if(wrap && btn){
+    btn.addEventListener('click', function(e){ e.stopPropagation(); wrap.classList.toggle('open'); });
+    document.addEventListener('click', function(){ wrap.classList.remove('open'); });
+  }
+})();
+(function(){
+  const wrap = document.getElementById('notificationMenu');
+  const btn = document.getElementById('notificationToggle');
+  if(!wrap || !btn) return;
+  btn.addEventListener('click', function(e){ e.stopPropagation(); wrap.classList.toggle('open'); });
+  const dropdown = document.getElementById('notificationDropdown');
+  if(dropdown){ dropdown.addEventListener('click', function(e){ e.stopPropagation(); }); }
+  document.addEventListener('click', function(){ wrap.classList.remove('open'); });
+})();
+</script>
 </body>
 </html>

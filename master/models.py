@@ -54,6 +54,7 @@ class Kendaraan(TimeStampedModel):
     pengguna = models.ForeignKey(Pegawai, on_delete=models.SET_NULL, null=True, blank=True, related_name='kendaraan_digunakan')
     kondisi = models.CharField(max_length=20, choices=KONDISI_ASET, default='BAIK')
     status_pemanfaatan = models.CharField(max_length=30, choices=STATUS_PEMANFAATAN_KENDARAAN, default='TERSEDIA')
+    keterangan_status_pemanfaatan = models.TextField(blank=True, null=True)
     kilometer_terakhir = models.PositiveIntegerField(default=0)
     foto = models.ImageField(upload_to='kendaraan/', blank=True, null=True)
     dokumen_stnk = models.FileField(upload_to='kendaraan/dokumen/stnk/', blank=True, null=True)
@@ -108,9 +109,11 @@ class RumahDinas(TimeStampedModel):
     nilai_perolehan = models.DecimalField(max_digits=18, decimal_places=2, default=0)
     unit_kerja = models.ForeignKey(UnitKerja, on_delete=models.SET_NULL, null=True, blank=True, related_name='rumah_negara')
     nomor_sertifikat = models.CharField(max_length=100, blank=True, null=True)
+    dokumen_sertifikat = models.FileField(upload_to='rumah_dinas/dokumen/sertifikat/', blank=True, null=True)
     status_tanah = models.CharField(max_length=100, blank=True, null=True)
     kondisi = models.CharField(max_length=20, choices=KONDISI_ASET, default='BAIK')
     status_pemanfaatan = models.CharField(max_length=30, choices=STATUS_PEMANFAATAN_RUMAH, default='KOSONG')
+    keterangan_status_pemanfaatan = models.TextField(blank=True, null=True)
     foto_depan = models.ImageField(upload_to='rumah_dinas/', blank=True, null=True)
     class Meta:
         ordering = ['kode_rumah']

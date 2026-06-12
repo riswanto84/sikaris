@@ -1,5 +1,6 @@
 from .roles import is_admin_system, is_pengelola_bmn, is_pemeliharaan_kendaraan
 from .access import is_biro_umum_user, get_user_unit_kerja
+from .notifications import build_notifications
 
 
 def role_flags(request):
@@ -17,6 +18,9 @@ def role_flags(request):
         'can_access_psp': False,
         'is_biro_umum': False,
         'user_unit_kerja': None,
+        'notification_count': 0,
+        'notification_items': [],
+        'notification_has_more': False,
     }
     if user and user.is_authenticated:
         admin = is_admin_system(user)
@@ -24,6 +28,7 @@ def role_flags(request):
         pem = is_pemeliharaan_kendaraan(user)
         biro = is_biro_umum_user(user)
         unit = get_user_unit_kerja(user)
+        flags.update(build_notifications(user))
         flags.update({
             'is_admin_system': admin,
             'is_pengelola_bmn': bmn,

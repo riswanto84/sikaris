@@ -41,6 +41,9 @@ class BootstrapModelForm(forms.ModelForm):
     def clean_dokumen_bpkb(self):
         return self._validate_pdf_file(self.cleaned_data.get('dokumen_bpkb'), 'Dokumen BPKB')
 
+    def clean_dokumen_sertifikat(self):
+        return self._validate_pdf_file(self.cleaned_data.get('dokumen_sertifikat'), 'Dokumen Sertifikat Rumah Negara')
+
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
@@ -151,6 +154,7 @@ class KendaraanForm(BootstrapModelForm):
             'jenis_kendaraan': 'Jenis Kendaraan',
             'status_pemanfaatan': 'Status Pemanfaatan',
             'kilometer_terakhir': 'Kilometer Terakhir',
+            'keterangan_status_pemanfaatan': 'Keterangan Status Pemanfaatan',
         }
 
         widgets = {
@@ -185,6 +189,9 @@ class KendaraanForm(BootstrapModelForm):
     def clean_dokumen_bpkb(self):
         return self._validate_pdf_file(self.cleaned_data.get('dokumen_bpkb'), 'Dokumen BPKB')
 
+    def clean_dokumen_sertifikat(self):
+        return self._validate_pdf_file(self.cleaned_data.get('dokumen_sertifikat'), 'Dokumen Sertifikat Rumah Negara')
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -194,7 +201,7 @@ class KendaraanForm(BootstrapModelForm):
             'nomor_bpkb', 'dokumen_bpkb', 'nomor_stnk', 'dokumen_stnk',
             'masa_berlaku_stnk', 'jatuh_tempo_pajak', 'nup', 'kode_barang',
             'nilai_perolehan', 'unit_kerja', 'pengguna', 'kondisi', 'status_pemanfaatan',
-            'kilometer_terakhir', 'foto_kendaraan'
+            'kilometer_terakhir', 'keterangan_status_pemanfaatan', 'foto_kendaraan'
         ])
 
         if self.instance and self.instance.pk:
@@ -204,6 +211,16 @@ class KendaraanForm(BootstrapModelForm):
             if self.instance.jatuh_tempo_pajak:
                 self.fields['jatuh_tempo_pajak'].initial = self.instance.jatuh_tempo_pajak.strftime('%Y-%m-%d')
 class RumahDinasForm(BootstrapModelForm):
+    dokumen_sertifikat = forms.FileField(
+        required=False,
+        label='Upload Sertifikat Rumah Negara (PDF)',
+        widget=forms.ClearableFileInput(attrs={
+            'accept': 'application/pdf,.pdf',
+            'class': 'form-control'
+        }),
+        help_text='Upload sertifikat rumah negara dalam format PDF.'
+    )
+
     foto_rumah_dinas = MultipleImageField(
         required=False,
         label='Upload Foto Rumah Negara',
@@ -223,5 +240,22 @@ class RumahDinasForm(BootstrapModelForm):
             'kode_barang': 'Kode Barang',
             'kode_rumah': 'Kode Rumah',
             'nama_rumah': 'Nama Rumah Negara',
+            'dokumen_sertifikat': 'Sertifikat Rumah Negara (PDF)',
             'unit_kerja': 'Unit Kerja/Satker',
+            'status_pemanfaatan': 'Status Pemanfaatan',
+            'keterangan_status_pemanfaatan': 'Keterangan Status Pemanfaatan',
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.order_fields([
+            'kode_rumah', 'nama_rumah', 'jenis_rumah', 'alamat',
+            'provinsi', 'kabupaten_kota', 'kecamatan', 'kelurahan',
+            'latitude', 'longitude', 'luas_tanah', 'luas_bangunan',
+            'jumlah_kamar_tidur', 'jumlah_kamar_mandi', 'daya_listrik',
+            'tahun_dibangun', 'tahun_perolehan', 'nup', 'kode_barang',
+            'nilai_perolehan', 'unit_kerja', 'nomor_sertifikat', 'dokumen_sertifikat',
+            'status_tanah', 'kondisi', 'status_pemanfaatan',
+            'keterangan_status_pemanfaatan', 'foto_rumah_dinas'
+        ])
+

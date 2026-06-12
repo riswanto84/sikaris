@@ -176,3 +176,27 @@ class PermohonanPenghapusanBMN(TimeStampedModel):
             kwargs['force_insert'] = False
             kwargs['force_update'] = True
         super().save(*args, **kwargs)
+
+
+class FotoKondisiPenghapusanBMN(TimeStampedModel):
+    permohonan = models.ForeignKey(
+        PermohonanPenghapusanBMN,
+        on_delete=models.CASCADE,
+        related_name='foto_kondisi_list'
+    )
+    foto = models.ImageField(upload_to='penghapusan/foto_multi/')
+    keterangan = models.CharField(max_length=200, blank=True, null=True)
+    diupload_oleh = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Foto Kondisi Penghapusan BMN'
+        verbose_name_plural = 'Foto Kondisi Penghapusan BMN'
+
+    def __str__(self):
+        return f'Foto {self.permohonan.nomor_permohonan or self.permohonan_id}'

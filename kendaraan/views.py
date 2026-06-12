@@ -185,6 +185,11 @@ class ServiceKendaraanDetailView(MaintenanceRequiredMixin, UnitScopedQuerysetMix
     edit_url_name = 'kendaraan:service_update'
     delete_url_name = 'kendaraan:service_delete'
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['service_kuitansi_list'] = self.object.bukti_kuitansi.all()
+        return ctx
+
 
 class ServiceKendaraanUpdateView(MaintenanceRequiredMixin, UnitScopedQuerysetMixin, UnitScopedFormMixin, UpdateView):
     scope_type = 'service_kendaraan'

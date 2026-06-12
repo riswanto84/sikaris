@@ -2,15 +2,17 @@ import random
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 
 from core.listing import SearchListMixin
 from core.roles import AdminSystemRequiredMixin
-from .forms import CaptchaLoginForm, RoleForm, UserCreateForm, UserUpdateForm
+from .models import LoginHistory, UserVisitCounter
+from .forms import CaptchaLoginForm, RoleForm, UserCreateForm, UserUpdateForm, ProfileUpdateForm
 
 
 def _generate_captcha(request):
@@ -63,6 +65,40 @@ class UserListView(AdminSystemRequiredMixin, SearchListMixin):
 
     def get_queryset(self):
         return super().get_queryset().distinct()
+
+
+class LoginHistoryListView(AdminSystemRequiredMixin, SearchListMixin):
+    """Riwayat login seluruh user, hanya untuk Admin System."""
+    model = LoginHistory
+    template_name = 'accounts/login_history_list.html'
+    ordering = ['-login_at']
+    select_related = ['user', 'user__profile__unit_kerja']
+    search_fields = [
+        ('user__username', 'Username'),
+        ('user__first_name', 'Nama Depan'),
+        ('user__last_name', 'Nama Belakang'),
+        ('user__email', 'Email'),
+        ('user__profile__unit_kerja__nama_unit', 'Unit Kerja'),
+        ('ip_address', 'IP Address'),
+        ('user_agent', 'User Agent'),
+    ]
+
+
+class UserVisitCounterListView(AdminSystemRequiredMixin, SearchListMixin):
+    """Counter kunjungan user, hanya untuk Admin System."""
+    model = UserVisitCounter
+    template_name = 'accounts/visit_counter_list.html'
+    ordering = ['-total_kunjungan', 'user__username']
+    select_related = ['user', 'user__profile__unit_kerja']
+    search_fields = [
+        ('user__username', 'Username'),
+        ('user__first_name', 'Nama Depan'),
+        ('user__last_name', 'Nama Belakang'),
+        ('user__email', 'Email'),
+        ('user__profile__unit_kerja__nama_unit', 'Unit Kerja'),
+        ('last_path', 'Halaman Terakhir'),
+        ('last_ip_address', 'IP Terakhir'),
+    ]
 
 
 class UserCreateView(AdminSystemRequiredMixin, CreateView):
@@ -151,4 +187,28 @@ class RoleDeleteView(AdminSystemRequiredMixin, DeleteView):
 
     def form_valid(self, form):
         messages.success(self.request, 'Role berhasil dihapus.')
+        return super().form_valid(form)
+
+
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    """Edit profil pribadi user dari menu kanan atas."""
+    model = get_user_model()
+    form_class = ProfileUpdateForm
+    template_name = 'accounts/profile_form.html'
+    success_url = reverse_lazy('profile_edit')
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Profil berhasil diperbarui.')
+        return super().form_valid(form)
+
+
+class UserPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
+    template_name = 'accounts/password_change_form.html'
+    success_url = reverse_lazy('profile_edit')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Kata sandi berhasil diubah.')
         return super().form_valid(form)

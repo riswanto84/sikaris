@@ -127,11 +127,12 @@ class GenericDetailMixin:
                 dokumen_sip_url = None
                 dokumen_sip_is_pdf = False
 
-        # Preview dokumen kendaraan PDF pada halaman Detail Kendaraan.
+        # Preview dokumen kendaraan/rumah negara PDF pada halaman detail.
         kendaraan_document_previews = []
         for field_name, label in [
             ('dokumen_stnk', 'Preview Dokumen STNK'),
             ('dokumen_bpkb', 'Preview Dokumen BPKB'),
+            ('dokumen_sertifikat', 'Preview Sertifikat Rumah Negara'),
         ]:
             file_obj = getattr(self.object, field_name, None)
             if file_obj:
@@ -145,6 +146,59 @@ class GenericDetailMixin:
                     })
                 except Exception:
                     pass
+
+
+        # Galeri foto kendaraan/rumah negara pada halaman detail.
+        asset_photo_previews = []
+        if hasattr(self.object, 'galeri_foto'):
+            try:
+                for foto in self.object.galeri_foto.all():
+                    file_obj = getattr(foto, 'foto', None)
+                    if file_obj:
+                        asset_photo_previews.append({
+                            'url': file_obj.url,
+                            'caption': str(getattr(foto, 'keterangan', '') or getattr(foto, 'created_at', '') or ''),
+                        })
+            except Exception:
+                pass
+        for field_name, caption in [('foto', 'Foto utama'), ('foto_depan', 'Foto depan')]:
+            file_obj = getattr(self.object, field_name, None)
+            if file_obj:
+                try:
+                    asset_photo_previews.insert(0, {'url': file_obj.url, 'caption': caption})
+                except Exception:
+                    pass
+
+        # Jika detail SIP Rumah Negara, tampilkan data lokasi dan foto dari master rumah negara.
+        related_rumah = getattr(self.object, 'rumah_dinas', None)
+        rumah_location_context = None
+        rumah_photo_previews = []
+        if related_rumah:
+            lat = getattr(related_rumah, 'latitude', None)
+            lng = getattr(related_rumah, 'longitude', None)
+            if lat not in [None, ''] and lng not in [None, '']:
+                lat_s = normalize_coordinate_for_maps(lat)
+                lng_s = normalize_coordinate_for_maps(lng)
+                if lat_s and lng_s:
+                    query = f'{lat_s},{lng_s}'
+                    rumah_location_context = {
+                        'latitude': lat_s,
+                        'longitude': lng_s,
+                        'embed_url': 'https://maps.google.com/maps?' + urlencode({'hl':'id','ll':query,'q':query,'z':18,'t':'m','output':'embed'}),
+                        'open_url': 'https://www.google.com/maps/search/?' + urlencode({'api':1,'query':query}),
+                    }
+            for f_name, caption in [('foto_depan', 'Foto depan rumah')]:
+                file_obj = getattr(related_rumah, f_name, None)
+                if file_obj:
+                    try:
+                        rumah_photo_previews.append({'url': file_obj.url, 'caption': caption})
+                    except Exception:
+                        pass
+            try:
+                for foto in related_rumah.galeri_foto.all():
+                    rumah_photo_previews.append({'url': foto.foto.url, 'caption': getattr(foto, 'keterangan', '') or 'Foto rumah negara'})
+            except Exception:
+                pass
 
         # Preview Google Maps di halaman detail Rumah Negara/Tanah Negara
         # selama object memiliki latitude dan longitude.
@@ -184,5 +238,8 @@ class GenericDetailMixin:
             'kendaraan_document_previews': kendaraan_document_previews,
             'google_maps_embed_url': google_maps_embed_url,
             'google_maps_open_url': google_maps_open_url,
+            'asset_photo_previews': asset_photo_previews,
+            'rumah_location_context': rumah_location_context,
+            'rumah_photo_previews': rumah_photo_previews,
         })
         return ctx

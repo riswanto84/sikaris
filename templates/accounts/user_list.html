@@ -17,6 +17,7 @@
           <th>Unit Kerja/Satker</th>
           <th>Role</th>
           <th>Status</th>
+          <th>Total Kunjungan</th>
           <th>Aksi</th>
         </tr>
       </thead>
@@ -38,6 +39,7 @@
           <td>
             {% if o.is_active %}<span class="badge AKTIF">Aktif</span>{% else %}<span class="badge RUSAK_BERAT">Nonaktif</span>{% endif %}
           </td>
+          <td><strong>{{ o.visit_counter.total_kunjungan|default:0 }}</strong> kali</td>
           <td>
             <a class="btn btn-secondary" href="{% url 'user_update' o.pk %}">Edit</a>
             {% if o.pk != request.user.pk %}
@@ -46,7 +48,7 @@
           </td>
         </tr>
       {% empty %}
-        <tr><td colspan="7" class="empty-state">Belum ada data user.</td></tr>
+        <tr><td colspan="8" class="empty-state">Belum ada data user.</td></tr>
       {% endfor %}
       </tbody>
     </table>

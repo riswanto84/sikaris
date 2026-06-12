@@ -9,7 +9,7 @@
   </div>
 </div>
 <div class="message info">
-  Unit kerja mengajukan permohonan Penetapan Status Penggunaan (PSP) BMN kepada Biro Umum. Kolom lama proses berfungsi sebagai pengingat pemohon dan verifikator Biro Umum agar usulan PSP segera diverifikasi/ditindaklanjuti.
+  Unit kerja mengajukan permohonan Penetapan Status Penggunaan (PSP) BMN kepada Biro Umum. Kolom lama proses berfungsi sebagai pengingat pemohon dan verifikator.
 </div>
 <div class="card table-card">
   <div class="table-responsive">
@@ -19,8 +19,6 @@
           <th>Nomor/Tanggal</th>
           <th>Unit Kerja</th>
           <th>Jenis Barang</th>
-          <th>Nama Barang</th>
-          <th>Kode/NUP</th>
           <th>Nilai PSP</th>
           <th>Kategori Validasi</th>
           <th>Status</th>
@@ -34,8 +32,6 @@
           <td><strong>{{ o.nomor_permohonan }}</strong><br><small>{{ o.tanggal_permohonan|date:'d/m/Y' }}</small></td>
           <td>{{ o.unit_kerja|default:'-' }}<br><small>{{ o.pemohon|default:'-' }}</small></td>
           <td>{{ o.get_jenis_barang_display }}</td>
-          <td>{{ o.nama_barang }}</td>
-          <td>{{ o.kode_barang|default:'-' }}<br><small>NUP: {{ o.nup|default:'-' }}</small></td>
           <td>{{ o.nilai_psp|rupiah }}</td>
           <td>{{ o.kategori_nilai_display }}</td>
           <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
@@ -54,7 +50,7 @@
           </td>
         </tr>
       {% empty %}
-        <tr><td colspan="10" class="empty-state">Belum ada permohonan PSP BMN.</td></tr>
+        <tr><td colspan="8" class="empty-state">Belum ada permohonan PSP BMN.</td></tr>
       {% endfor %}
       </tbody>
     </table>

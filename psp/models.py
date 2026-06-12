@@ -19,7 +19,8 @@ class PermohonanPSPBMN(TimeStampedModel):
         ('DIVERIFIKASI_BIRO', 'Diverifikasi Biro Umum'),
         ('PERLU_PERBAIKAN', 'Perlu Perbaikan Usulan'),
         ('DITOLAK', 'Ditolak'),
-        ('DISETUJUI', 'Disetujui/Penetapan PSP'),
+        ('DISETUJUI', 'Disetujui'),
+        ('PROSES_PSP', 'Proses Penetapan PSP'),
         ('SELESAI', 'Selesai'),
     ]
 
@@ -35,11 +36,14 @@ class PermohonanPSPBMN(TimeStampedModel):
 
     kode_barang = models.CharField(max_length=100, blank=True, null=True)
     nup = models.CharField(max_length=100, blank=True, null=True)
-    nama_barang = models.CharField(max_length=220)
+    nama_barang = models.CharField(max_length=220, blank=True, null=True)
     nilai_psp = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     kondisi_barang = models.CharField(max_length=120, blank=True, null=True)
     lokasi_barang = models.TextField(blank=True, null=True)
     keterangan_barang = models.TextField(blank=True, null=True)
+
+    # Dokumen permohonan PSP gabungan dalam satu file PDF.
+    dokumen_permohonan_psp = models.FileField(upload_to='psp/dokumen_permohonan/', blank=True, null=True, help_text='Gabungan surat permohonan, pengantar, daftar kondisi, laporan sub kelompok, dan surat pernyataan dalam satu PDF.')
 
     # Dokumen dasar PSP sampai dengan Rp100 juta dan tetap wajib untuk seluruh usulan.
     surat_permohonan_satker = models.FileField(upload_to='psp/surat_permohonan_satker/', blank=True, null=True)
@@ -59,9 +63,9 @@ class PermohonanPSPBMN(TimeStampedModel):
 
     diverifikasi_oleh = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='verifikasi_psp')
     tanggal_verifikasi = models.DateField(blank=True, null=True)
-    nomor_penetapan_psp = models.CharField(max_length=150, blank=True, null=True)
-    tanggal_penetapan_psp = models.DateField(blank=True, null=True)
-    dokumen_penetapan_psp = models.FileField(upload_to='psp/penetapan_psp/', blank=True, null=True)
+    nomor_sk_psp = models.CharField(max_length=150, blank=True, null=True)
+    tanggal_sk_psp = models.DateField(blank=True, null=True)
+    sk_penetapan_psp = models.FileField(upload_to='psp/penetapan_psp/', blank=True, null=True)
 
     dibuat_oleh = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='permohonan_psp_dibuat')
     diperbarui_oleh = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='permohonan_psp_diperbarui')
@@ -93,7 +97,7 @@ class PermohonanPSPBMN(TimeStampedModel):
     def tanggal_akhir_proses(self):
         """Tanggal acuan akhir proses untuk menghitung lama proses."""
         return (
-            self.tanggal_penetapan_psp
+            self.tanggal_sk_psp
             or self.tanggal_verifikasi
             or timezone.now().date()
         )
@@ -120,7 +124,7 @@ class PermohonanPSPBMN(TimeStampedModel):
             if self.lama_proses_hari >= 3:
                 return 'warning'
             return 'success'
-        if self.status in ['DIVERIFIKASI_BIRO', 'DISETUJUI']:
+        if self.status in ['DIVERIFIKASI_BIRO', 'DISETUJUI', 'PROSES_PSP']:
             if self.lama_proses_hari >= 14:
                 return 'danger'
             if self.lama_proses_hari >= 7:
@@ -140,7 +144,7 @@ class PermohonanPSPBMN(TimeStampedModel):
             if self.lama_proses_hari >= 3:
                 return 'Perlu segera diverifikasi'
             return 'Menunggu verifikasi Biro Umum'
-        if self.status in ['DIVERIFIKASI_BIRO', 'DISETUJUI']:
+        if self.status in ['DIVERIFIKASI_BIRO', 'DISETUJUI', 'PROSES_PSP']:
             if self.lama_proses_hari >= 14:
                 return 'Proses melewati batas pantau'
             if self.lama_proses_hari >= 7:
@@ -160,7 +164,7 @@ class PermohonanPSPBMN(TimeStampedModel):
     def pesan_pengingat_verifikator(self):
         if self.status == 'DIAJUKAN' and self.lama_proses_hari >= 3:
             return 'Pengingat untuk Biro Umum: permohonan PSP sudah menunggu verifikasi beberapa hari.'
-        if self.status in ['DIVERIFIKASI_BIRO', 'DISETUJUI'] and self.lama_proses_hari >= 7:
+        if self.status in ['DIVERIFIKASI_BIRO', 'DISETUJUI', 'PROSES_PSP'] and self.lama_proses_hari >= 7:
             return 'Pengingat untuk Biro Umum: permohonan PSP perlu tindak lanjut penetapan/dokumen.'
         return ''
 
@@ -171,3 +175,27 @@ class PermohonanPSPBMN(TimeStampedModel):
             kwargs['force_insert'] = False
             kwargs['force_update'] = True
         super().save(*args, **kwargs)
+
+
+class FotoBarangPSP(TimeStampedModel):
+    permohonan = models.ForeignKey(
+        PermohonanPSPBMN,
+        on_delete=models.CASCADE,
+        related_name='foto_barang_list'
+    )
+    foto = models.ImageField(upload_to='psp/foto_barang/')
+    keterangan = models.CharField(max_length=200, blank=True, null=True)
+    diupload_oleh = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Foto Barang PSP'
+        verbose_name_plural = 'Foto Barang PSP'
+
+    def __str__(self):
+        return f'Foto PSP {self.permohonan.nomor_permohonan or self.permohonan_id}'

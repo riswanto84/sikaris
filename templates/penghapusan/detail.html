@@ -41,12 +41,31 @@
     <div class="list-stack">
       <div class="list-item"><div class="list-main"><strong>Dokumen Usulan</strong><span>{% if object.dokumen_usulan %}<a href="{{ object.dokumen_usulan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
       <div class="list-item"><div class="list-main"><strong>Dokumen Pendukung</strong><span>{% if object.dokumen_pendukung %}<a href="{{ object.dokumen_pendukung.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
-      <div class="list-item"><div class="list-main"><strong>Foto Kondisi</strong><span>{% if object.foto_kondisi %}<a href="{{ object.foto_kondisi.url }}" target="_blank">Lihat foto</a>{% else %}-{% endif %}</span></div></div>
+
+      {% if foto_kondisi_list %}
+      <div class="list-item"><div class="list-main"><strong>Galeri Foto Kondisi Aset</strong><span>{{ foto_kondisi_list|length }} foto tersimpan</span></div></div>
+      {% endif %}
       <div class="list-item"><div class="list-main"><strong>Dokumen Persetujuan</strong><span>{% if object.dokumen_persetujuan %}<a href="{{ object.dokumen_persetujuan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
       <div class="list-item"><div class="list-main"><strong>SK Penghapusan</strong><span>{% if object.dokumen_sk_penghapusan %}<a href="{{ object.dokumen_sk_penghapusan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
       <div class="list-item"><div class="list-main"><strong>Berita Acara</strong><span>{% if object.berita_acara_penghapusan %}<a href="{{ object.berita_acara_penghapusan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
     </div>
   </div>
+
+  {% if foto_kondisi_list %}
+  <div style="height:18px"></div>
+  <div class="card" style="padding:18px">
+    <h3>Galeri Foto Kondisi Aset</h3>
+    <div class="asset-photo-preview-grid">
+      {% for item in foto_kondisi_list %}
+      <a class="asset-photo-preview-card" href="{{ item.foto.url }}" target="_blank" rel="noopener">
+        <img src="{{ item.foto.url }}" alt="Foto kondisi aset">
+        <div>{{ item.created_at|date:'d/m/Y H:i' }}</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <div style="height:18px"></div>
   <div class="card" style="padding:18px">
     <h3>Proses Biro Umum</h3>

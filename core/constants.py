@@ -20,6 +20,8 @@ STATUS_PEMANFAATAN_KENDARAAN = [
     ('DIGUNAKAN', 'Digunakan'),
     ('DALAM_SERVICE', 'Dalam Service'),
     ('TIDAK_AKTIF', 'Tidak Aktif'),
+    ('TIDAK_DIKETAHUI', 'Tidak Diketahui Keberadaannya'),
+    ('DIKUASAI_PIHAK_LAIN', 'Dikuasai Pihak Lain'),
 ]
 
 STATUS_PEMANFAATAN_RUMAH = [
@@ -27,6 +29,7 @@ STATUS_PEMANFAATAN_RUMAH = [
     ('DIHUNI', 'Dihuni'),
     ('DALAM_PERBAIKAN', 'Dalam Perbaikan'),
     ('TIDAK_AKTIF', 'Tidak Aktif'),
+    ('DALAM_PENGUASAAN_PIHAK_LAIN', 'Dalam Penguasaan Pihak Lain'),
 ]
 
 

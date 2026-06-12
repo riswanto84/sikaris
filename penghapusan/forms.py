@@ -7,7 +7,30 @@ from tanah_negara.models import TanahNegara
 from .models import PermohonanPenghapusanBMN
 
 
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleImageField(forms.FileField):
+    widget = MultipleFileInput
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            return [single_file_clean(d, initial) for d in data]
+        return single_file_clean(data, initial)
+
+
+def validate_pdf(uploaded_file, label):
+    if not uploaded_file:
+        return uploaded_file
+    if not uploaded_file.name.lower().endswith('.pdf'):
+        raise forms.ValidationError(f'{label} harus berformat PDF.')
+    return uploaded_file
+
+
 class PermohonanPenghapusanBMNForm(forms.ModelForm):
+    foto_kondisi_files = MultipleImageField(required=False, label='Foto Kondisi Aset', widget=MultipleFileInput(attrs={'multiple': True, 'accept': 'image/*,.jpg,.jpeg,.png', 'class': 'form-control'}), help_text='Bisa upload lebih dari satu foto kondisi aset.')
     class Meta:
         model = PermohonanPenghapusanBMN
         fields = [
@@ -16,7 +39,7 @@ class PermohonanPenghapusanBMNForm(forms.ModelForm):
             'kode_barang', 'nup', 'nama_barang', 'nilai_perolehan',
             'kondisi_barang', 'lokasi_barang', 'alasan_penghapusan',
             'uraian_alasan', 'dasar_usulan', 'dokumen_usulan',
-            'dokumen_pendukung', 'foto_kondisi', 'status', 'catatan_unit',
+            'dokumen_pendukung', 'foto_kondisi_files', 'status', 'catatan_unit',
             'catatan_biro_umum', 'nomor_persetujuan', 'tanggal_persetujuan',
             'dokumen_persetujuan', 'nomor_sk_penghapusan',
             'tanggal_sk_penghapusan', 'dokumen_sk_penghapusan',
@@ -38,7 +61,7 @@ class PermohonanPenghapusanBMNForm(forms.ModelForm):
             'alasan_penghapusan': 'Alasan Penghapusan',
             'dokumen_usulan': 'Dokumen Usulan Unit Kerja',
             'dokumen_pendukung': 'Dokumen Pendukung',
-            'foto_kondisi': 'Foto Kondisi Aset',
+            'foto_kondisi_files': 'Foto Kondisi Aset',
             'catatan_unit': 'Catatan Unit Kerja',
             'catatan_biro_umum': 'Catatan Biro Umum',
             'nomor_persetujuan': 'Nomor Persetujuan/Penetapan',
@@ -58,9 +81,8 @@ class PermohonanPenghapusanBMNForm(forms.ModelForm):
             'lokasi_barang': forms.Textarea(attrs={'rows': 2}),
             'catatan_unit': forms.Textarea(attrs={'rows': 3}),
             'catatan_biro_umum': forms.Textarea(attrs={'rows': 3}),
-            'dokumen_usulan': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*,.pdf,.jpg,.jpeg,.png,.doc,.docx'}),
-            'dokumen_pendukung': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*,.pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx'}),
-            'foto_kondisi': forms.ClearableFileInput(attrs={'accept': 'image/*,.jpg,.jpeg,.png'}),
+            'dokumen_usulan': forms.ClearableFileInput(attrs={'accept': 'application/pdf,.pdf'}),
+            'dokumen_pendukung': forms.ClearableFileInput(attrs={'accept': 'application/pdf,.pdf'}),
             'dokumen_persetujuan': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*,.pdf,.jpg,.jpeg,.png,.doc,.docx'}),
             'dokumen_sk_penghapusan': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*,.pdf,.jpg,.jpeg,.png,.doc,.docx'}),
             'berita_acara_penghapusan': forms.ClearableFileInput(attrs={'accept': 'application/pdf,image/*,.pdf,.jpg,.jpeg,.png,.doc,.docx'}),
@@ -107,6 +129,12 @@ class PermohonanPenghapusanBMNForm(forms.ModelForm):
                 value = getattr(self.instance, date_field, None)
                 if value and date_field in self.fields:
                     self.fields[date_field].initial = value.strftime('%Y-%m-%d')
+
+    def clean_dokumen_usulan(self):
+        return validate_pdf(self.cleaned_data.get('dokumen_usulan'), 'Dokumen usulan unit kerja')
+
+    def clean_dokumen_pendukung(self):
+        return validate_pdf(self.cleaned_data.get('dokumen_pendukung'), 'Dokumen pendukung')
 
     def clean(self):
         cleaned = super().clean()

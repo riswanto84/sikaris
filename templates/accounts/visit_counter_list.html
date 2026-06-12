@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block page_title %}Counter Kunjungan User{% endblock %}
+{% block content %}
+<div class="toolbar">
+  {% include 'includes/list_search.html' %}
+  <a class="btn btn-secondary" href="{% url 'login_history_list' %}">Lihat Riwayat Login</a>
+</div>
+
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Nama</th>
+          <th>Email</th>
+          <th>Unit Kerja</th>
+          <th>Role</th>
+          <th>Total Kunjungan</th>
+          <th>Kunjungan Terakhir</th>
+          <th>Halaman Terakhir</th>
+          <th>IP Terakhir</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for o in object_list %}
+        <tr>
+          <td><strong>{{ o.user.username }}</strong></td>
+          <td>{{ o.user.get_full_name|default:'-' }}</td>
+          <td>{{ o.user.email|default:'-' }}</td>
+          <td>{{ o.user.profile.unit_kerja.nama_unit|default:'-' }}</td>
+          <td>
+            {% for g in o.user.groups.all %}
+              <span class="badge AKTIF">{{ g.name }}</span>
+            {% empty %}
+              <span class="badge">Tanpa role</span>
+            {% endfor %}
+            {% if o.user.is_superuser %}<span class="badge RUSAK_RINGAN">Superuser</span>{% endif %}
+          </td>
+          <td><strong>{{ o.total_kunjungan }}</strong> kali</td>
+          <td>{{ o.last_visit_at|date:'d/m/Y H:i:s'|default:'-' }}</td>
+          <td><small>{{ o.last_path|default:'-' }}</small></td>
+          <td>{{ o.last_ip_address|default:'-' }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="9" class="empty-state">Belum ada data kunjungan user.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'includes/pagination.html' %}
+</div>
+{% endblock %}
