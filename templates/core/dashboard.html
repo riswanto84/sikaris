@@ -6,7 +6,7 @@
     <div class="welcome-panel card">
         <div>
             <h2>Selamat datang, {{ request.user.get_full_name|default:request.user.username }} 👋</h2>
-            <p>Berikut ringkasan data kendaraan dan rumah dinas Kementerian Sosial.</p>
+            <p>Berikut ringkasan data kendaraan dan rumah negara Kementerian Sosial.</p>
             <p class="muted small-text">Cakupan dashboard: <strong>{{ dashboard_scope_label }}</strong></p>
         </div>
         <div class="date-chip">📅 {% now "l, j F Y" %}</div>
@@ -69,7 +69,7 @@
         <div class="summary-card">
             <div class="summary-icon teal">🏠</div>
             <div>
-                <div class="summary-label">Total Rumah Dinas</div>
+                <div class="summary-label">Total Rumah Negara</div>
                 <div class="summary-value" data-counter data-stat="total_rumah">{{ total_rumah }}</div>
                 <a href="{% url 'master:rumah_list' %}" class="mini-link">Lihat detail →</a>
             </div>
@@ -77,7 +77,7 @@
         <div class="summary-card">
             <div class="summary-icon lime">📑</div>
             <div>
-                <div class="summary-label">SIP Rumah Dinas Aktif</div>
+                <div class="summary-label">SIP Rumah Negara Aktif</div>
                 <div class="summary-value" data-counter data-stat="sip_rumah_aktif">{{ sip_rumah_aktif }}</div>
                 <a href="{% url 'rumah_dinas:sip_list' %}" class="mini-link">Lihat detail →</a>
             </div>
@@ -107,7 +107,7 @@
 
                 {% if can_access_house %}
                 <div class="panel-card">
-                    <div class="panel-title">Grafik Kondisi Rumah Dinas</div>
+                    <div class="panel-title">Grafik Kondisi Rumah Negara</div>
                     <div class="chart-row">
                         <div class="ring-chart ring-houses">
                             <div class="ring-center">
@@ -171,7 +171,7 @@
                 </div>
                 <div class="tab-pills">
                     <button class="tab-pill active">Kendaraan ({{ sip_akan_berakhir|length }})</button>
-                    {% if can_access_house %}<button class="tab-pill">Rumah Dinas</button>{% endif %}
+                    {% if can_access_house %}<button class="tab-pill">Rumah Negara</button>{% endif %}
                 </div>
                 <div class="list-stack">
                     {% for s in sip_akan_berakhir %}
@@ -191,7 +191,7 @@
                     {% endfor %}
                 </div>
                 {% if can_access_house %}
-                <div class="panel-title mt-20">SIP Rumah Dinas Akan Berakhir</div>
+                <div class="panel-title mt-20">SIP Rumah Negara Akan Berakhir</div>
                 <div class="list-stack">
                     {% for s in sip_rumah_akan_berakhir_list %}
                     <div class="list-item">
@@ -206,7 +206,7 @@
                         </div>
                     </div>
                     {% empty %}
-                    <div class="empty-inline">Tidak ada SIP rumah dinas yang akan berakhir.</div>
+                    <div class="empty-inline">Tidak ada SIP rumah negara yang akan berakhir.</div>
                     {% endfor %}
                 </div>
                 {% endif %}

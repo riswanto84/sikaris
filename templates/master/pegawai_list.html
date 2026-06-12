@@ -3,7 +3,7 @@
 {% block content %}
 <div class="toolbar">
   {% include 'includes/list_search.html' %}
-  <a class="btn btn-primary" href="{% url 'master:pegawai_create' %}">+ Tambah Pegawai</a>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="{% url 'master:pegawai_import' %}">Impor Excel/CSV</a><a class="btn btn-primary" href="{% url 'master:pegawai_create' %}">+ Tambah Pegawai</a></div>
 </div>
 <div class="card table-card">
   <div class="table-responsive">
@@ -17,7 +17,7 @@
         <td>{{ o.jabatan|default:'-' }}</td>
         <td>{{ o.unit_kerja|default:'-' }}</td>
         <td><span class="badge AKTIF">{{ o.status_pegawai }}</span></td>
-        <td><a class="btn btn-secondary" href="{% url 'master:pegawai_update' o.pk %}">Edit</a></td>
+        <td><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-secondary btn-detail" href="{% url 'master:pegawai_detail' o.pk %}">Detail</a><a class="btn btn-secondary" href="{% url 'master:pegawai_update' o.pk %}">Edit</a><a class="btn btn-danger" href="{% url 'master:pegawai_delete' o.pk %}">Hapus</a></div></td>
       </tr>
       {% empty %}<tr><td colspan="6" class="empty-state">Belum ada data pegawai.</td></tr>{% endfor %}
       </tbody>

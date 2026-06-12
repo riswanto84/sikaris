@@ -12,7 +12,7 @@ def validate_pdf_file(uploaded_file):
     filename = uploaded_file.name.lower()
 
     if not filename.endswith('.pdf'):
-        raise ValidationError('Dokumen SIP Rumah Dinas hanya boleh berupa file PDF.')
+        raise ValidationError('Dokumen SIP Rumah Negara hanya boleh berupa file PDF.')
 
     content_type = getattr(uploaded_file, 'content_type', '')
 
@@ -41,15 +41,21 @@ class SIPRumahDinasForm(BootstrapModelForm):
         labels = {
             'nomor_sip': 'Nomor SIP',
             'tanggal_sip': 'Tanggal SIP',
-            'rumah_dinas': 'Rumah Dinas',
-            'pegawai': 'Pegawai',
+            'rumah_dinas': 'Rumah Negara',
+            'pegawai': 'Pemegang SIP',
+            'penghuni': 'Penghuni Aktual',
+            'status_bayar_pnbp': 'Status Bayar Sewa PNBP',
+            'tahun_pnbp': 'Tahun PNBP',
+            'nilai_pnbp': 'Nilai Sewa PNBP',
+            'tanggal_bayar_pnbp': 'Tanggal Bayar PNBP',
+            'bukti_bayar_pnbp': 'Bukti Bayar PNBP',
             'tanggal_mulai': 'Tanggal Mulai',
             'tanggal_akhir': 'Tanggal Akhir',
             'dasar_penerbitan': 'Dasar Penerbitan',
             'pejabat_penandatangan': 'Pejabat Penandatangan',
             'jumlah_anggota_keluarga': 'Jumlah Anggota Keluarga',
             'status': 'Status',
-            'dokumen_sip': 'Dokumen SIP Rumah Dinas (PDF)',
+            'dokumen_sip': 'Dokumen SIP Rumah Negara (PDF)',
             'catatan': 'Catatan',
         }
 
@@ -75,6 +81,7 @@ class SIPRumahDinasForm(BootstrapModelForm):
                     'class': 'form-control'
                 }
             ),
+            'tanggal_bayar_pnbp': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-control'}),
             'dokumen_sip': forms.ClearableFileInput(attrs={
                 'accept': 'application/pdf,.pdf',
                 'class': 'form-control'
@@ -93,7 +100,7 @@ class SIPRumahDinasForm(BootstrapModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        for field_name in ['tanggal_sip', 'tanggal_mulai', 'tanggal_akhir']:
+        for field_name in ['tanggal_sip', 'tanggal_mulai', 'tanggal_akhir', 'tanggal_bayar_pnbp']:
             value = getattr(self.instance, field_name, None)
 
             if self.instance and self.instance.pk and value:

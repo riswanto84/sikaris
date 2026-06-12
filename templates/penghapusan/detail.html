@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load rupiah %}
+{% block page_title %}Detail Permohonan Penghapusan BMN{% endblock %}
+{% block content %}
+<div class="card form-card">
+  <div class="form-header">
+    <h2>{{ object.nomor_permohonan }}</h2>
+    <p>{{ object.get_jenis_aset_display }} - {{ object.nama_barang }}</p>
+  </div>
+  <div class="mini-stats-grid">
+    <div class="mini-stat-card"><div><small>Status</small><strong>{{ object.get_status_display }}</strong></div></div>
+    <div class="mini-stat-card"><div><small>Unit Kerja</small><strong>{{ object.unit_kerja|default:'-' }}</strong></div></div>
+    <div class="mini-stat-card"><div><small>Tanggal Usul</small><strong>{{ object.tanggal_permohonan|date:'d/m/Y' }}</strong></div></div>
+    <div class="mini-stat-card"><div><small>Nilai</small><strong>{{ object.nilai_perolehan|rupiah }}</strong></div></div>
+  </div>
+  <div style="height:18px"></div>
+  <div class="card" style="padding:18px">
+    <h3>Data Aset</h3>
+    <table class="table">
+      <tbody>
+        <tr><th>Nama Barang</th><td>{{ object.nama_barang }}</td></tr>
+        <tr><th>Kode Barang / NUP</th><td>{{ object.kode_barang|default:'-' }} / {{ object.nup|default:'-' }}</td></tr>
+        <tr><th>Kondisi/Lokasi</th><td>{{ object.kondisi_barang|default:'-' }}<br>{{ object.lokasi_barang|default:'-' }}</td></tr>
+        <tr><th>Alasan</th><td>{{ object.get_alasan_penghapusan_display }}</td></tr>
+        <tr><th>Uraian</th><td>{{ object.uraian_alasan|linebreaksbr }}</td></tr>
+        <tr><th>Dasar Usulan</th><td>{{ object.dasar_usulan|default:'-'|linebreaksbr }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="height:18px"></div>
+  <div class="card" style="padding:18px">
+    <h3>Dokumen</h3>
+    <div class="list-stack">
+      <div class="list-item"><div class="list-main"><strong>Dokumen Usulan</strong><span>{% if object.dokumen_usulan %}<a href="{{ object.dokumen_usulan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Dokumen Pendukung</strong><span>{% if object.dokumen_pendukung %}<a href="{{ object.dokumen_pendukung.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Foto Kondisi</strong><span>{% if object.foto_kondisi %}<a href="{{ object.foto_kondisi.url }}" target="_blank">Lihat foto</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Dokumen Persetujuan</strong><span>{% if object.dokumen_persetujuan %}<a href="{{ object.dokumen_persetujuan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>SK Penghapusan</strong><span>{% if object.dokumen_sk_penghapusan %}<a href="{{ object.dokumen_sk_penghapusan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Berita Acara</strong><span>{% if object.berita_acara_penghapusan %}<a href="{{ object.berita_acara_penghapusan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+    </div>
+  </div>
+  <div style="height:18px"></div>
+  <div class="card" style="padding:18px">
+    <h3>Proses Biro Umum</h3>
+    <table class="table">
+      <tbody>
+        <tr><th>Catatan Biro Umum</th><td>{{ object.catatan_biro_umum|default:'-'|linebreaksbr }}</td></tr>
+        <tr><th>Diverifikasi Oleh</th><td>{{ object.diverifikasi_oleh|default:'-' }}{% if object.tanggal_verifikasi %} - {{ object.tanggal_verifikasi|date:'d/m/Y' }}{% endif %}</td></tr>
+        <tr><th>Persetujuan</th><td>{{ object.nomor_persetujuan|default:'-' }}{% if object.tanggal_persetujuan %} - {{ object.tanggal_persetujuan|date:'d/m/Y' }}{% endif %}</td></tr>
+        <tr><th>SK Penghapusan</th><td>{{ object.nomor_sk_penghapusan|default:'-' }}{% if object.tanggal_sk_penghapusan %} - {{ object.tanggal_sk_penghapusan|date:'d/m/Y' }}{% endif %}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="form-actions">
+    <a class="btn btn-secondary" href="{% url 'penghapusan:update' object.pk %}">Edit</a>
+    <a class="btn btn-secondary" href="{% url 'penghapusan:list' %}">Kembali</a>
+  </div>
+</div>
+{% endblock %}

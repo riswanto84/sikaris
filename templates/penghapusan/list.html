@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load rupiah %}
+{% block page_title %}Permohonan Penghapusan BMN{% endblock %}
+{% block content %}
+<div class="toolbar">
+  {% include 'includes/list_search.html' %}
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <a class="btn btn-primary" href="{% url 'penghapusan:create' %}">+ Ajukan Penghapusan BMN</a>
+  </div>
+</div>
+<div class="message info">
+  Unit kerja mengajukan usulan penghapusan BMN kepada Biro Umum. Biro Umum melakukan verifikasi, memberi catatan, persetujuan/penolakan, dan mencatat SK/BA penghapusan.
+</div>
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nomor/Tanggal</th>
+          <th>Unit Kerja</th>
+          <th>Jenis Aset</th>
+          <th>Nama Barang</th>
+          <th>Kode/NUP</th>
+          <th>Nilai</th>
+          <th>Alasan</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for o in object_list %}
+        <tr>
+          <td><strong>{{ o.nomor_permohonan }}</strong><br><small>{{ o.tanggal_permohonan|date:'d/m/Y' }}</small></td>
+          <td>{{ o.unit_kerja|default:'-' }}<br><small>{{ o.pemohon|default:'-' }}</small></td>
+          <td>{{ o.get_jenis_aset_display }}</td>
+          <td>{{ o.nama_barang }}</td>
+          <td>{{ o.kode_barang|default:'-' }}<br><small>NUP: {{ o.nup|default:'-' }}</small></td>
+          <td>{{ o.nilai_perolehan|rupiah }}</td>
+          <td>{{ o.get_alasan_penghapusan_display }}</td>
+          <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
+          <td>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <a class="btn btn-secondary" href="{% url 'penghapusan:detail' o.pk %}">Detail</a>
+              <a class="btn btn-secondary" href="{% url 'penghapusan:update' o.pk %}">Edit</a>
+              <a class="btn btn-danger" href="{% url 'penghapusan:delete' o.pk %}">Hapus</a>
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="9" class="empty-state">Belum ada permohonan penghapusan BMN.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'includes/pagination.html' %}
+</div>
+{% endblock %}

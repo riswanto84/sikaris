@@ -1,28 +1,30 @@
 {% extends 'base.html' %}
 {% load rupiah %}
-{% block page_title %}Master Rumah Dinas{% endblock %}
+{% block page_title %}Master Rumah Negara{% endblock %}
 {% block content %}
 <div class="toolbar">
   {% include 'includes/list_search.html' %}
-  <a class="btn btn-primary" href="{% url 'master:rumah_create' %}">+ Tambah Rumah Dinas</a>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="{% url 'master:rumah_import' %}">Impor Excel/CSV</a><a class="btn btn-primary" href="{% url 'master:rumah_create' %}">+ Tambah Rumah Negara</a></div>
 </div>
 <div class="card table-card">
   <div class="table-responsive">
     <table class="table">
-      <thead><tr><th>Kode</th><th>Nama Rumah</th><th>Jenis</th><th>Alamat</th><th>Nilai Perolehan</th><th>Kondisi</th><th>Status</th><th>Aksi</th></tr></thead>
+      <thead><tr><th>Kode</th><th>Nama Rumah Negara</th><th>Jenis</th><th>Unit Kerja</th><th>Alamat</th><th>Nilai Perolehan</th><th>Kondisi</th><th>Status</th><th>Koordinat</th><th>Aksi</th></tr></thead>
       <tbody>
       {% for o in object_list %}
       <tr>
         <td><strong>{{ o.kode_rumah }}</strong></td>
         <td>{{ o.nama_rumah }}</td>
         <td>{{ o.jenis_rumah|default:'-' }}</td>
+        <td>{{ o.unit_kerja|default:'-' }}</td>
         <td>{{ o.alamat|truncatechars:60 }}</td>
         <td>{{ o.nilai_perolehan|rupiah }}</td>
         <td><span class="badge {{ o.kondisi }}">{{ o.get_kondisi_display }}</span></td>
         <td>{{ o.get_status_pemanfaatan_display }}</td>
-        <td><a class="btn btn-secondary" href="{% url 'master:rumah_update' o.pk %}">Edit</a></td>
+        <td>{{ o.latitude|default:'-' }}, {{ o.longitude|default:'-' }}</td>
+        <td><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-secondary btn-detail" href="{% url 'master:rumah_detail' o.pk %}">Detail</a><a class="btn btn-secondary" href="{% url 'master:rumah_update' o.pk %}">Edit</a><a class="btn btn-danger" href="{% url 'master:rumah_delete' o.pk %}">Hapus</a></div></td>
       </tr>
-      {% empty %}<tr><td colspan="8" class="empty-state">Belum ada data rumah dinas.</td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="10" class="empty-state">Belum ada data rumah negara.</td></tr>{% endfor %}
       </tbody>
     </table>
   </div>

@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 {% load l10n %}
 
-{% block page_title %}Form Master Rumah Dinas{% endblock %}
+{% block page_title %}Form Master Rumah Negara{% endblock %}
 
 {% block content %}
 <div class="card form-card">
   <div class="form-header">
     <div>
-      <h2>Form Master Rumah Dinas</h2>
-      <p>Lengkapi data rumah dinas, upload foto, dan pastikan latitude serta longitude sudah benar.</p>
+      <h2>Form Master Rumah Negara</h2>
+      <p>Lengkapi data rumah negara, upload foto, dan pastikan latitude serta longitude sudah benar.</p>
     </div>
   </div>
 
@@ -47,7 +47,7 @@
     <div class="photo-section">
       <div class="photo-section-header">
         <div>
-          <h3>Foto Rumah Dinas Tersimpan</h3>
+          <h3>Foto Rumah Negara Tersimpan</h3>
           <p>Foto yang sudah diupload akan tampil di bawah ini.</p>
         </div>
       </div>
@@ -57,7 +57,7 @@
         {% for item in foto_rumah_list %}
         <div class="asset-photo-card">
           <a href="{{ item.foto.url }}" target="_blank">
-            <img src="{{ item.foto.url }}" alt="Foto rumah dinas {{ object.kode_rumah }}">
+            <img src="{{ item.foto.url }}" alt="Foto rumah negara {{ object.kode_rumah }}">
           </a>
 
           <div class="asset-photo-meta">
@@ -79,7 +79,7 @@
       </div>
       {% else %}
       <div class="empty-photo-state">
-        Belum ada foto rumah dinas yang diupload.
+        Belum ada foto rumah negara yang diupload.
       </div>
       {% endif %}
     </div>
@@ -89,7 +89,7 @@
     <div class="map-section">
       <div class="map-header">
         <div>
-          <h3>Lokasi Rumah Dinas</h3>
+          <h3>Lokasi Rumah Negara</h3>
           <p>Peta ditampilkan berdasarkan Latitude dan Longitude pada form. Jika koordinat baru diisi, klik tombol refresh peta.</p>
         </div>
       </div>
@@ -363,7 +363,7 @@
               src="${mapUrl}"
               loading="lazy"
               referrerpolicy="no-referrer-when-downgrade"
-              title="Peta Lokasi Rumah Dinas">
+              title="Peta Lokasi Rumah Negara">
           </iframe>
       `;
   }

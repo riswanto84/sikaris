@@ -50,6 +50,7 @@
         .btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:14px;padding:11px 16px;font-size:14px;font-weight:800;cursor:pointer;transition:all .16s ease;gap:8px;text-decoration:none}
         .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;box-shadow:0 10px 24px rgba(21,101,245,.25)}
         .btn-secondary{background:#eef5ff;color:#144fae;border:1px solid #d3e3ff}
+        .btn-danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
         .btn-light{background:#fff;color:#15356d;border:1px solid rgba(255,255,255,.7)}
         .btn-logout{width:100%}
         .card,.panel-card,.summary-card,.welcome-panel{background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow)}
@@ -72,6 +73,25 @@
         .form-card{padding:24px;max-width:1200px}.form-header{margin-bottom:18px}.form-header h2{margin:0;font-size:22px;color:#0f172a}.form-header p{margin:6px 0 0;color:#64748b}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 22px}.form-grid p{margin:0;display:flex;flex-direction:column}.form-grid p.full{grid-column:1/-1}label{display:block;font-size:14px;font-weight:800;margin-bottom:8px;color:#334155}.form-control,input,select,textarea{width:100%;padding:12px 14px;border:1px solid #d4dee9;border-radius:14px;background:#fff;font-size:14px;outline:none}textarea{min-height:120px;resize:vertical}.form-actions{display:flex;gap:10px;margin-top:22px}
         @media (max-width:1200px){.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-main-grid{grid-template-columns:1fr}.panel-grid.two-col,.mini-stats-grid{grid-template-columns:1fr 1fr}}
         @media (max-width:900px){.hamburger{display:inline-flex;align-items:center;justify-content:center}.sidebar{transform:translateX(-102%)}.sidebar.open{transform:translateX(0)}.content-area{margin-left:0;padding:18px}.stats-grid,.panel-grid.two-col,.mini-stats-grid,.form-grid{grid-template-columns:1fr}}
+
+
+        /* Perbaikan proporsi tampilan tabel dan detail agar data lebih terbaca */
+        .content-area{font-size:14px;}
+        .table th{font-size:11px;padding:11px 12px;white-space:nowrap;}
+        .table td{font-size:13px;line-height:1.35;padding:11px 12px;}
+        .table td small{font-size:11.5px;line-height:1.35;color:#334155;}
+        .table .btn{padding:7px 10px;font-size:12px;border-radius:12px;}
+        .btn-detail{background:#eef6ff;color:#0f4fb8;border:1px solid #cfe0ff;}
+        .detail-card{padding:22px;}
+        .detail-header{margin-bottom:18px;}
+        .detail-header h2{font-size:22px;margin:0;color:#0f172a;}
+        .detail-header p{font-size:13px;color:#64748b;margin:6px 0 0;}
+        .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;}
+        .detail-item{border:1px solid #e6edf5;border-radius:14px;background:#fbfdff;padding:12px 14px;min-width:0;}
+        .detail-item.wide{grid-column:1/-1;}
+        .detail-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:900;color:#64748b;margin-bottom:6px;}
+        .detail-value{font-size:13.5px;color:#0f172a;word-break:break-word;line-height:1.45;}
+        @media (max-width:900px){.detail-grid{grid-template-columns:1fr}.table th,.table td{font-size:12.5px;padding:10px}}
     </style>
 </head>
 <body>
@@ -81,7 +101,7 @@
             <img src="{% static 'img/logo-kemensos.svg' %}" alt="Logo Kemensos">
             <div>
                 <div class="brand-title">SIKARIS</div>
-                <div class="brand-subtitle">Sistem Informasi Kendaraan<br>dan Rumah Dinas</div>
+                <div class="brand-subtitle">Sistem Informasi Kendaraan<br>dan Rumah Negara</div>
             </div>
         </div>
 
@@ -93,7 +113,7 @@
                 <div class="nav-group-title">Master Data</div>
                 <a class="nav-link" href="{% url 'master:pegawai_list' %}"><span class="nav-icon">👤</span><span>Pegawai</span></a>
                 <a class="nav-link" href="{% url 'master:kendaraan_list' %}"><span class="nav-icon">🚘</span><span>Kendaraan</span></a>
-                <a class="nav-link" href="{% url 'master:rumah_list' %}"><span class="nav-icon">🏠</span><span>Rumah Dinas</span></a>
+                <a class="nav-link" href="{% url 'master:rumah_list' %}"><span class="nav-icon">🏠</span><span>Rumah Negara</span></a>
                 <a class="nav-link" href="{% url 'master:unitkerja_list' %}"><span class="nav-icon">▣</span><span>Unit Kerja</span></a>
             </div>
             {% elif is_pemeliharaan_kendaraan %}
@@ -109,8 +129,8 @@
                 <a class="nav-link" href="{% url 'kendaraan:sip_list' %}"><span class="nav-icon">🧾</span><span>Daftar SIP Kendaraan</span></a>
             </div>
             <div class="nav-group">
-                <div class="nav-group-title">SIP Rumah Dinas</div>
-                <a class="nav-link" href="{% url 'rumah_dinas:sip_list' %}"><span class="nav-icon">📑</span><span>Daftar SIP Rumah Dinas</span></a>
+                <div class="nav-group-title">SIP Rumah Negara</div>
+                <a class="nav-link" href="{% url 'rumah_dinas:sip_list' %}"><span class="nav-icon">📑</span><span>Daftar SIP Rumah Negara</span></a>
             </div>
             {% endif %}
 
@@ -122,6 +142,21 @@
             </div>
             {% endif %}
 
+
+            {% if can_access_penghapusan %}
+            <div class="nav-group">
+                <div class="nav-group-title">Penghapusan BMN</div>
+                <a class="nav-link" href="{% url 'penghapusan:list' %}"><span class="nav-icon">🗑️</span><span>Permohonan Penghapusan</span></a>
+            </div>
+            {% endif %}
+
+            {% if can_access_psp %}
+            <div class="nav-group">
+                <div class="nav-group-title">PSP BMN</div>
+                <a class="nav-link" href="{% url 'psp:list' %}"><span class="nav-icon">✅</span><span>Permohonan PSP</span></a>
+            </div>
+            {% endif %}
+
             {% if can_access_reports %}
             <div class="nav-group">
                 <div class="nav-group-title">Laporan</div>
@@ -130,6 +165,11 @@
             {% endif %}
 
             {% if is_admin_system %}
+            <div class="nav-group">
+                <div class="nav-group-title">Tanah Negara</div>
+                <a class="nav-link" href="{% url 'tanah_negara:list' %}"><span class="nav-icon">🗺️</span><span>Daftar Tanah Negara</span></a>
+            </div>
+
             <div class="nav-group">
                 <div class="nav-group-title">Pengaturan</div>
                 <a class="nav-link" href="{% url 'user_list' %}"><span class="nav-icon">👤</span><span>Manajemen User</span></a>

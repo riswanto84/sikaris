@@ -19,7 +19,7 @@
         <td>{{ o.tanggal_mulai }} s.d. {{ o.tanggal_akhir }}</td>
         <td>{{ o.get_jenis_pemakaian_display|default:o.jenis_pemakaian|default:'-' }}</td>
         <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
-        <td>{% if can_access_sip %}<a class="btn btn-secondary" href="{% url 'kendaraan:sip_update' o.pk %}">Edit</a>{% else %}-{% endif %}</td>
+        <td>{% if can_access_sip %}<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-secondary btn-detail" href="{% url 'kendaraan:sip_detail' o.pk %}">Detail</a><a class="btn btn-secondary" href="{% url 'kendaraan:sip_update' o.pk %}">Edit</a><a class="btn btn-danger" href="{% url 'kendaraan:sip_delete' o.pk %}">Hapus</a></div>{% else %}-{% endif %}</td>
       </tr>
       {% empty %}<tr><td colspan="8" class="empty-state">Belum ada data SIP kendaraan.</td></tr>{% endfor %}
       </tbody>

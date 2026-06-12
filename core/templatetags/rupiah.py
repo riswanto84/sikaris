@@ -42,3 +42,17 @@ def rupiah_no_symbol(value):
     """
     formatted = rupiah(value)
     return formatted.replace('Rp ', '').replace('-Rp ', '-')
+
+
+@register.filter(name="angka_id")
+def angka_id(value):
+    """Format angka gaya Indonesia tanpa simbol Rupiah."""
+    if value is None or value == "":
+        return "-"
+    try:
+        amount = Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError):
+        return value
+    if amount == amount.to_integral():
+        return f"{int(amount):,}".replace(",", ".")
+    return f"{amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")

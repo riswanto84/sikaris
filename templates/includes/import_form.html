@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="card form-card">
+  <div class="form-header"><h2>{{ title }}</h2><p>{{ description }}</p></div>
+  <form method="post" enctype="multipart/form-data" id="importForm" data-back-url="{{ back_url }}">
+    {% csrf_token %}
+    <div class="form-grid">
+      {% for field in form %}
+      <p class="full"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small class="hint">{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<small class="error-text">{{ error }}</small>{% endfor %}</p>
+      {% endfor %}
+    </div>
+    <div id="uploadProgressWrap" style="display:none;margin-top:18px">
+      <div style="display:flex;justify-content:space-between;font-weight:800;margin-bottom:8px"><span>Progress upload</span><span id="uploadProgressText">0%</span></div>
+      <div style="height:16px;border-radius:999px;background:#e5ebf3;overflow:hidden"><div id="uploadProgressBar" style="width:0%;height:100%;background:linear-gradient(135deg,#1565f5,#0b4cc6);transition:width .2s ease"></div></div>
+      <p id="uploadStatus" class="hint">Menunggu upload...</p>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Upload & Impor</button><a class="btn btn-secondary" href="{{ back_url }}">Kembali</a></div>
+  </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  const form=document.getElementById('importForm'); if(!form) return;
+  const wrap=document.getElementById('uploadProgressWrap'), bar=document.getElementById('uploadProgressBar'), text=document.getElementById('uploadProgressText'), status=document.getElementById('uploadStatus');
+  form.addEventListener('submit', function(e){
+    e.preventDefault(); wrap.style.display='block'; bar.style.width='0%'; text.textContent='0%'; status.textContent='Mengupload file...';
+    const xhr=new XMLHttpRequest(); xhr.open('POST', window.location.href); xhr.setRequestHeader('X-Requested-With','XMLHttpRequest');
+    xhr.upload.addEventListener('progress', function(evt){ if(evt.lengthComputable){ const pct=Math.round((evt.loaded/evt.total)*100); bar.style.width=pct+'%'; text.textContent=pct+'%'; }});
+    xhr.onload=function(){
+      let data={}; try{data=JSON.parse(xhr.responseText||'{}')}catch(e){}
+      if(xhr.status>=200 && xhr.status<300 && data.ok){ bar.style.width='100%'; text.textContent='100%'; status.textContent=data.message || 'Impor selesai.'; setTimeout(()=>{ window.location.href=data.redirect_url || form.dataset.backUrl; }, 900); }
+      else { status.textContent=(data.message || 'Upload/impor gagal. Periksa format file.'); }
+    };
+    xhr.onerror=function(){ status.textContent='Upload gagal karena koneksi/server bermasalah.'; };
+    xhr.send(new FormData(form));
+  });
+})();
+</script>
+{% endblock %}

@@ -13,6 +13,8 @@ def role_flags(request):
         'can_access_vehicle_maintenance': False,
         'can_access_house': False,
         'can_access_reports': False,
+        'can_access_penghapusan': False,
+        'can_access_psp': False,
         'is_biro_umum': False,
         'user_unit_kerja': None,
     }
@@ -33,5 +35,7 @@ def role_flags(request):
             'can_access_vehicle_maintenance': admin or pem or biro,
             'can_access_house': admin or bmn or biro,
             'can_access_reports': admin or bmn or pem or biro,
+            'can_access_penghapusan': admin or bmn or biro,
+            'can_access_psp': admin or bmn or biro,
         })
     return flags

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ detail_title }}{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    {% if back_url %}<a class="btn btn-light" href="{{ back_url }}">← Kembali</a>{% endif %}
+    {% if edit_url %}<a class="btn btn-secondary" href="{{ edit_url }}">Edit</a>{% endif %}
+    {% if delete_url %}<a class="btn btn-danger" href="{{ delete_url }}">Hapus</a>{% endif %}
+  </div>
+</div>
+
+<div class="card detail-card">
+  <div class="detail-header">
+    <h2>{{ detail_title }}</h2>
+    <p>Informasi detail data.</p>
+  </div>
+  <div class="detail-grid">
+    {% for row in detail_rows %}
+    <div class="detail-item {% if row.name in 'alamat catatan uraian_kondisi uraian_pekerjaan sparepart_diganti keterangan' %}wide{% endif %}">
+      <div class="detail-label">{{ row.label }}</div>
+      <div class="detail-value">
+        {% if row.is_file %}
+          <a href="{{ row.value }}" target="_blank" rel="noopener">Lihat file</a>
+        {% else %}
+          {{ row.value|default:'-' }}
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">Tidak ada data detail.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

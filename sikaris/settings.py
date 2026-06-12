@@ -27,6 +27,9 @@ INSTALLED_APPS = [
     'master',
     'kendaraan',
     'rumah_dinas',
+    'tanah_negara',
+    'penghapusan',
+    'psp',
     'laporan',
 ]
 

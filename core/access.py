@@ -111,18 +111,18 @@ def scope_queryset_by_user(qs, user, scope_type):
     if scope_type == 'kendaraan':
         return qs.filter(unit_kerja_id=unit_id)
     if scope_type == 'rumah':
-        return qs.filter(sip_rumah__pegawai__unit_kerja_id=unit_id).distinct()
+        return qs.filter(unit_kerja_id=unit_id)
     if scope_type == 'sip_kendaraan':
         return qs.filter(Q(kendaraan__unit_kerja_id=unit_id) | Q(pegawai__unit_kerja_id=unit_id)).distinct()
     if scope_type == 'sip_rumah':
-        return qs.filter(pegawai__unit_kerja_id=unit_id)
+        return qs.filter(Q(rumah_dinas__unit_kerja_id=unit_id) | Q(pegawai__unit_kerja_id=unit_id) | Q(penghuni__unit_kerja_id=unit_id)).distinct()
     if scope_type == 'service_kendaraan':
         return qs.filter(kendaraan__unit_kerja_id=unit_id)
     if scope_type == 'kondisi_kendaraan':
         return qs.filter(kendaraan__unit_kerja_id=unit_id)
     if scope_type == 'perbaikan_rumah':
         return qs.filter(
-            Q(rumah_dinas__sip_rumah__pegawai__unit_kerja_id=unit_id) |
+            Q(rumah_dinas__unit_kerja_id=unit_id) |
             Q(pelapor__unit_kerja_id=unit_id)
         ).distinct()
 
@@ -168,15 +168,16 @@ def filter_form_fields_by_user(form, user):
     if 'pelapor' in form.fields:
         form.fields['pelapor'].queryset = Pegawai.objects.filter(unit_kerja_id=unit_id).order_by('nama')
 
+    if 'penghuni' in form.fields:
+        form.fields['penghuni'].queryset = Pegawai.objects.filter(unit_kerja_id=unit_id).order_by('nama')
+
     if 'kendaraan' in form.fields:
         from master.models import Kendaraan
         form.fields['kendaraan'].queryset = Kendaraan.objects.filter(unit_kerja_id=unit_id).order_by('nomor_polisi')
 
     if 'rumah_dinas' in form.fields:
         from master.models import RumahDinas
-        form.fields['rumah_dinas'].queryset = RumahDinas.objects.filter(
-            sip_rumah__pegawai__unit_kerja_id=unit_id
-        ).distinct().order_by('kode_rumah')
+        form.fields['rumah_dinas'].queryset = RumahDinas.objects.filter(unit_kerja_id=unit_id).order_by('kode_rumah')
 
     return form
 

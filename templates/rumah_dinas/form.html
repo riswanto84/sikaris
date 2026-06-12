@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 
 {% block page_title %}
-Form SIP Rumah Dinas
+Form SIP Rumah Negara
 {% endblock %}
 
 {% block content %}
 <div class="card form-card">
   <div class="form-header">
     <div>
-      <h2>Form SIP Rumah Dinas</h2>
-      <p>Lengkapi data Surat Izin Pemakaian Rumah Dinas. Dokumen SIP hanya boleh menggunakan format PDF.</p>
+      <h2>Form SIP Rumah Negara</h2>
+      <p>Lengkapi data Surat Izin Pemakaian Rumah Negara. Dokumen SIP hanya boleh menggunakan format PDF.</p>
     </div>
   </div>
 
@@ -24,7 +24,7 @@ Form SIP Rumah Dinas
 
     <div class="form-grid">
       {% for field in form %}
-      <p class="{% if field.name == 'dasar_penerbitan' or field.name == 'catatan' or field.name == 'dokumen_sip' %}full{% endif %}">
+      <p class="{% if field.name == 'dasar_penerbitan' or field.name == 'catatan' or field.name == 'dokumen_sip' or field.name == 'bukti_bayar_pnbp' %}full{% endif %}">
         <label for="{{ field.id_for_label }}">
           {{ field.label }}
         </label>
@@ -52,8 +52,8 @@ Form SIP Rumah Dinas
     <div class="document-section">
       <div class="document-header">
         <div>
-          <h3>Preview Dokumen SIP Rumah Dinas</h3>
-          <p>Dokumen SIP Rumah Dinas yang sudah diupload ditampilkan di bawah ini.</p>
+          <h3>Preview Dokumen SIP Rumah Negara</h3>
+          <p>Dokumen SIP Rumah Negara yang sudah diupload ditampilkan di bawah ini.</p>
         </div>
       </div>
 
@@ -61,7 +61,7 @@ Form SIP Rumah Dinas
         <iframe
           src="{{ object.dokumen_sip.url }}#toolbar=1&navpanes=0&scrollbar=1"
           loading="lazy"
-          title="Preview Dokumen SIP Rumah Dinas">
+          title="Preview Dokumen SIP Rumah Negara">
         </iframe>
       </div>
     </div>

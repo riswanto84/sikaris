@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block page_title %}Form Tanah Negara{% endblock %}
+{% block content %}
+<div class="card form-card">
+  <div class="form-header"><h2>Form Tanah Negara</h2><p>Field mengikuti template Excel tanah negara. Latitude dan longitude tetap tersedia bila diperlukan untuk peta/lokasi.</p></div>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="message error">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="message info"><strong>Catatan:</strong> Upload sertifikat PDF/gambar dilakukan dari field Dokumen Sertifikat. Preview PDF tersedia di halaman detail.</div>
+    <div class="form-grid tanah-form-grid">
+      {% for field in form %}
+      <p class="{% if field.name == 'alamat' or field.name == 'keterangan' or field.name == 'dokumen_sertifikat' or field.name == 'jenis_dokumen' or field.name == 'status_penggunaan' or field.name == 'status_pemanfaatan' %}full{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+        {% if field.help_text %}<small class="hint">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+      </p>
+      {% endfor %}
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Simpan</button><a class="btn btn-secondary" href="{% url 'tanah_negara:list' %}">Kembali</a></div>
+  </form>
+</div>
+{% endblock %}

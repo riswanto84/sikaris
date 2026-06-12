@@ -1,11 +1,14 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.db.models.deletion import ProtectedError
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, UpdateView
+from django.views.generic import CreateView, UpdateView, DetailView, DeleteView
 
 from core.roles import BMNRequiredMixin, MaintenanceRequiredMixin, VehicleViewRequiredMixin
 from core.listing import SearchListMixin
+from core.detail import GenericDetailMixin
 from core.access import UnitScopedQuerysetMixin, UnitScopedFormMixin, scope_queryset_by_user
 from master.models import Kendaraan
 
@@ -21,6 +24,20 @@ from .forms import (
     ServiceKendaraanForm,
     RiwayatKondisiKendaraanForm,
 )
+
+
+class SafeDeleteMixin:
+    template_name = 'includes/confirm_delete.html'
+    success_message = 'Data berhasil dihapus.'
+    protected_message = 'Data tidak dapat dihapus karena masih digunakan oleh data lain.'
+
+    def form_valid(self, form):
+        try:
+            messages.success(self.request, self.success_message)
+            return super().form_valid(form)
+        except ProtectedError:
+            messages.error(self.request, self.protected_message)
+            return redirect(self.get_success_url())
 
 
 def get_kendaraan_foto_map(user=None):
@@ -93,6 +110,22 @@ class SIPKendaraanUpdateView(BMNRequiredMixin, UnitScopedQuerysetMixin, UnitScop
     success_url = reverse_lazy('kendaraan:sip_list')
 
 
+class SIPKendaraanDetailView(VehicleViewRequiredMixin, UnitScopedQuerysetMixin, GenericDetailMixin, DetailView):
+    scope_type = 'sip_kendaraan'
+    model = SIPKendaraan
+    detail_title = 'Detail SIP Kendaraan'
+    back_url_name = 'kendaraan:sip_list'
+    edit_url_name = 'kendaraan:sip_update'
+    delete_url_name = 'kendaraan:sip_delete'
+
+
+class SIPKendaraanDeleteView(BMNRequiredMixin, UnitScopedQuerysetMixin, SafeDeleteMixin, DeleteView):
+    scope_type = 'sip_kendaraan'
+    model = SIPKendaraan
+    success_url = reverse_lazy('kendaraan:sip_list')
+    success_message = 'SIP kendaraan berhasil dihapus.'
+
+
 class ServiceKendaraanListView(MaintenanceRequiredMixin, UnitScopedQuerysetMixin, SearchListMixin):
     scope_type = 'service_kendaraan'
     model = ServiceKendaraan
@@ -144,6 +177,15 @@ class ServiceKendaraanCreateView(MaintenanceRequiredMixin, UnitScopedFormMixin, 
         return ctx
 
 
+class ServiceKendaraanDetailView(MaintenanceRequiredMixin, UnitScopedQuerysetMixin, GenericDetailMixin, DetailView):
+    scope_type = 'service_kendaraan'
+    model = ServiceKendaraan
+    detail_title = 'Detail Service Kendaraan'
+    back_url_name = 'kendaraan:service_list'
+    edit_url_name = 'kendaraan:service_update'
+    delete_url_name = 'kendaraan:service_delete'
+
+
 class ServiceKendaraanUpdateView(MaintenanceRequiredMixin, UnitScopedQuerysetMixin, UnitScopedFormMixin, UpdateView):
     scope_type = 'service_kendaraan'
     model = ServiceKendaraan
@@ -177,6 +219,13 @@ class ServiceKendaraanUpdateView(MaintenanceRequiredMixin, UnitScopedQuerysetMix
         ctx['kuitansi_list'] = self.object.bukti_kuitansi.all()
 
         return ctx
+
+
+class ServiceKendaraanDeleteView(MaintenanceRequiredMixin, UnitScopedQuerysetMixin, SafeDeleteMixin, DeleteView):
+    scope_type = 'service_kendaraan'
+    model = ServiceKendaraan
+    success_url = reverse_lazy('kendaraan:service_list')
+    success_message = 'Service kendaraan berhasil dihapus.'
 
 
 @login_required
@@ -217,3 +266,17 @@ class RiwayatKondisiCreateView(MaintenanceRequiredMixin, UnitScopedFormMixin, Cr
     def form_valid(self, form):
         form.instance.dicatat_oleh = self.request.user
         return super().form_valid(form)
+
+class RiwayatKondisiDetailView(MaintenanceRequiredMixin, UnitScopedQuerysetMixin, GenericDetailMixin, DetailView):
+    scope_type = 'kondisi_kendaraan'
+    model = RiwayatKondisiKendaraan
+    detail_title = 'Detail Riwayat Kondisi Kendaraan'
+    back_url_name = 'kendaraan:kondisi_list'
+    delete_url_name = 'kendaraan:kondisi_delete'
+
+
+class RiwayatKondisiDeleteView(MaintenanceRequiredMixin, UnitScopedQuerysetMixin, SafeDeleteMixin, DeleteView):
+    scope_type = 'kondisi_kendaraan'
+    model = RiwayatKondisiKendaraan
+    success_url = reverse_lazy('kendaraan:kondisi_list')
+    success_message = 'Riwayat kondisi kendaraan berhasil dihapus.'

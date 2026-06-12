@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block page_title %}Form Permohonan Penghapusan BMN{% endblock %}
+{% block content %}
+<div class="card form-card">
+  <div class="form-header">
+    <h2>Form Permohonan Penghapusan BMN</h2>
+    <p>Isi data usulan dari unit kerja. Pilih jenis aset, lengkapi alasan, dan unggah dokumen pendukung seperti surat usulan, berita acara pemeriksaan, foto kondisi, atau dokumen lain.</p>
+  </div>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="message error">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-grid">
+      {% for field in form %}
+      <p class="{% if field.name == 'uraian_alasan' or field.name == 'dasar_usulan' or field.name == 'lokasi_barang' or field.name == 'catatan_unit' or field.name == 'catatan_biro_umum' or field.name == 'dokumen_usulan' or field.name == 'dokumen_pendukung' or field.name == 'foto_kondisi' or field.name == 'dokumen_persetujuan' or field.name == 'dokumen_sk_penghapusan' or field.name == 'berita_acara_penghapusan' %}full{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="hint">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+      </p>
+      {% endfor %}
+    </div>
+    <div class="message warning" style="margin-top:16px">
+      Pastikan usulan sudah dilengkapi dokumen pendukung. Biro Umum dapat mengembalikan usulan dengan status <strong>Perlu Perbaikan</strong> bila dokumen belum lengkap.
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Simpan Permohonan</button>
+      <a class="btn btn-secondary" href="{% url 'penghapusan:list' %}">Kembali</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

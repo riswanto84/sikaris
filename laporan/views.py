@@ -235,7 +235,7 @@ def _build_simple_pdf(lines, title='Laporan SIKARIS'):
         canvas.setFont('Helvetica-Bold', 10)
         canvas.drawCentredString(width / 2, height - 14 * mm, 'KEMENTERIAN SOSIAL REPUBLIK INDONESIA')
         canvas.setFont('Helvetica', 8)
-        canvas.drawCentredString(width / 2, height - 19 * mm, 'SIKARIS - Sistem Informasi Kendaraan dan Rumah Dinas')
+        canvas.drawCentredString(width / 2, height - 19 * mm, 'SIKARIS - Sistem Informasi Kendaraan dan Rumah Negara')
         canvas.setStrokeColor(colors.HexColor('#1F4E79'))
         canvas.line(15 * mm, height - 26 * mm, width - 15 * mm, height - 26 * mm)
         canvas.setFont('Helvetica', 7)
@@ -259,7 +259,7 @@ def _build_fallback_pdf(lines, title='Laporan SIKARIS'):
 
     header_lines = [
         'KEMENTERIAN SOSIAL REPUBLIK INDONESIA',
-        'SIKARIS - Sistem Informasi Kendaraan dan Rumah Dinas',
+        'SIKARIS - Sistem Informasi Kendaraan dan Rumah Negara',
         '',
     ]
     prepared_lines = []
@@ -516,7 +516,7 @@ def export_kendaraan_pdf(request):
 
 
 # -----------------------------------------------------------------------------
-# Export Laporan Rumah Dinas
+# Export Laporan Rumah Negara
 # -----------------------------------------------------------------------------
 def _get_latest_sip_rumah(rumah):
     return rumah.sip_rumah.all().order_by('-tanggal_sip').first()
@@ -527,7 +527,7 @@ def _get_latest_sip_rumah(rumah):
 def export_rumah_excel(request):
     wb = Workbook()
     ws = wb.active
-    ws.title = 'Rumah Dinas dan SIP'
+    ws.title = 'Rumah Negara dan SIP'
 
     ws.append([
         'Kode Rumah', 'Nama Rumah', 'Jenis', 'Alamat', 'Provinsi', 'Kab/Kota',
@@ -559,7 +559,7 @@ def export_rumah_excel(request):
         ])
     _style_sheet(ws)
 
-    ws_sip = wb.create_sheet('Detail SIP Rumah Dinas')
+    ws_sip = wb.create_sheet('Detail SIP Rumah Negara')
     ws_sip.append([
         'Nomor SIP', 'Tanggal SIP', 'Kode Rumah', 'Nama Rumah', 'Alamat', 'Kondisi Rumah',
         'Pemakai', 'NIP Pemakai', 'Jabatan', 'Unit Kerja', 'Tanggal Mulai', 'Tanggal Akhir',
@@ -633,4 +633,4 @@ def export_rumah_pdf(request):
             lines.append('   Riwayat pengguna sebelumnya: -')
         lines.append('')
 
-    return _pdf_response(lines, f'laporan_rumah_dinas_sip_pemakai_{_today_label()}.pdf', 'Laporan Rumah Dinas')
+    return _pdf_response(lines, f'laporan_rumah_dinas_sip_pemakai_{_today_label()}.pdf', 'Laporan Rumah Negara')

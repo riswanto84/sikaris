@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load rupiah %}
+{% block page_title %}Tanah Negara{% endblock %}
+{% block content %}
+<div class="toolbar">
+  {% include 'includes/list_search.html' %}
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <a class="btn btn-secondary" href="{% url 'tanah_negara:import' %}">Impor Excel/CSV</a>
+    <a class="btn btn-primary" href="{% url 'tanah_negara:create' %}">+ Tambah Tanah Negara</a>
+  </div>
+</div>
+<div class="message warning"><strong>Rahasia:</strong> fitur tanah negara hanya dapat diakses Admin System untuk saat ini. Menu sudah dipisahkan dari Pengaturan.</div>
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Kode / Register</th>
+          <th>Nama Aset</th>
+          <th>Satker / Unit</th>
+          <th>Lokasi</th>
+          <th>Luas / Nilai</th>
+          <th>Status</th>
+          <th>Sertifikat / PSP</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for o in object_list %}
+      <tr>
+        <td><strong>{{ o.kode_tanah }}</strong><br><small>NUP: {{ o.nup|default:'-' }}<br>Register: {{ o.kode_register|default:'-' }}</small></td>
+        <td>{{ o.nama_tanah }}<br><small>{{ o.nama_barang|default:'-' }}</small></td>
+        <td>{{ o.unit_kerja|default:o.nama_satker|default:'-' }}<br><small>{{ o.kode_satker|default:'-' }}</small></td>
+        <td>{{ o.alamat|default:'-' }}<br><small>{{ o.kelurahan_desa|default:o.kelurahan|default:'-' }}, {{ o.kecamatan|default:'-' }}, {{ o.kab_kota|default:o.kabupaten_kota|default:'-' }}</small></td>
+        <td>{{ o.luas_tanah_seluruhnya|default:o.luas_tanah|angka_id }} m²<br><small>{{ o.nilai_perolehan|rupiah }}</small></td>
+        <td><span class="badge {{ o.status_tanah }}">{{ o.get_status_tanah_display }}</span><br><small>{{ o.status_penggunaan|default:o.status_pemanfaatan|default:o.status_bmn|default:'-' }}</small></td>
+        <td>{{ o.nomor_sertifikat|default:o.nomor_dokumen|default:'-' }}<br><small>PSP: {{ o.no_psp|default:'-' }}</small></td>
+        <td><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-secondary" href="{% url 'tanah_negara:detail' o.pk %}">Detail</a><a class="btn btn-secondary" href="{% url 'tanah_negara:update' o.pk %}">Edit</a><a class="btn btn-danger" href="{% url 'tanah_negara:delete' o.pk %}">Hapus</a></div></td>
+      </tr>
+      {% empty %}<tr><td colspan="8" class="empty-state">Belum ada data tanah negara.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'includes/pagination.html' %}
+</div>
+{% endblock %}

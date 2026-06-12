@@ -104,6 +104,7 @@ class RumahDinas(TimeStampedModel):
     nup = models.CharField(max_length=100, blank=True, null=True)
     kode_barang = models.CharField(max_length=100, blank=True, null=True)
     nilai_perolehan = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    unit_kerja = models.ForeignKey(UnitKerja, on_delete=models.SET_NULL, null=True, blank=True, related_name='rumah_negara')
     nomor_sertifikat = models.CharField(max_length=100, blank=True, null=True)
     status_tanah = models.CharField(max_length=100, blank=True, null=True)
     kondisi = models.CharField(max_length=20, choices=KONDISI_ASET, default='BAIK')

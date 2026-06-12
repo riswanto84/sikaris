@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block page_title %}Konfirmasi Hapus{% endblock %}
+{% block content %}
+<div class="card form-card">
+  <div class="form-header">
+    <div>
+      <h2>Konfirmasi Hapus</h2>
+      <p>Data yang dihapus tidak dapat dikembalikan. Pastikan data ini memang sudah tidak diperlukan.</p>
+    </div>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="message warning">
+      Apakah Anda yakin ingin menghapus <strong>{{ object }}</strong>?
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-danger" type="submit">Ya, Hapus</button>
+      <a class="btn btn-secondary" href="javascript:history.back()">Batal</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

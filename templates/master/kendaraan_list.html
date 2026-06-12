@@ -4,7 +4,7 @@
 {% block content %}
 <div class="toolbar">
   {% include 'includes/list_search.html' %}
-  {% if can_access_master %}<a class="btn btn-primary" href="{% url 'master:kendaraan_create' %}">+ Tambah Kendaraan</a>{% endif %}
+  {% if can_access_master %}<div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="{% url 'master:kendaraan_import' %}">Impor Excel/CSV</a><a class="btn btn-primary" href="{% url 'master:kendaraan_create' %}">+ Tambah Kendaraan</a></div>{% endif %}
 </div>
 <div class="card table-card">
   <div class="table-responsive">
@@ -22,7 +22,7 @@
         <td>{{ o.nilai_perolehan|rupiah }}</td>
         <td><span class="badge {{ o.kondisi }}">{{ o.get_kondisi_display }}</span></td>
         <td>{{ o.get_status_pemanfaatan_display }}</td>
-        <td>{% if can_access_master %}<a class="btn btn-secondary" href="{% url 'master:kendaraan_update' o.pk %}">Edit</a>{% else %}-{% endif %}</td>
+        <td>{% if can_access_master %}<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-secondary btn-detail" href="{% url 'master:kendaraan_detail' o.pk %}">Detail</a><a class="btn btn-secondary" href="{% url 'master:kendaraan_update' o.pk %}">Edit</a><a class="btn btn-danger" href="{% url 'master:kendaraan_delete' o.pk %}">Hapus</a></div>{% else %}-{% endif %}</td>
       </tr>
       {% empty %}<tr><td colspan="10" class="empty-state">Belum ada data kendaraan.</td></tr>{% endfor %}
       </tbody>

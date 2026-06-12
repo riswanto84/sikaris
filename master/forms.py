@@ -133,13 +133,13 @@ class KendaraanForm(BootstrapModelForm):
 class RumahDinasForm(BootstrapModelForm):
     foto_rumah_dinas = MultipleImageField(
         required=False,
-        label='Upload Foto Rumah Dinas',
+        label='Upload Foto Rumah Negara',
         widget=MultipleFileInput(attrs={
             'multiple': True,
             'accept': 'image/*',
             'class': 'form-control'
         }),
-        help_text='Bisa pilih lebih dari satu foto rumah dinas sekaligus.'
+        help_text='Bisa pilih lebih dari satu foto rumah negara sekaligus.'
     )
 
     class Meta:
@@ -149,5 +149,6 @@ class RumahDinasForm(BootstrapModelForm):
             'nup': 'NUP',
             'kode_barang': 'Kode Barang',
             'kode_rumah': 'Kode Rumah',
-            'nama_rumah': 'Nama Rumah Dinas',
+            'nama_rumah': 'Nama Rumah Negara',
+            'unit_kerja': 'Unit Kerja/Satker',
         }

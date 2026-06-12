@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
-{% block page_title %}SIP Rumah Dinas{% endblock %}
+{% block page_title %}SIP Rumah Negara{% endblock %}
 {% block content %}
 <div class="toolbar">
   {% include 'includes/list_search.html' %}
-  <a class="btn btn-primary" href="{% url 'rumah_dinas:sip_create' %}">+ Buat SIP Rumah Dinas</a>
+  <a class="btn btn-primary" href="{% url 'rumah_dinas:sip_create' %}">+ Buat SIP Rumah Negara</a>
 </div>
 <div class="card table-card">
   <div class="table-responsive">
     <table class="table" id="sipRumahTable">
-      <thead><tr><th>No SIP</th><th>Tanggal</th><th>Rumah</th><th>Pegawai</th><th>Periode</th><th>Keluarga</th><th>Status</th><th>Aksi</th></tr></thead>
+      <thead><tr><th>No SIP</th><th>Tanggal</th><th>Rumah Negara</th><th>Pemegang SIP</th><th>Penghuni Aktual</th><th>Periode</th><th>Sewa PNBP</th><th>Status</th><th>Aksi</th></tr></thead>
       <tbody>
       {% for o in object_list %}
       <tr>
@@ -16,12 +16,13 @@
         <td>{{ o.tanggal_sip }}</td>
         <td>{{ o.rumah_dinas }}</td>
         <td>{{ o.pegawai }}</td>
+        <td>{{ o.penghuni|default:o.pegawai }}</td>
         <td>{{ o.tanggal_mulai }} s.d. {{ o.tanggal_akhir }}</td>
-        <td>{{ o.jumlah_anggota_keluarga }}</td>
+        <td>{{ o.get_status_bayar_pnbp_display }}{% if o.tahun_pnbp %}<br><small>Tahun {{ o.tahun_pnbp }}</small>{% endif %}</td>
         <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
-        <td><a class="btn btn-secondary" href="{% url 'rumah_dinas:sip_update' o.pk %}">Edit</a></td>
+        <td><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-secondary btn-detail" href="{% url 'rumah_dinas:sip_detail' o.pk %}">Detail</a><a class="btn btn-secondary" href="{% url 'rumah_dinas:sip_update' o.pk %}">Edit</a><a class="btn btn-danger" href="{% url 'rumah_dinas:sip_delete' o.pk %}">Hapus</a></div></td>
       </tr>
-      {% empty %}<tr><td colspan="8" class="empty-state">Belum ada data SIP rumah dinas.</td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="9" class="empty-state">Belum ada data SIP rumah negara.</td></tr>{% endfor %}
       </tbody>
     </table>
   </div>

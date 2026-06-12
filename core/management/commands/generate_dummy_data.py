@@ -11,8 +11,8 @@ from rumah_dinas.models import SIPRumahDinas
 
 class Command(BaseCommand):
     help = (
-        "Generate 100 data dummy untuk Pegawai, Kendaraan, Rumah Dinas, "
-        "SIP Kendaraan, SIP Rumah Dinas, Service Kendaraan, dan Riwayat Kondisi."
+        "Generate 100 data dummy untuk Pegawai, Kendaraan, Rumah Negara, "
+        "SIP Kendaraan, SIP Rumah Negara, Service Kendaraan, dan Riwayat Kondisi."
     )
 
     def add_arguments(self, parser):
@@ -52,9 +52,9 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Selesai generate data dummy."))
         self.stdout.write(self.style.SUCCESS(f"Pegawai: {jumlah}"))
         self.stdout.write(self.style.SUCCESS(f"Kendaraan: {jumlah}"))
-        self.stdout.write(self.style.SUCCESS(f"Rumah Dinas: {jumlah}"))
+        self.stdout.write(self.style.SUCCESS(f"Rumah Negara: {jumlah}"))
         self.stdout.write(self.style.SUCCESS(f"SIP Kendaraan: {jumlah}"))
-        self.stdout.write(self.style.SUCCESS(f"SIP Rumah Dinas: {jumlah}"))
+        self.stdout.write(self.style.SUCCESS(f"SIP Rumah Negara: {jumlah}"))
         self.stdout.write(self.style.SUCCESS(f"Service Kendaraan: {jumlah}"))
         self.stdout.write(self.style.SUCCESS(f"Riwayat Kondisi Kendaraan: {jumlah}"))
 
@@ -92,7 +92,7 @@ class Command(BaseCommand):
 
     def _create_pegawai(self, jumlah, unit_list):
         jabatan_list = [
-            "Analis BMN", "Pengelola Kendaraan", "Pengelola Rumah Dinas",
+            "Analis BMN", "Pengelola Kendaraan", "Pengelola Rumah Negara",
             "Pranata Komputer", "Arsiparis", "Bendahara", "Verifikator",
             "Pengadministrasi Umum", "Kepala Subbagian", "Staf Operasional",
         ]
@@ -174,9 +174,9 @@ class Command(BaseCommand):
             rumah, _ = RumahDinas.objects.update_or_create(
                 kode_rumah=f"DMY-RD-{i:03d}",
                 defaults={
-                    "nama_rumah": f"Rumah Dinas Dummy {i:03d}",
+                    "nama_rumah": f"Rumah Negara Dummy {i:03d}",
                     "jenis_rumah": "Rumah Negara Golongan II" if i % 2 == 0 else "Rumah Negara Golongan I",
-                    "alamat": f"Komplek Rumah Dinas Dummy Blok {chr(65 + ((i - 1) % 26))} No. {i}, Jakarta",
+                    "alamat": f"Komplek Rumah Negara Dummy Blok {chr(65 + ((i - 1) % 26))} No. {i}, Jakarta",
                     "provinsi": "DKI Jakarta",
                     "kabupaten_kota": "Jakarta Pusat",
                     "kecamatan": "Gambir",
@@ -193,6 +193,7 @@ class Command(BaseCommand):
                     "nup": f"NUP-RD-{i:04d}",
                     "kode_barang": "3.01.01.01.001",
                     "nilai_perolehan": Decimal(350_000_000 + (i * 7_500_000)),
+                    "unit_kerja": pegawai_list[(i - 1) % len(pegawai_list)].unit_kerja,
                     "nomor_sertifikat": f"SERT-DMY-{i:06d}",
                     "status_tanah": "Milik Negara",
                     "kondisi": kondisi_list[(i - 1) % len(kondisi_list)],
@@ -238,13 +239,18 @@ class Command(BaseCommand):
                     "tanggal_sip": mulai - timedelta(days=14),
                     "rumah_dinas": rumah_list[(i - 1) % len(rumah_list)],
                     "pegawai": pegawai_list[(i + 13) % len(pegawai_list)],
+                    "penghuni": pegawai_list[(i + 17) % len(pegawai_list)] if i % 3 == 0 else pegawai_list[(i + 13) % len(pegawai_list)],
                     "tanggal_mulai": mulai,
                     "tanggal_akhir": akhir,
-                    "dasar_penerbitan": "Keputusan penggunaan rumah dinas dummy.",
+                    "dasar_penerbitan": "Keputusan penggunaan rumah negara dummy.",
                     "pejabat_penandatangan": "Pejabat Penandatangan Dummy",
                     "jumlah_anggota_keluarga": i % 6,
                     "status": status_list[(i - 1) % len(status_list)],
-                    "catatan": "Data dummy SIP rumah dinas.",
+                    "status_bayar_pnbp": "SUDAH_BAYAR" if i % 2 == 0 else "BELUM_BAYAR",
+                    "tahun_pnbp": today.year,
+                    "nilai_pnbp": Decimal(1500000 + (i * 25000)),
+                    "tanggal_bayar_pnbp": today - timedelta(days=i) if i % 2 == 0 else None,
+                    "catatan": "Data dummy SIP rumah negara. Penghuni aktual dapat berbeda dengan pemegang SIP.",
                 },
             )
 

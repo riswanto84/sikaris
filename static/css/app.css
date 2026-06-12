@@ -28,6 +28,7 @@ a{text-decoration:none;color:inherit}
 .btn:hover{transform:translateY(-1px)}
 .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;box-shadow:0 10px 24px rgba(21,101,245,.25)}
 .btn-secondary{background:#eef5ff;color:#144fae;border:1px solid #d3e3ff}
+.btn-danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
 .btn-light{background:#fff;color:#15356d;border:1px solid rgba(255,255,255,.7)}
 .btn-logout{width:100%}
 

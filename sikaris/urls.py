@@ -10,7 +10,10 @@ urlpatterns = [
     path('master/', include('master.urls')),
     path('kendaraan/', include('kendaraan.urls')),
     path('rumah-dinas/', include('rumah_dinas.urls')),
-    path('laporan/', include('laporan.urls')),
+    path('tanah-negara/', include('tanah_negara.urls')),
+    path('penghapusan-bmn/', include('penghapusan.urls')),
+    path('psp-bmn/', include('psp.urls')),
+    path('laporan/', include('laporan.urls')), 
 ]
 
 if settings.DEBUG:

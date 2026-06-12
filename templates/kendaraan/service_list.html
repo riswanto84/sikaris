@@ -20,7 +20,7 @@
         <td>{{ o.bengkel|default:'-' }}</td>
         <td><span class="badge {{ o.kondisi_sesudah }}">{{ o.get_kondisi_sesudah_display }}</span></td>
         <td>{{ o.total_biaya|rupiah }}</td>
-        <td><a class="btn btn-secondary" href="{% url 'kendaraan:service_update' o.pk %}">Edit</a></td>
+        <td><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-secondary btn-detail" href="{% url 'kendaraan:service_detail' o.pk %}">Detail</a><a class="btn btn-secondary" href="{% url 'kendaraan:service_update' o.pk %}">Edit</a><a class="btn btn-danger" href="{% url 'kendaraan:service_delete' o.pk %}">Hapus</a></div></td>
       </tr>
       {% empty %}<tr><td colspan="8" class="empty-state">Belum ada data service.</td></tr>{% endfor %}
       </tbody>

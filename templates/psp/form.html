@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block page_title %}Form Permohonan PSP BMN{% endblock %}
+{% block content %}
+<div class="card form-card">
+  <div class="form-header">
+    <h2>Form Permohonan PSP BMN</h2>
+    <p>Lengkapi data usulan PSP dari unit kerja dan unggah dokumen persyaratan. Jika jenis barang adalah kendaraan dengan nilai PSP di atas Rp100 juta, sistem otomatis mewajibkan foto kendaraan serta dokumen kepemilikan atau surat pernyataan pengganti.</p>
+  </div>
+
+  <div class="message info" style="margin-bottom:16px">
+    <strong>Checklist PSP:</strong> dokumen dasar wajib meliputi Surat Permohonan Satker, Surat Pengantar Eselon I, Daftar Kondisi Barang, Laporan Sub Kelompok Barang, dan Surat Pernyataan Kepala Satker. Untuk kendaraan di atas Rp100 juta, wajib tambah Foto Kendaraan dan Dokumen Kepemilikan/BPKB/STNK; jika tidak ada, lampirkan Surat Pernyataan Pengganti.
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="message error">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-grid">
+      {% for field in form %}
+      <p class="{% if field.name == 'lokasi_barang' or field.name == 'keterangan_barang' or field.name == 'catatan_unit' or field.name == 'catatan_biro_umum' or field.name == 'surat_permohonan_satker' or field.name == 'surat_pengantar_eselon1' or field.name == 'daftar_kondisi_barang' or field.name == 'laporan_sub_kelompok_barang' or field.name == 'surat_pernyataan_kepala_satker' or field.name == 'foto_kendaraan' or field.name == 'dokumen_kepemilikan' or field.name == 'surat_pernyataan_pengganti_kepemilikan' or field.name == 'dokumen_penetapan_psp' %}full{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="hint">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+      </p>
+      {% endfor %}
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Simpan Permohonan PSP</button>
+      <a class="btn btn-secondary" href="{% url 'psp:list' %}">Kembali</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

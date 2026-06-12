@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load rupiah %}
+{% block page_title %}Detail Permohonan PSP BMN{% endblock %}
+{% block content %}
+<div class="card detail-card">
+  <div class="detail-header">
+    <h2>{{ object.nomor_permohonan }}</h2>
+    <p>{{ object.get_jenis_barang_display }} - {{ object.nama_barang }}</p>
+  </div>
+
+  <div class="mini-stats-grid">
+    <div class="mini-stat-card"><div><small>Status</small><strong>{{ object.get_status_display }}</strong></div></div>
+    <div class="mini-stat-card"><div><small>Unit Kerja</small><strong>{{ object.unit_kerja|default:'-' }}</strong></div></div>
+    <div class="mini-stat-card"><div><small>Tanggal Usul</small><strong>{{ object.tanggal_permohonan|date:'d/m/Y' }}</strong></div></div>
+    <div class="mini-stat-card"><div><small>Nilai PSP</small><strong>{{ object.nilai_psp|rupiah }}</strong></div></div>
+  </div>
+
+  <div style="height:18px"></div>
+  <div class="detail-grid">
+    <div class="detail-item"><div class="detail-label">Jenis Barang</div><div class="detail-value">{{ object.get_jenis_barang_display }}</div></div>
+    <div class="detail-item"><div class="detail-label">Kategori Validasi</div><div class="detail-value">{{ object.kategori_nilai_display }}</div></div>
+    <div class="detail-item"><div class="detail-label">Kode Barang / NUP</div><div class="detail-value">{{ object.kode_barang|default:'-' }} / {{ object.nup|default:'-' }}</div></div>
+    <div class="detail-item"><div class="detail-label">Kondisi Barang</div><div class="detail-value">{{ object.kondisi_barang|default:'-' }}</div></div>
+    <div class="detail-item wide"><div class="detail-label">Lokasi Barang</div><div class="detail-value">{{ object.lokasi_barang|default:'-'|linebreaksbr }}</div></div>
+    <div class="detail-item wide"><div class="detail-label">Keterangan Barang</div><div class="detail-value">{{ object.keterangan_barang|default:'-'|linebreaksbr }}</div></div>
+  </div>
+
+  <div style="height:18px"></div>
+  <div class="card" style="padding:18px">
+    <h3>Checklist Dokumen Dasar</h3>
+    <div class="list-stack">
+      <div class="list-item"><div class="list-main"><strong>Surat Permohonan Satker</strong><span>{% if object.surat_permohonan_satker %}<a href="{{ object.surat_permohonan_satker.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Surat Pengantar/Usulan Eselon I</strong><span>{% if object.surat_pengantar_eselon1 %}<a href="{{ object.surat_pengantar_eselon1.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Daftar Kondisi Barang</strong><span>{% if object.daftar_kondisi_barang %}<a href="{{ object.daftar_kondisi_barang.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Laporan Sub Kelompok Barang</strong><span>{% if object.laporan_sub_kelompok_barang %}<a href="{{ object.laporan_sub_kelompok_barang.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Surat Pernyataan Kepala Satker</strong><span>{% if object.surat_pernyataan_kepala_satker %}<a href="{{ object.surat_pernyataan_kepala_satker.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+    </div>
+  </div>
+
+  <div style="height:18px"></div>
+  <div class="card" style="padding:18px">
+    <h3>Dokumen Tambahan Kendaraan & Proses Biro Umum</h3>
+    <div class="list-stack">
+      <div class="list-item"><div class="list-main"><strong>Foto Kendaraan</strong><span>{% if object.foto_kendaraan %}<a href="{{ object.foto_kendaraan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Dokumen Kepemilikan</strong><span>{% if object.dokumen_kepemilikan %}<a href="{{ object.dokumen_kepemilikan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Surat Pernyataan Pengganti Kepemilikan</strong><span>{% if object.surat_pernyataan_pengganti_kepemilikan %}<a href="{{ object.surat_pernyataan_pengganti_kepemilikan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Dokumen Penetapan PSP</strong><span>{% if object.dokumen_penetapan_psp %}<a href="{{ object.dokumen_penetapan_psp.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+    </div>
+    <table class="table" style="margin-top:14px">
+      <tbody>
+        <tr><th>Catatan Unit</th><td>{{ object.catatan_unit|default:'-'|linebreaksbr }}</td></tr>
+        <tr><th>Catatan Biro Umum</th><td>{{ object.catatan_biro_umum|default:'-'|linebreaksbr }}</td></tr>
+        <tr><th>Diverifikasi Oleh</th><td>{{ object.diverifikasi_oleh|default:'-' }}{% if object.tanggal_verifikasi %} - {{ object.tanggal_verifikasi|date:'d/m/Y' }}{% endif %}</td></tr>
+        <tr><th>Penetapan PSP</th><td>{{ object.nomor_penetapan_psp|default:'-' }}{% if object.tanggal_penetapan_psp %} - {{ object.tanggal_penetapan_psp|date:'d/m/Y' }}{% endif %}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="form-actions">
+    <a class="btn btn-secondary" href="{% url 'psp:update' object.pk %}">Edit</a>
+    <a class="btn btn-secondary" href="{% url 'psp:list' %}">Kembali</a>
+  </div>
+</div>
+{% endblock %}

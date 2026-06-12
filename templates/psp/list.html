@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load rupiah %}
+{% block page_title %}Permohonan PSP BMN{% endblock %}
+{% block content %}
+<div class="toolbar">
+  {% include 'includes/list_search.html' %}
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <a class="btn btn-primary" href="{% url 'psp:create' %}">+ Ajukan PSP BMN</a>
+  </div>
+</div>
+<div class="message info">
+  Unit kerja mengajukan permohonan Penetapan Status Penggunaan (PSP) BMN kepada Biro Umum. Sistem melakukan validasi dokumen dasar dan dokumen tambahan khusus kendaraan bernilai di atas Rp100 juta.
+</div>
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nomor/Tanggal</th>
+          <th>Unit Kerja</th>
+          <th>Jenis Barang</th>
+          <th>Nama Barang</th>
+          <th>Kode/NUP</th>
+          <th>Nilai PSP</th>
+          <th>Kategori Validasi</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for o in object_list %}
+        <tr>
+          <td><strong>{{ o.nomor_permohonan }}</strong><br><small>{{ o.tanggal_permohonan|date:'d/m/Y' }}</small></td>
+          <td>{{ o.unit_kerja|default:'-' }}<br><small>{{ o.pemohon|default:'-' }}</small></td>
+          <td>{{ o.get_jenis_barang_display }}</td>
+          <td>{{ o.nama_barang }}</td>
+          <td>{{ o.kode_barang|default:'-' }}<br><small>NUP: {{ o.nup|default:'-' }}</small></td>
+          <td>{{ o.nilai_psp|rupiah }}</td>
+          <td>{{ o.kategori_nilai_display }}</td>
+          <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
+          <td>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <a class="btn btn-secondary" href="{% url 'psp:detail' o.pk %}">Detail</a>
+              <a class="btn btn-secondary" href="{% url 'psp:update' o.pk %}">Edit</a>
+              <a class="btn btn-danger" href="{% url 'psp:delete' o.pk %}">Hapus</a>
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="9" class="empty-state">Belum ada permohonan PSP BMN.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'includes/pagination.html' %}
+</div>
+{% endblock %}

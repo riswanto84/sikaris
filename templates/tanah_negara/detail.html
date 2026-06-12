@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block page_title %}Detail Tanah Negara{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="toolbar">
+    <div><h2>{{ object.kode_tanah }} - {{ object.nama_tanah }}</h2><p>{{ object.alamat|default:'-' }}</p></div>
+    <div style="display:flex;gap:10px"><a class="btn btn-secondary" href="{% url 'tanah_negara:update' object.pk %}">Edit</a><a class="btn btn-danger" href="{% url 'tanah_negara:delete' object.pk %}">Hapus</a></div>
+  </div>
+
+  <h3>Identitas Aset</h3>
+  <div class="table-responsive"><table class="table"><tbody>
+    <tr><th>Kode Tanah</th><td>{{ object.kode_tanah }}</td><th>Kode Register</th><td>{{ object.kode_register|default:'-' }}</td></tr>
+    <tr><th>Kode Barang</th><td>{{ object.kode_barang|default:'-' }}</td><th>NUP</th><td>{{ object.nup|default:'-' }}</td></tr>
+    <tr><th>Nama Barang</th><td>{{ object.nama_barang|default:'-' }}</td><th>Nama Aset</th><td>{{ object.nama_aset|default:'-' }}</td></tr>
+    <tr><th>Status BMN</th><td>{{ object.status_bmn|default:'-' }}</td><th>Kondisi</th><td>{{ object.kondisi|default:'-' }}</td></tr>
+    <tr><th>Intra/Extra</th><td>{{ object.intra_extra|default:'-' }}</td><th>Kategori Status Tanah</th><td>{{ object.get_status_tanah_display }}</td></tr>
+  </tbody></table></div>
+
+  <h3>Satker dan Lokasi</h3>
+  <div class="table-responsive"><table class="table"><tbody>
+    <tr><th>Kode Satker</th><td>{{ object.kode_satker|default:'-' }}</td><th>Nama Satker</th><td>{{ object.nama_satker|default:'-' }}</td></tr>
+    <tr><th>Unit Kerja</th><td>{{ object.unit_kerja|default:'-' }}</td><th>Alamat</th><td>{{ object.alamat|default:'-' }}</td></tr>
+    <tr><th>RT/RW</th><td>{{ object.rt_rw|default:'-' }}</td><th>Kelurahan/Desa</th><td>{{ object.kelurahan_desa|default:object.kelurahan|default:'-' }}</td></tr>
+    <tr><th>Kecamatan</th><td>{{ object.kecamatan|default:'-' }}</td><th>Kab/Kota</th><td>{{ object.kab_kota|default:object.kabupaten_kota|default:'-' }}</td></tr>
+    <tr><th>Provinsi</th><td>{{ object.provinsi|default:'-' }}</td><th>Kode Pos</th><td>{{ object.kode_pos|default:'-' }}</td></tr>
+    <tr><th>Latitude</th><td>{{ object.latitude|default:'-' }}</td><th>Longitude</th><td>{{ object.longitude|default:'-' }}</td></tr>
+  </tbody></table></div>
+
+  <h3>Dokumen dan Sertifikasi</h3>
+  <div class="table-responsive"><table class="table"><tbody>
+    <tr><th>Jenis Dokumen</th><td>{{ object.jenis_dokumen|default:'-' }}</td><th>Nomor Dokumen</th><td>{{ object.nomor_dokumen|default:'-' }}</td></tr>
+    <tr><th>Status Sertifikasi</th><td>{{ object.status_sertifikasi|default:'-' }}</td><th>Jenis Sertipikat</th><td>{{ object.jenis_sertipikat|default:'-' }}</td></tr>
+    <tr><th>Nomor Sertifikat</th><td>{{ object.nomor_sertifikat|default:'-' }}</td><th>Atas Nama Sertifikat</th><td>{{ object.atas_nama_sertifikat|default:'-' }}</td></tr>
+    <tr><th>Tanggal Buku Pertama</th><td>{{ object.tanggal_buku_pertama|default:'-' }}</td><th>Tanggal Perolehan</th><td>{{ object.tanggal_perolehan|default:'-' }}</td></tr>
+    <tr><th>No PSP</th><td>{{ object.no_psp|default:'-' }}</td><th>Tanggal PSP</th><td>{{ object.tanggal_psp|default:'-' }}</td></tr>
+  </tbody></table></div>
+
+  <h3>Luas, Nilai, dan Pemanfaatan</h3>
+  <div class="table-responsive"><table class="table"><tbody>
+    <tr><th>Luas Tanah Seluruhnya</th><td>{{ object.luas_tanah_seluruhnya }} m²</td><th>Luas untuk Bangunan</th><td>{{ object.luas_tanah_untuk_bangunan }} m²</td></tr>
+    <tr><th>Luas Sarana Lingkungan</th><td>{{ object.luas_tanah_untuk_sarana_lingkungan }} m²</td><th>Luas Lahan Kosong</th><td>{{ object.luas_lahan_kosong }} m²</td></tr>
+    <tr><th>Luas Pemanfaatan</th><td>{{ object.luas_pemanfaatan }} m²</td><th>Jumlah Foto</th><td>{{ object.jumlah_foto }}</td></tr>
+    <tr><th>Nilai Perolehan</th><td>{{ object.nilai_perolehan }}</td><th>Nilai Buku</th><td>{{ object.nilai_buku }}</td></tr>
+    <tr><th>Status Penggunaan</th><td>{{ object.status_penggunaan|default:'-' }}</td><th>Status Pemanfaatan</th><td>{{ object.status_pemanfaatan|default:'-' }}</td></tr>
+    <tr><th>SBSK</th><td>{{ object.sbsk }}</td><th>Optimalisasi</th><td>{{ object.optimalisasi }}</td></tr>
+    <tr><th>Penghuni</th><td>{{ object.penghuni|default:'-' }}</td><th>Pengguna</th><td>{{ object.pengguna|default:'-' }}</td></tr>
+  </tbody></table></div>
+
+  <h3>DJKN dan Keterangan</h3>
+  <div class="table-responsive"><table class="table"><tbody>
+    <tr><th>Kode KPKNL</th><td>{{ object.kode_kpknl|default:'-' }}</td><th>Uraian KPKNL</th><td>{{ object.uraian_kpknl|default:'-' }}</td></tr>
+    <tr><th>Kanwil DJKN</th><td>{{ object.uraian_kanwil_djkn|default:'-' }}</td><th>Nama K/L</th><td>{{ object.nama_kl|default:'-' }}</td></tr>
+    <tr><th>Nama E1</th><td>{{ object.nama_e1|default:'-' }}</td><th>Nama Korwil</th><td>{{ object.nama_korwil|default:'-' }}</td></tr>
+    <tr><th>Status PMK</th><td>{{ object.status_pmk|default:'-' }}</td><th>Keterangan</th><td>{{ object.keterangan|default:'-' }}</td></tr>
+  </tbody></table></div>
+
+  {% if object.dokumen_sertifikat %}
+    <h3>Preview Sertifikat</h3>
+    {% if object.is_pdf %}
+    <div class="pdf-preview"><iframe src="{{ object.dokumen_sertifikat.url }}#toolbar=1&navpanes=0&scrollbar=1" title="Sertifikat"></iframe></div>
+    {% else %}<img src="{{ object.dokumen_sertifikat.url }}" style="max-width:100%;border-radius:16px;border:1px solid #e5ebf3">{% endif %}
+  {% endif %}
+  <div class="form-actions"><a class="btn btn-secondary" href="{% url 'tanah_negara:list' %}">Kembali</a></div>
+</div>
+<style>.pdf-preview{width:100%;height:720px;border:1px solid #dbe5f0;border-radius:18px;overflow:hidden}.pdf-preview iframe{width:100%;height:100%;border:0}.card h3{margin:24px 0 12px;color:#0f172a}</style>
+{% endblock %}
