@@ -50,25 +50,12 @@
 </div>
 {% endif %}
 
-{% if rumah_photo_previews or rumah_location_context %}
+{% if rumah_photo_previews %}
 <div class="card detail-card detail-preview-card">
   <div class="detail-header">
-    <h2>Data Master Rumah Negara</h2>
-    <p>Foto, latitude, longitude, dan peta dari data master rumah negara terkait SIP ini.</p>
+    <h2>Foto Rumah Negara</h2>
+    <p>Foto diambil dari data master rumah negara yang terkait dengan SIP ini.</p>
   </div>
-  {% if rumah_location_context %}
-  <div class="detail-grid" style="margin-bottom:14px">
-    <div class="detail-item"><div class="detail-label">Latitude</div><div class="detail-value">{{ rumah_location_context.latitude }}</div></div>
-    <div class="detail-item"><div class="detail-label">Longitude</div><div class="detail-value">{{ rumah_location_context.longitude }}</div></div>
-  </div>
-  <div class="maps-preview-frame">
-    <iframe src="{{ rumah_location_context.embed_url }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Preview Google Maps Rumah Negara"></iframe>
-  </div>
-  <div class="form-actions" style="margin-top:14px">
-    <a class="btn btn-secondary" href="{{ rumah_location_context.open_url }}" target="_blank" rel="noopener">Buka di Google Maps</a>
-  </div>
-  {% endif %}
-  {% if rumah_photo_previews %}
   <div class="asset-photo-preview-grid">
     {% for foto in rumah_photo_previews %}
     <a class="asset-photo-preview-card" href="{{ foto.url }}" target="_blank" rel="noopener">
@@ -77,7 +64,6 @@
     </a>
     {% endfor %}
   </div>
-  {% endif %}
 </div>
 {% endif %}
 
@@ -153,6 +139,31 @@
         </div>
       </div>
     {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if rumah_location_context %}
+<div class="card detail-card detail-preview-card">
+  <div class="detail-header">
+    <h2>Preview Lokasi Rumah Negara</h2>
+    <p>Peta ditampilkan berdasarkan latitude dan longitude pada tabel master Rumah Negara/Rumah Dinas yang terkait dengan SIP ini.</p>
+  </div>
+  <div class="detail-grid" style="margin-bottom:14px">
+    <div class="detail-item">
+      <div class="detail-label">Latitude</div>
+      <div class="detail-value">{{ rumah_location_context.latitude }}</div>
+    </div>
+    <div class="detail-item">
+      <div class="detail-label">Longitude</div>
+      <div class="detail-value">{{ rumah_location_context.longitude }}</div>
+    </div>
+  </div>
+  <div class="maps-preview-frame">
+    <iframe src="{{ rumah_location_context.embed_url }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Preview Google Maps Rumah Negara"></iframe>
+  </div>
+  <div class="form-actions" style="margin-top:14px">
+    <a class="btn btn-secondary" href="{{ rumah_location_context.open_url }}" target="_blank" rel="noopener">Buka di Google Maps</a>
   </div>
 </div>
 {% endif %}

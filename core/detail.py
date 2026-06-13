@@ -176,6 +176,9 @@ class GenericDetailMixin:
         if related_rumah:
             lat = getattr(related_rumah, 'latitude', None)
             lng = getattr(related_rumah, 'longitude', None)
+            if lng in [None, '']:
+                # Antisipasi apabila ada versi lama/varian field yang memakai nama long_latitude.
+                lng = getattr(related_rumah, 'long_latitude', None)
             if lat not in [None, ''] and lng not in [None, '']:
                 lat_s = normalize_coordinate_for_maps(lat)
                 lng_s = normalize_coordinate_for_maps(lng)
@@ -184,8 +187,18 @@ class GenericDetailMixin:
                     rumah_location_context = {
                         'latitude': lat_s,
                         'longitude': lng_s,
-                        'embed_url': 'https://maps.google.com/maps?' + urlencode({'hl':'id','ll':query,'q':query,'z':18,'t':'m','output':'embed'}),
-                        'open_url': 'https://www.google.com/maps/search/?' + urlencode({'api':1,'query':query}),
+                        'embed_url': 'https://maps.google.com/maps?' + urlencode({
+                            'hl': 'id',
+                            'll': query,
+                            'q': query,
+                            'z': 18,
+                            't': 'm',
+                            'output': 'embed',
+                        }),
+                        'open_url': 'https://www.google.com/maps/search/?' + urlencode({
+                            'api': 1,
+                            'query': query,
+                        }),
                     }
             for f_name, caption in [('foto_depan', 'Foto depan rumah')]:
                 file_obj = getattr(related_rumah, f_name, None)
