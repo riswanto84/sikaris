@@ -261,6 +261,24 @@
         <nav class="nav-menu">
             <a class="nav-link" href="{% url 'dashboard' %}"><span class="nav-icon">⌂</span><span>Dashboard</span></a>
 
+            {% if is_pemeliharaan_strict %}
+            {# FINAL: menu khusus Pemeliharaan Kendaraan. Jangan tampilkan master umum/SIP rumah/PSP/penghapusan. #}
+            <div class="nav-group">
+                <div class="nav-group-title">Referensi Kendaraan</div>
+                <a class="nav-link" href="{% url 'master:kendaraan_list' %}"><span class="nav-icon">🚘</span><span>Daftar Kendaraan</span></a>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-group-title">Pemeliharaan Kendaraan</div>
+                <a class="nav-link" href="{% url 'kendaraan:service_list' %}"><span class="nav-icon">🛠</span><span>Service Kendaraan</span></a>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-group-title">Laporan</div>
+                <a class="nav-link" href="{% url 'laporan:index' %}"><span class="nav-icon">📊</span><span>Laporan Kendaraan</span></a>
+            </div>
+
+            {% else %}
             {% if can_access_master %}
             <div class="nav-group">
                 <div class="nav-group-title">Master Data</div>
@@ -268,11 +286,6 @@
                 <a class="nav-link" href="{% url 'master:kendaraan_list' %}"><span class="nav-icon">🚘</span><span>Kendaraan</span></a>
                 <a class="nav-link" href="{% url 'master:rumah_list' %}"><span class="nav-icon">🏠</span><span>Rumah Negara</span></a>
                 <a class="nav-link" href="{% url 'master:unitkerja_list' %}"><span class="nav-icon">▣</span><span>Unit Kerja</span></a>
-            </div>
-            {% elif is_pemeliharaan_kendaraan %}
-            <div class="nav-group">
-                <div class="nav-group-title">Referensi Kendaraan</div>
-                <a class="nav-link" href="{% url 'master:kendaraan_list' %}"><span class="nav-icon">🚘</span><span>Daftar Kendaraan</span></a>
             </div>
             {% endif %}
 
@@ -293,7 +306,6 @@
                 <a class="nav-link" href="{% url 'kendaraan:service_list' %}"><span class="nav-icon">🛠</span><span>Service Kendaraan</span></a>
             </div>
             {% endif %}
-
 
             {% if can_access_penghapusan %}
             <div class="nav-group">
@@ -329,6 +341,7 @@
                 <a class="nav-link" href="{% url 'login_history_list' %}"><span class="nav-icon">🕘</span><span>Riwayat Login</span></a>
                 <a class="nav-link" href="{% url 'visit_counter_list' %}"><span class="nav-icon">👁️</span><span>Counter Kunjungan</span></a>
             </div>
+            {% endif %}
             {% endif %}
         </nav>
 
