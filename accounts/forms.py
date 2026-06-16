@@ -48,7 +48,7 @@ class UserCreateForm(UserCreationForm):
         queryset=Group.objects.all().order_by('name'),
         required=False,
         widget=forms.CheckboxSelectMultiple,
-        help_text='Pilih role user. Contoh: Admin System, Biro Umum, Pengelola BMN, Pemeliharaan Kendaraan.',
+        help_text='Pilih role user. Contoh: Admin System, Biro Umum, Kepala Biro Umum, Sekretaris Jenderal, Pengelola BMN, Pemeliharaan Kendaraan.',
     )
     unit_kerja = forms.ModelChoiceField(
         label='Unit Kerja / Satker',

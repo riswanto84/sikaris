@@ -9,7 +9,7 @@ class Command(BaseCommand):
     help = 'Membuat role dan user demo SIKARIS'
 
     def handle(self, *args, **kwargs):
-        roles = ['Admin System', 'Pengelola BMN', 'Pemeliharaan Kendaraan', 'Biro Umum']
+        roles = ['Admin System', 'Pengelola BMN', 'Pemeliharaan Kendaraan', 'Biro Umum', 'Sekretaris Jenderal', 'Kepala Biro Umum', 'Pejabat Penerbit SIP', 'Sekretaris Ditjen', 'Sekretaris Eselon I', 'Kepala Sentra', 'Kepala Balai']
         for role in roles:
             Group.objects.get_or_create(name=role)
 
@@ -25,6 +25,8 @@ class Command(BaseCommand):
         demos = [
             ('adminsystem', 'Admin System', True, None),
             ('biroumum', 'Biro Umum', False, biro_umum_unit),
+            ('sekjen', 'Sekretaris Jenderal', False, None),
+            ('kabiroumum', 'Kepala Biro Umum', False, biro_umum_unit),
             ('bmn', 'Pengelola BMN', False, unit_demo),
             ('pemeliharaan', 'Pemeliharaan Kendaraan', False, unit_demo),
         ]

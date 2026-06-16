@@ -4,12 +4,12 @@
 {% block content %}
 <div class="toolbar">
   {% include 'includes/list_search.html' %}
-  {% if can_access_master %}<div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="{% url 'master:kendaraan_import' %}">Impor Excel/CSV</a><a class="btn btn-primary" href="{% url 'master:kendaraan_create' %}">+ Tambah Kendaraan</a></div>{% endif %}
+  {% if can_access_master %}<div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="{% url 'master:kendaraan_export' 'pdf' %}?{{ request.GET.urlencode }}">Export PDF</a><a class="btn btn-secondary" href="{% url 'master:kendaraan_export' 'xlsx' %}?{{ request.GET.urlencode }}">Export Excel</a><a class="btn btn-secondary" href="{% url 'master:kendaraan_export' 'csv' %}?{{ request.GET.urlencode }}">Export CSV</a><a class="btn btn-secondary" href="{% url 'master:kendaraan_import' %}">Impor Excel/CSV</a><a class="btn btn-primary" href="{% url 'master:kendaraan_create' %}">+ Tambah Kendaraan</a></div>{% endif %}
 </div>
 <div class="card table-card">
   <div class="table-responsive">
     <table class="table">
-      <thead><tr><th>No Polisi</th><th>Merek/Tipe</th><th>Jenis</th><th>Tahun</th><th>Unit Kerja</th><th>Pengguna</th><th>Nilai Perolehan</th><th>Kondisi</th><th>Status</th><th>Aksi</th></tr></thead>
+      <thead><tr><th>No Polisi</th><th>Merek/Tipe</th><th>Jenis</th><th>Tahun</th><th>Unit Kerja</th><th>Nilai Perolehan</th><th>Kondisi</th><th>Status</th><th>Aksi</th></tr></thead>
       <tbody>
       {% for o in object_list %}
       <tr>
@@ -18,13 +18,12 @@
         <td>{{ o.get_jenis_kendaraan_display|default:o.jenis_kendaraan|default:'-' }}</td>
         <td>{{ o.tahun_perolehan|default:'-' }}</td>
         <td>{{ o.unit_kerja|default:'-' }}</td>
-        <td>{{ o.pengguna|default:'-' }}</td>
         <td>{{ o.nilai_perolehan|rupiah }}</td>
         <td><span class="badge {{ o.kondisi }}">{{ o.get_kondisi_display }}</span></td>
         <td>{{ o.get_status_pemanfaatan_display }}</td>
         <td>{% if can_access_master %}<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-secondary btn-detail" href="{% url 'master:kendaraan_detail' o.pk %}">Detail</a><a class="btn btn-secondary" href="{% url 'master:kendaraan_update' o.pk %}">Edit</a><a class="btn btn-danger" href="{% url 'master:kendaraan_delete' o.pk %}">Hapus</a></div>{% else %}-{% endif %}</td>
       </tr>
-      {% empty %}<tr><td colspan="10" class="empty-state">Belum ada data kendaraan.</td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="9" class="empty-state">Belum ada data kendaraan.</td></tr>{% endfor %}
       </tbody>
     </table>
   </div>

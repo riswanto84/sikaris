@@ -3,7 +3,16 @@
 {% block content %}
 <div class="toolbar">
   {% include 'includes/list_search.html' %}
-  <a class="btn btn-primary" href="{% url 'master:unitkerja_create' %}">+ Tambah Unit Kerja</a>
+  {% if is_admin_system or is_biro_umum %}
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <a class="btn btn-secondary" href="{% url 'master:unitkerja_export' 'pdf' %}?{{ request.GET.urlencode }}">Export PDF</a>
+    <a class="btn btn-secondary" href="{% url 'master:unitkerja_export' 'xlsx' %}?{{ request.GET.urlencode }}">Export Excel</a>
+    <a class="btn btn-secondary" href="{% url 'master:unitkerja_export' 'csv' %}?{{ request.GET.urlencode }}">Export CSV</a>
+    <a class="btn btn-secondary" href="{% url 'master:unitkerja_import' %}">Import Excel/CSV</a>
+    <a class="btn btn-secondary" href="{% url 'master:unitkerja_template_import' %}">Download Template Import</a>
+    <a class="btn btn-primary" href="{% url 'master:unitkerja_create' %}">+ Tambah Unit Kerja</a>
+  </div>
+  {% endif %}
 </div>
 <div class="card table-card">
   <div class="table-responsive">

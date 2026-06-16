@@ -5,9 +5,144 @@
   <div style="display:flex;gap:10px;flex-wrap:wrap">
     {% if back_url %}<a class="btn btn-light" href="{{ back_url }}">← Kembali</a>{% endif %}
     {% if edit_url %}<a class="btn btn-secondary" href="{{ edit_url }}">Edit</a>{% endif %}
-    {% if delete_url %}<a class="btn btn-danger" href="{{ delete_url }}">Hapus</a>{% endif %}
+    {% if delete_url and not is_sekretaris_jenderal and not is_kepala_biro_umum %}<a class="btn btn-danger" href="{{ delete_url }}">Hapus</a>{% endif %}
+
+    {% if can_generate_concept_pdf %}
+      {% if object.kendaraan %}
+      <form method="post" action="{% url 'kendaraan:sip_generate_konsep_pdf' object.pk %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Generate Konsep PDF</button></form>
+      {% elif object.rumah_dinas %}
+      <form method="post" action="{% url 'rumah_dinas:sip_generate_konsep_pdf' object.pk %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Generate Konsep PDF</button></form>
+      {% endif %}
+    {% endif %}
+
+    {% if object.kendaraan %}
+      {% if can_submit_to_kabiro and object.status == 'DRAFT' or can_submit_to_kabiro and object.status == 'DITOLAK' %}
+      <form method="post" action="{% url 'kendaraan:sip_ajukan_kabiro' object.pk %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">Ajukan ke {{ tujuan_pengajuan_sip_kendaraan|default:'Pejabat Penerbit' }}</button></form>
+      {% endif %}
+      {% if can_approve_as_kabiro and object.status == 'DIAJUKAN' %}
+      <form method="post" action="{% url 'kendaraan:sip_setujui_kabiro' object.pk %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Setujui SIP</button></form>
+      {% endif %}
+    {% elif object.rumah_dinas %}
+      {% if can_submit_to_sekjen and object.status == 'DRAFT' or can_submit_to_sekjen and object.status == 'DITOLAK' %}
+      <form method="post" action="{% url 'rumah_dinas:sip_ajukan_sekjen' object.pk %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">Ajukan ke Sekjen</button></form>
+      {% endif %}
+      {% if can_approve_as_sekjen and object.status == 'DIAJUKAN' %}
+      <form method="post" action="{% url 'rumah_dinas:sip_setujui_sekjen' object.pk %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Setujui SIP</button></form>
+      {% endif %}
+    {% endif %}
   </div>
 </div>
+
+
+{% if object.kendaraan and can_upload_tte_pengusul %}
+<div class="card detail-card" style="margin-bottom:18px; border-left: 5px solid #2563eb;">
+  <div class="detail-header">
+    <h2>Upload SIP yang Sudah TTE Pegawai Calon Pemegang SIP</h2>
+    <p>
+      Upload file PDF SIP Kendaraan yang sudah ditandatangani elektronik/TTE oleh pegawai calon pemegang SIP.
+      Fitur ini tersedia untuk Pengelola BMN selama SIP belum disetujui oleh Kepala Biro/Sekretaris/Kepala Sentra/Kepala Balai.
+    </p>
+    {% if not has_konsep_pdf_for_tte_pengusul %}
+      <div class="alert alert-warning" style="margin-top:10px">
+        Silakan klik <b>Generate Konsep PDF</b> terlebih dahulu, kemudian lakukan TTE oleh pegawai calon pemegang SIP, lalu upload file PDF hasil TTE pada form ini.
+      </div>
+    {% endif %}
+  </div>
+  <form method="post" enctype="multipart/form-data" action="{% url 'kendaraan:sip_upload_tte_pengusul_pdf' object.pk %}">
+    {% csrf_token %}
+    <input type="file" name="file_tte_pengusul" accept="application/pdf,.pdf" class="form-control" required>
+    <div class="form-actions" style="margin-top:12px">
+      <button type="submit" class="btn btn-primary">Upload SIP TTE Pegawai Calon Pemegang</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+
+
+{% if object.rumah_dinas and can_upload_tte_calon_pengguna_rumah %}
+<div class="card detail-card" style="margin-bottom:18px; border-left: 5px solid #2563eb;">
+  <div class="detail-header">
+    <h2>Upload SIP yang Sudah TTE Calon Pengguna Rumah</h2>
+    <p>
+      Upload file PDF SIP Rumah Negara yang sudah ditandatangani elektronik/TTE oleh calon pengguna rumah.
+      Fitur ini tersedia setelah konsep PDF digenerate dan sebelum SIP disetujui/terbit oleh Sekjen.
+    </p>
+    {% if not has_konsep_pdf_rumah_for_tte %}
+      <div class="alert alert-warning" style="margin-top:10px">
+        Silakan klik <b>Generate Konsep PDF</b> terlebih dahulu, lakukan TTE oleh calon pengguna rumah, lalu upload file PDF hasil TTE pada form ini.
+      </div>
+    {% endif %}
+  </div>
+  <form method="post" enctype="multipart/form-data" action="{% url 'rumah_dinas:sip_upload_tte_calon_pengguna_pdf' object.pk %}">
+    {% csrf_token %}
+    <input type="file" name="file_tte_calon_pengguna" accept="application/pdf,.pdf" class="form-control" required>
+    <div class="form-actions" style="margin-top:12px">
+      <button type="submit" class="btn btn-primary">Upload SIP TTE Calon Pengguna Rumah</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+
+{% if object.rumah_dinas and can_upload_tte_sekjen_rumah %}
+<div class="card detail-card" style="margin-bottom:18px; border-left: 5px solid #16a34a;">
+  <div class="detail-header">
+    <h2>Upload SIP yang Sudah TTE Sekjen/BSrE</h2>
+    <p>
+      Upload file PDF SIP Rumah Negara final yang sudah ditandatangani elektronik/TTE oleh Sekretaris Jenderal melalui BSrE/BeSign.
+      Setelah upload berhasil, status SIP berubah menjadi <b>Terbit</b> dan preview Detail SIP menampilkan file final TTE ini.
+    </p>
+  </div>
+  <form method="post" enctype="multipart/form-data" action="{% url 'rumah_dinas:sip_upload_tte_sekjen_pdf' object.pk %}">
+    {% csrf_token %}
+    <input type="file" name="file_signed_pdf" accept="application/pdf,.pdf" class="form-control" required>
+    <div class="form-actions" style="margin-top:12px">
+      <button type="submit" class="btn btn-primary">Upload SIP TTE Sekjen/BSrE</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+{% if object.kendaraan and can_upload_sip_kendaraan_bsre %}
+<div class="card detail-card" style="margin-bottom:18px">
+  <div class="detail-header">
+    <h2>Upload SIP Final TTE Pejabat Penerbit</h2>
+    <p>Upload file PDF SIP Kendaraan final yang sudah TTE oleh Kepala Biro/Sekretaris/Kepala Sentra/Kepala Balai. Setelah upload, preview Detail SIP akan menampilkan file final terakhir tersebut.</p>
+  </div>
+  <form method="post" enctype="multipart/form-data" action="{% url 'kendaraan:sip_upload_bsre_pdf' object.pk %}">
+    {% csrf_token %}
+    <input type="file" name="file_signed_pdf" accept="application/pdf,.pdf" class="form-control" required>
+    <div class="form-actions" style="margin-top:12px"><button type="submit" class="btn btn-primary">Upload SIP Final TTE Pejabat</button></div>
+  </form>
+</div>
+{% endif %}
+
+{% if object.kendaraan and can_approve_as_kabiro and object.status == 'DIAJUKAN' %}
+<div class="card detail-card" style="margin-bottom:18px">
+  <div class="detail-header">
+    <h2>Tolak Pengajuan SIP Kendaraan</h2>
+    <p>Catatan penolakan wajib diisi agar operator dapat memperbaiki konsep SIP.</p>
+  </div>
+  <form method="post" action="{% url 'kendaraan:sip_tolak_kabiro' object.pk %}">
+    {% csrf_token %}
+    <textarea name="catatan_penolakan" class="form-control" rows="3" placeholder="Tuliskan alasan/catatan penolakan"></textarea>
+    <div class="form-actions" style="margin-top:12px"><button type="submit" class="btn btn-danger">Tolak SIP</button></div>
+  </form>
+</div>
+{% elif object.rumah_dinas and can_approve_as_sekjen and object.status == 'DIAJUKAN' %}
+<div class="card detail-card" style="margin-bottom:18px">
+  <div class="detail-header">
+    <h2>Tolak Pengajuan SIP Rumah Negara</h2>
+    <p>Catatan penolakan wajib diisi agar operator dapat memperbaiki konsep SIP.</p>
+  </div>
+  <form method="post" action="{% url 'rumah_dinas:sip_tolak_sekjen' object.pk %}">
+    {% csrf_token %}
+    <textarea name="catatan_penolakan" class="form-control" rows="3" placeholder="Tuliskan alasan/catatan penolakan"></textarea>
+    <div class="form-actions" style="margin-top:12px"><button type="submit" class="btn btn-danger">Tolak SIP</button></div>
+  </form>
+</div>
+{% endif %}
 
 <div class="card detail-card">
   <div class="detail-header">
@@ -65,6 +200,28 @@
     {% endfor %}
   </div>
 </div>
+{% endif %}
+
+
+{% if approval_docs %}
+  {% for doc in approval_docs %}
+  <div class="card detail-card detail-preview-card">
+    <div class="detail-header">
+      <h2>{{ doc.label }}</h2>
+      <p>Dokumen PDF hasil generate konsep/final untuk proses persetujuan dan TTE.</p>
+    </div>
+    {% if doc.is_pdf %}
+      <div class="pdf-preview-frame">
+        <iframe src="{{ doc.url }}#toolbar=1&navpanes=0&scrollbar=1" title="{{ doc.label }}"></iframe>
+      </div>
+      <div class="form-actions" style="margin-top:14px">
+        <a class="btn btn-secondary" href="{{ doc.url }}" target="_blank" rel="noopener">Buka PDF</a>
+      </div>
+    {% else %}
+      <div class="empty-state"><a href="{{ doc.url }}" target="_blank" rel="noopener">Buka dokumen</a></div>
+    {% endif %}
+  </div>
+  {% endfor %}
 {% endif %}
 
 {% if dokumen_sip_url %}

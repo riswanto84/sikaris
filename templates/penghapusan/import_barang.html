@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block page_title %}Import Barang Penghapusan BMN{% endblock %}
+{% block content %}
+<div class="card form-card">
+  <div class="form-header">
+    <h2>Import Barang yang Akan Dihapus</h2>
+    <p>{{ object.nomor_permohonan }} - {{ object.nama_barang }}</p>
+  </div>
+  <div class="message info">
+    Gunakan template Excel agar data barang banyak dapat diunggah sekaligus. Cocok untuk usulan penghapusan banyak unit barang/aset.
+  </div>
+  <form method="post" enctype="multipart/form-data" class="form-grid">
+    {% csrf_token %}
+    <div class="form-group full-width">
+      <label>{{ form.file_excel.label }}</label>
+      {{ form.file_excel }}
+      <small>{{ form.file_excel.help_text }}</small>
+    </div>
+    <div class="form-group full-width">
+      <label>{{ form.replace_existing }} {{ form.replace_existing.label }}</label>
+    </div>
+    <div class="form-actions full-width">
+      <button type="submit" class="btn btn-primary">Upload & Import</button>
+      <a class="btn btn-secondary" href="{% url 'penghapusan:template_import_barang' %}">Download Template Excel</a>
+      <a class="btn btn-secondary" href="{% url 'penghapusan:detail' object.pk %}">Kembali</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

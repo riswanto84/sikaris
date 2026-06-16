@@ -8,7 +8,7 @@
     <p>{{ object.get_jenis_aset_display }} - {{ object.nama_barang }}</p>
   </div>
   <div class="mini-stats-grid">
-    <div class="mini-stat-card"><div><small>Status</small><strong>{{ object.get_status_display }}</strong></div></div>
+    <div class="mini-stat-card"><div><small>Status</small><strong>{{ object.status_label_alur }}</strong></div></div>
     <div class="mini-stat-card"><div><small>Unit Kerja</small><strong>{{ object.unit_kerja|default:'-' }}</strong></div></div>
     <div class="mini-stat-card"><div><small>Tanggal Usul</small><strong>{{ object.tanggal_permohonan|date:'d/m/Y' }}</strong></div></div>
     <div class="mini-stat-card"><div><small>Nilai</small><strong>{{ object.nilai_perolehan|rupiah }}</strong></div></div>
@@ -21,6 +21,66 @@
     {% if object.pesan_pengingat_pemohon %}<br>{{ object.pesan_pengingat_pemohon }}{% endif %}
     {% if object.pesan_pengingat_verifikator %}<br>{{ object.pesan_pengingat_verifikator }}{% endif %}
   </div>
+  {% if alur_nota_penghapusan %}
+  <div style="height:18px"></div>
+  <div class="message info">
+    <strong>Rule Nota Dinas Penghapusan:</strong><br>
+    Dari: {{ alur_nota_penghapusan.dari }}<br>
+    Tujuan: {{ alur_nota_penghapusan.tujuan }}<br>
+    {{ alur_nota_penghapusan.keterangan }}
+  </div>
+  {% endif %}
+
+  {% if can_verifikasi_penghapusan or can_persetujuan_dirjen_rehsos or can_penetapan_penghapusan %}
+  <div style="height:18px"></div>
+  <div class="card" style="padding:18px">
+    {% if can_verifikasi_penghapusan %}
+      <h3>Verifikasi Usulan Penghapusan - Biro Umum</h3>
+      <p class="small-muted">Alur disamakan dengan PSP: Biro Umum memverifikasi, memastikan dokumen final/gabungan tersedia, lalu meneruskan ke Dirjen Rehsos khusus Sentra Rehsos atau langsung ke Sekjen untuk unit lainnya.</p>
+      <form method="post" enctype="multipart/form-data" action="{% url 'penghapusan:proses' object.pk %}" style="display:grid;gap:12px;margin-top:12px">
+        {% csrf_token %}
+        <textarea class="form-control" name="catatan" rows="3" placeholder="Catatan Biro Umum / alasan perbaikan">{{ object.catatan_biro_umum|default:'' }}</textarea>
+        <label><strong>Dokumen Penghapusan SIKARIS Final/Gabungan (PDF)</strong></label>
+        <input class="form-control" type="file" name="dokumen_penghapusan_final" accept="application/pdf,.pdf">
+        {% if object.dokumen_persetujuan %}<small class="hint">Dokumen final saat ini: <a href="{{ object.dokumen_persetujuan.url }}" target="_blank">Lihat dokumen</a></small>{% else %}<small class="hint">Wajib diupload sebelum diteruskan sesuai alur PSP.</small>{% endif %}
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-secondary" name="action" value="verifikasi_biro">Tandai Diverifikasi</button>
+          <button class="btn btn-primary" name="action" value="teruskan_sekjen">Teruskan ke Sekjen</button>
+          <button class="btn btn-danger" name="action" value="kembalikan_biro">Kembalikan untuk Perbaikan</button>
+        </div>
+      </form>
+    {% endif %}
+
+    {% if can_persetujuan_dirjen_rehsos %}
+      <h3>Persetujuan Dirjen Rehsos</h3>
+      <p class="small-muted">Khusus usulan penghapusan dari Sentra di bawah Ditjen Rehabilitasi Sosial. Setelah disetujui, usulan diteruskan kepada Sekretaris Jenderal.</p>
+      <form method="post" action="{% url 'penghapusan:proses' object.pk %}" style="display:grid;gap:12px;margin-top:12px">
+        {% csrf_token %}
+        <textarea class="form-control" name="catatan" rows="3" placeholder="Catatan Dirjen Rehsos / alasan penolakan"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" name="action" value="setujui_dirjen_rehsos">Setujui & Teruskan ke Sekjen</button>
+          <button class="btn btn-danger" name="action" value="tolak_dirjen_rehsos">Tolak/Kembalikan</button>
+        </div>
+      </form>
+    {% endif %}
+
+    {% if can_penetapan_penghapusan %}
+      <h3>Penetapan SK Penghapusan - Sekjen</h3>
+      <p class="small-muted">Sekjen menetapkan SK Penghapusan BMN setelah usulan diverifikasi Biro Umum atau diteruskan oleh Dirjen Rehsos untuk Sentra Rehsos.</p>
+      <form method="post" enctype="multipart/form-data" action="{% url 'penghapusan:proses' object.pk %}" style="display:grid;gap:12px;margin-top:12px">
+        {% csrf_token %}
+        <textarea class="form-control" name="catatan" rows="3" placeholder="Catatan Sekjen / alasan penolakan"></textarea>
+        <label><strong>Dokumen SK Penghapusan Final (PDF, opsional)</strong></label>
+        <input class="form-control" type="file" name="dokumen_sk_penghapusan" accept="application/pdf,.pdf">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" name="action" value="tetapkan_sekjen">Tetapkan SK Penghapusan</button>
+          <button class="btn btn-danger" name="action" value="tolak_sekjen">Tolak Usulan</button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <div style="height:18px"></div>
   <div class="card" style="padding:18px">
     <h3>Data Aset</h3>
@@ -35,6 +95,29 @@
       </tbody>
     </table>
   </div>
+
+  <div style="height:18px"></div>
+  <div class="card" style="padding:18px">
+    <h3>Daftar Barang yang Akan Dihapus</h3>
+    <p class="small-muted">Untuk usulan penghapusan banyak unit barang, gunakan template Excel lalu import daftar barang pada menu ini.</p>
+    {% if not is_sekretaris_jenderal %}
+      <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn btn-secondary" href="{% url 'penghapusan:import_barang' object.pk %}">Import Barang dari Excel</a>
+        <a class="btn btn-secondary" href="{% url 'penghapusan:template_import_barang' %}">Download Template Excel</a>
+      </div>
+    {% endif %}
+    <table class="table">
+      <thead><tr><th>No</th><th>Kode/NUP</th><th>Nama Barang</th><th>Qty</th><th>Nilai</th><th>Kondisi</th><th>Alasan</th></tr></thead>
+      <tbody>
+      {% for item in object.detail_barang.all %}
+        <tr><td>{{ item.nomor_urut }}</td><td>{{ item.kode_barang|default:'-' }}<br><small>{{ item.nup|default:'-' }}</small></td><td>{{ item.nama_barang }}</td><td>{{ item.kuantitas }}</td><td>{{ item.nilai_perolehan|rupiah }}</td><td>{{ item.kondisi_barang|default:'-' }}</td><td>{{ item.get_alasan_penghapusan_display }}</td></tr>
+      {% empty %}
+        <tr><td colspan="7" class="empty-state">Belum ada detail barang banyak. Import Excel jika usulan penghapusan terdiri dari banyak unit barang.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
   <div style="height:18px"></div>
   <div class="card" style="padding:18px">
     <h3>Dokumen</h3>
@@ -45,7 +128,7 @@
       {% if foto_kondisi_list %}
       <div class="list-item"><div class="list-main"><strong>Galeri Foto Kondisi Aset</strong><span>{{ foto_kondisi_list|length }} foto tersimpan</span></div></div>
       {% endif %}
-      <div class="list-item"><div class="list-main"><strong>Dokumen Persetujuan</strong><span>{% if object.dokumen_persetujuan %}<a href="{{ object.dokumen_persetujuan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Dokumen Penghapusan SIKARIS Final/Gabungan</strong><span>{% if object.dokumen_persetujuan %}<a href="{{ object.dokumen_persetujuan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
       <div class="list-item"><div class="list-main"><strong>SK Penghapusan</strong><span>{% if object.dokumen_sk_penghapusan %}<a href="{{ object.dokumen_sk_penghapusan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
       <div class="list-item"><div class="list-main"><strong>Berita Acara</strong><span>{% if object.berita_acara_penghapusan %}<a href="{{ object.berita_acara_penghapusan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
     </div>
@@ -80,8 +163,10 @@
     </table>
   </div>
   <div class="form-actions">
-    <a class="btn btn-secondary" href="{% url 'penghapusan:update' object.pk %}">Edit</a>
-    <a class="btn btn-secondary" href="{% url 'penghapusan:list' %}">Kembali</a>
+    {% if not is_sekretaris_jenderal and not can_verifikasi_penghapusan %}
+      <a class="btn btn-secondary" href="{% url 'penghapusan:update' object.pk %}">Edit</a>
+    {% endif %}
+    <a class="btn btn-secondary" href="{% url back_url_name %}">Kembali</a>
   </div>
 </div>
 {% endblock %}

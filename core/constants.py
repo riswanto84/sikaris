@@ -5,15 +5,16 @@ KONDISI_ASET = [
 ]
 
 STATUS_SIP = [
-    ('DRAFT', 'Draft'),
+    ('DRAFT', 'Draft/Konsep'),
     ('DIAJUKAN', 'Diajukan'),
     ('DISETUJUI', 'Disetujui'),
-    ('AKTIF', 'Aktif'),
-    ('BERAKHIR', 'Berakhir'),
-    ('DICABUT', 'Dicabut'),
     ('DITOLAK', 'Ditolak'),
+    ('TERBIT', 'Terbit'),
+    ('MENUNGGU_TTE', 'Menunggu TTE BSrE'),
+    ('BERAKHIR', 'Berakhir'),
     ('DIBATALKAN', 'Dibatalkan'),
 ]
+
 
 STATUS_PEMANFAATAN_KENDARAAN = [
     ('TERSEDIA', 'Tersedia'),
@@ -41,4 +42,24 @@ JENIS_KENDARAAN_CHOICES = [
     ('OPERASIONAL', 'Operasional'),
     ('DINAS_JABATAN', 'Dinas Jabatan'),
     ('KENDARAAN_SEWA', 'Kendaraan Sewa'),
+]
+
+
+JENIS_UNIT_KERJA_CHOICES = [
+    ('BIRO_UMUM', 'Biro Umum'),
+    ('DITJEN', 'Direktorat Jenderal / Sekretariat Ditjen'),
+    ('ITJEN', 'Inspektorat Jenderal / Sekretariat Itjen'),
+    ('BADAN', 'Badan'),
+    ('PUSAT', 'Pusat'),
+    ('SENTRA', 'Sentra'),
+    ('BALAI', 'Balai'),
+    ('LAINNYA', 'Lainnya'),
+]
+
+STATUS_TTE_DOKUMEN = [
+    ('BELUM', 'Belum TTE'),
+    ('SIAP_TTE', 'Siap TTE'),
+    ('PROSES_TTE', 'Proses TTE'),
+    ('SUDAH_TTE', 'Sudah TTE'),
+    ('DITOLAK_TTE', 'Ditolak TTE'),
 ]

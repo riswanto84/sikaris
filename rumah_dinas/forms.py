@@ -20,7 +20,34 @@ def validate_pdf_file(uploaded_file):
         raise ValidationError('Format file tidak valid. Upload dokumen dalam format PDF.')
 
 
+def validate_dokumen_lainnya_file(uploaded_file):
+    if not uploaded_file:
+        return
+
+    filename = uploaded_file.name.lower()
+    allowed_extensions = (
+        '.pdf', '.jpg', '.jpeg', '.png', '.webp',
+        '.doc', '.docx', '.xls', '.xlsx'
+    )
+    if not filename.endswith(allowed_extensions):
+        raise ValidationError(
+            'Dokumen lainnya hanya boleh berupa PDF, JPG, JPEG, PNG, WEBP, DOC, DOCX, XLS, atau XLSX.'
+        )
+
+
 class BootstrapModelForm(forms.ModelForm):
+    def clean(self):
+        cleaned = super().clean()
+
+        # Samakan dengan SIP Kendaraan: status tidak diubah dari form.
+        # Edit hanya boleh saat Draft/Konsep atau Ditolak.
+        if self.instance and self.instance.pk:
+            status = getattr(self.instance, 'status', 'DRAFT')
+            if status not in ['DRAFT', 'DITOLAK'] and not (self.user and self.user.is_superuser):
+                raise ValidationError('SIP Rumah Negara hanya dapat diedit saat berstatus Draft/Konsep atau Ditolak.')
+
+        return cleaned
+
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
@@ -36,7 +63,7 @@ class SIPRumahDinasForm(BootstrapModelForm):
         model = SIPRumahDinas
 
         # dokumen_bast sengaja tidak ditampilkan
-        exclude = ['dibuat_oleh', 'dokumen_bast']
+        exclude = ['dibuat_oleh', 'pejabat_penandatangan', 'dokumen_bast', 'dokumen_sip', 'status', 'file_konsep_pdf', 'file_tte_calon_pengguna', 'status_tte_calon_pengguna', 'tanggal_tte_calon_pengguna', 'catatan_tte_calon_pengguna', 'file_final_pdf', 'file_signed_pdf', 'status_tte', 'tanggal_tte', 'catatan_tte', 'tanggal_pengajuan', 'tanggal_persetujuan', 'disetujui_oleh', 'catatan_penolakan']
 
         labels = {
             'nomor_sip': 'Nomor SIP',
@@ -49,13 +76,16 @@ class SIPRumahDinasForm(BootstrapModelForm):
             'nilai_pnbp': 'Nilai Sewa PNBP',
             'tanggal_bayar_pnbp': 'Tanggal Bayar PNBP',
             'bukti_bayar_pnbp': 'Bukti Bayar PNBP',
-            'tanggal_mulai': 'Tanggal Mulai',
-            'tanggal_akhir': 'Tanggal Akhir',
+            'tanggal_mulai': 'Tanggal Mulai SIP',
+            'tanggal_akhir': 'Tanggal Akhir SIP',
+            'jenis_masa_berlaku': 'Jenis Masa Berlaku SIP',
+            'masa_berlaku_sip': 'Keterangan Masa Berlaku SIP',
             'dasar_penerbitan': 'Dasar Penerbitan',
             'pejabat_penandatangan': 'Pejabat Penandatangan',
             'jumlah_anggota_keluarga': 'Jumlah Anggota Keluarga',
             'status': 'Status',
             'dokumen_sip': 'Dokumen SIP Rumah Negara (PDF)',
+            'dokumen_lainnya': 'Dokumen Lainnya / Lampiran Pendukung (Opsional)',
             'catatan': 'Catatan',
         }
 
@@ -86,7 +116,18 @@ class SIPRumahDinasForm(BootstrapModelForm):
                 'accept': 'application/pdf,.pdf',
                 'class': 'form-control'
             }),
+            'dokumen_lainnya': forms.ClearableFileInput(attrs={
+                'accept': 'application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx',
+                'class': 'form-control'
+            }),
         }
+
+    def clean_dokumen_lainnya(self):
+        dokumen = self.cleaned_data.get('dokumen_lainnya')
+        if not dokumen:
+            return dokumen
+        validate_dokumen_lainnya_file(dokumen)
+        return dokumen
 
     def clean_dokumen_sip(self):
         dokumen = self.cleaned_data.get('dokumen_sip')
@@ -97,6 +138,18 @@ class SIPRumahDinasForm(BootstrapModelForm):
         validate_pdf_file(dokumen)
         return dokumen
 
+    def clean(self):
+        cleaned = super().clean()
+
+        # Samakan dengan SIP Kendaraan: status tidak diubah dari form.
+        # Edit hanya boleh saat Draft/Konsep atau Ditolak.
+        if self.instance and self.instance.pk:
+            status = getattr(self.instance, 'status', 'DRAFT')
+            if status not in ['DRAFT', 'DITOLAK'] and not (self.user and self.user.is_superuser):
+                raise ValidationError('SIP Rumah Negara hanya dapat diedit saat berstatus Draft/Konsep atau Ditolak.')
+
+        return cleaned
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -105,3 +158,46 @@ class SIPRumahDinasForm(BootstrapModelForm):
 
             if self.instance and self.instance.pk and value:
                 self.fields[field_name].initial = value.strftime('%Y-%m-%d')
+
+class SIPRumahCalonPenggunaTTEUploadForm(forms.ModelForm):
+    class Meta:
+        model = SIPRumahDinas
+        fields = ['file_tte_calon_pengguna']
+        labels = {
+            'file_tte_calon_pengguna': 'Upload SIP Rumah Negara yang sudah TTE oleh Calon Pengguna Rumah',
+        }
+        widgets = {
+            'file_tte_calon_pengguna': forms.ClearableFileInput(attrs={
+                'accept': 'application/pdf,.pdf',
+                'class': 'form-control'
+            })
+        }
+
+    def clean_file_tte_calon_pengguna(self):
+        dokumen = self.cleaned_data.get('file_tte_calon_pengguna')
+        if not dokumen:
+            raise ValidationError('File SIP Rumah Negara yang sudah TTE oleh calon pengguna rumah wajib diupload.')
+        validate_pdf_file(dokumen)
+        return dokumen
+
+
+class SIPRumahSekjenTTEUploadForm(forms.ModelForm):
+    class Meta:
+        model = SIPRumahDinas
+        fields = ['file_signed_pdf']
+        labels = {
+            'file_signed_pdf': 'Upload SIP Rumah Negara yang sudah TTE Sekjen/BSrE',
+        }
+        widgets = {
+            'file_signed_pdf': forms.ClearableFileInput(attrs={
+                'accept': 'application/pdf,.pdf',
+                'class': 'form-control'
+            })
+        }
+
+    def clean_file_signed_pdf(self):
+        dokumen = self.cleaned_data.get('file_signed_pdf')
+        if not dokumen:
+            raise ValidationError('File SIP Rumah Negara yang sudah TTE Sekjen/BSrE wajib diupload.')
+        validate_pdf_file(dokumen)
+        return dokumen

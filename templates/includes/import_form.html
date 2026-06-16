@@ -3,6 +3,12 @@
 {% block content %}
 <div class="card form-card">
   <div class="form-header"><h2>{{ title }}</h2><p>{{ description }}</p></div>
+  {% if template_url %}
+  <div style="margin:0 0 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <a class="btn btn-secondary" href="{{ template_url }}">Download Template Excel</a>
+    <span class="hint">Unduh template, isi data sesuai kolom, lalu upload kembali file Excel/CSV.</span>
+  </div>
+  {% endif %}
   <form method="post" enctype="multipart/form-data" id="importForm" data-back-url="{{ back_url }}">
     {% csrf_token %}
     <div class="form-grid">

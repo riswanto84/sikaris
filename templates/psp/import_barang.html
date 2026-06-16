@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block page_title %}Import Detail Barang PSP{% endblock %}
+{% block content %}
+<div class="card form-card">
+  <div class="form-header">
+    <h2>Import Detail Barang PSP</h2>
+    <p>{{ object.nomor_permohonan }} - {{ object.judul_paket|default:object.get_jenis_barang_display }}</p>
+  </div>
+  <div class="message info">
+    Gunakan template Excel agar kolom sesuai. Setelah import, sistem otomatis menghitung jumlah barang, total nilai, nilai tertinggi per unit, serta menandai bila ada barang di atas Rp100.000.000 per unit.
+  </div>
+  <p><a class="btn btn-secondary" href="{% url 'psp:template_import_barang' %}">Download Template Excel</a></p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="message error">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-grid">
+      {% for field in form %}
+      <p>
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="hint">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<small class="error-text">{{ error }}</small>{% endfor %}
+      </p>
+      {% endfor %}
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Import Detail Barang</button>
+      <a class="btn btn-secondary" href="{% url 'psp:detail' object.pk %}">Kembali</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

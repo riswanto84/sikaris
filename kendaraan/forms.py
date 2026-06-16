@@ -32,6 +32,25 @@ def validate_pdf_file(uploaded_file):
         raise ValidationError('Format file tidak valid. Upload dokumen dalam format PDF.')
 
 
+def validate_dokumen_lainnya_file(uploaded_file):
+    """
+    Validator lampiran pendukung opsional.
+    Menerima PDF, gambar, Word, dan Excel agar dapat mengakomodir dokumen lampiran.
+    """
+    if not uploaded_file:
+        return
+
+    filename = uploaded_file.name.lower()
+    allowed_extensions = (
+        '.pdf', '.jpg', '.jpeg', '.png', '.webp',
+        '.doc', '.docx', '.xls', '.xlsx'
+    )
+    if not filename.endswith(allowed_extensions):
+        raise ValidationError(
+            'Dokumen lainnya hanya boleh berupa PDF, JPG, JPEG, PNG, WEBP, DOC, DOCX, XLS, atau XLSX.'
+        )
+
+
 def validate_kuitansi_file(uploaded_file):
     """
     Validator untuk bukti kuitansi service.
@@ -101,22 +120,23 @@ class BootstrapModelForm(forms.ModelForm):
 class SIPKendaraanForm(BootstrapModelForm):
     class Meta:
         model = SIPKendaraan
-        exclude = ['dibuat_oleh']
+        exclude = ['dibuat_oleh', 'pejabat_penandatangan', 'pejabat_penerbit_sip_kendaraan', 'nama_pejabat_penerbit_sip_kendaraan', 'nip_pejabat_penerbit_sip_kendaraan', 'jabatan_pejabat_penerbit_sip_kendaraan', 'status_tte', 'tanggal_tte', 'catatan_tte', 'dokumen_sip', 'file_konsep_pdf', 'file_tte_pengusul', 'status_tte_pengusul', 'tanggal_tte_pengusul', 'catatan_tte_pengusul', 'file_final_pdf', 'file_signed_pdf', 'tanggal_pengajuan', 'tanggal_persetujuan', 'disetujui_oleh', 'catatan_penolakan', 'status']
 
         labels = {
             'nomor_sip': 'Nomor SIP',
             'tanggal_sip': 'Tanggal SIP',
             'kendaraan': 'Kendaraan',
             'pegawai': 'Pegawai',
-            'tanggal_mulai': 'Tanggal Mulai',
-            'tanggal_akhir': 'Tanggal Akhir',
+            'tanggal_mulai': 'Tanggal Mulai SIP',
+            'tanggal_akhir': 'Tanggal Akhir / Masa Berlaku SIP',
+            'masa_berlaku_sip': 'Keterangan Masa Berlaku SIP',
             'jenis_pemakaian': 'Jenis Kendaraan',
             'tujuan_pemakaian': 'Tujuan Pemakaian',
             'lokasi_penggunaan': 'Lokasi Penggunaan',
             'dasar_penerbitan': 'Dasar Penerbitan',
             'pejabat_penandatangan': 'Pejabat Penandatangan',
-            'status': 'Status',
             'dokumen_sip': 'Dokumen SIP Kendaraan (PDF)',
+            'dokumen_lainnya': 'Dokumen Lainnya / Lampiran Pendukung (Opsional)',
             'catatan': 'Catatan',
         }
 
@@ -146,7 +166,18 @@ class SIPKendaraanForm(BootstrapModelForm):
                 'accept': 'application/pdf,.pdf',
                 'class': 'form-control'
             }),
+            'dokumen_lainnya': forms.ClearableFileInput(attrs={
+                'accept': 'application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx',
+                'class': 'form-control'
+            }),
         }
+
+    def clean_dokumen_lainnya(self):
+        dokumen = self.cleaned_data.get('dokumen_lainnya')
+        if not dokumen:
+            return dokumen
+        validate_dokumen_lainnya_file(dokumen)
+        return dokumen
 
     def clean_dokumen_sip(self):
         dokumen = self.cleaned_data.get('dokumen_sip')
@@ -159,6 +190,20 @@ class SIPKendaraanForm(BootstrapModelForm):
         validate_pdf_file(dokumen)
         return dokumen
 
+
+    def clean(self):
+        cleaned = super().clean()
+
+        # Pengelola BMN hanya boleh menyusun Draft/Konsep.
+        # Perubahan status dilakukan melalui tombol Ajukan/Setujui/Tolak,
+        # bukan dari form input biasa.
+        if self.instance and self.instance.pk:
+            status = getattr(self.instance, 'status', 'DRAFT')
+            if status not in ['DRAFT', 'DITOLAK'] and not (self.user and self.user.is_superuser):
+                raise ValidationError('SIP Kendaraan hanya dapat diedit saat berstatus Draft/Konsep atau Ditolak.')
+
+        return cleaned
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -168,6 +213,52 @@ class SIPKendaraanForm(BootstrapModelForm):
 
             if self.instance and self.instance.pk and value:
                 self.fields[field_name].initial = value.strftime('%Y-%m-%d')
+
+
+
+
+class SIPKendaraanPengusulTTEUploadForm(forms.ModelForm):
+    class Meta:
+        model = SIPKendaraan
+        fields = ['file_tte_pengusul']
+        labels = {
+            'file_tte_pengusul': 'Upload SIP Kendaraan yang sudah TTE oleh Pegawai Pengusul',
+        }
+        widgets = {
+            'file_tte_pengusul': forms.ClearableFileInput(attrs={
+                'accept': 'application/pdf,.pdf',
+                'class': 'form-control'
+            })
+        }
+
+    def clean_file_tte_pengusul(self):
+        dokumen = self.cleaned_data.get('file_tte_pengusul')
+        if not dokumen:
+            raise ValidationError('File SIP Kendaraan yang sudah TTE oleh pegawai pengusul wajib diupload.')
+        validate_pdf_file(dokumen)
+        return dokumen
+
+
+class SIPKendaraanBSREUploadForm(forms.ModelForm):
+    class Meta:
+        model = SIPKendaraan
+        fields = ['file_signed_pdf']
+        labels = {
+            'file_signed_pdf': 'Upload SIP Kendaraan yang sudah TTE BSrE',
+        }
+        widgets = {
+            'file_signed_pdf': forms.ClearableFileInput(attrs={
+                'accept': 'application/pdf,.pdf',
+                'class': 'form-control'
+            })
+        }
+
+    def clean_file_signed_pdf(self):
+        dokumen = self.cleaned_data.get('file_signed_pdf')
+        if not dokumen:
+            raise ValidationError('File SIP Kendaraan yang sudah TTE BSrE wajib diupload.')
+        validate_pdf_file(dokumen)
+        return dokumen
 
 
 # ============================================================
@@ -237,6 +328,20 @@ class ServiceKendaraanForm(BootstrapModelForm):
 
         return files
 
+
+    def clean(self):
+        cleaned = super().clean()
+
+        # Pengelola BMN hanya boleh menyusun Draft/Konsep.
+        # Perubahan status dilakukan melalui tombol Ajukan/Setujui/Tolak,
+        # bukan dari form input biasa.
+        if self.instance and self.instance.pk:
+            status = getattr(self.instance, 'status', 'DRAFT')
+            if status not in ['DRAFT', 'DITOLAK'] and not (self.user and self.user.is_superuser):
+                raise ValidationError('SIP Kendaraan hanya dapat diedit saat berstatus Draft/Konsep atau Ditolak.')
+
+        return cleaned
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -271,6 +376,20 @@ class RiwayatKondisiKendaraanForm(BootstrapModelForm):
                 }
             ),
         }
+
+
+    def clean(self):
+        cleaned = super().clean()
+
+        # Pengelola BMN hanya boleh menyusun Draft/Konsep.
+        # Perubahan status dilakukan melalui tombol Ajukan/Setujui/Tolak,
+        # bukan dari form input biasa.
+        if self.instance and self.instance.pk:
+            status = getattr(self.instance, 'status', 'DRAFT')
+            if status not in ['DRAFT', 'DITOLAK'] and not (self.user and self.user.is_superuser):
+                raise ValidationError('SIP Kendaraan hanya dapat diedit saat berstatus Draft/Konsep atau Ditolak.')
+
+        return cleaned
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

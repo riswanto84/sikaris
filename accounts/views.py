@@ -176,7 +176,7 @@ class RoleDeleteView(AdminSystemRequiredMixin, DeleteView):
     template_name = 'accounts/confirm_delete.html'
     success_url = reverse_lazy('role_list')
 
-    protected_roles = {'Admin System', 'Biro Umum', 'Pengelola BMN', 'Pemeliharaan Kendaraan'}
+    protected_roles = {'Admin System', 'Biro Umum', 'Kepala Biro Umum', 'Sekretaris Jenderal', 'Pengelola BMN', 'Pemeliharaan Kendaraan'}
 
     def dispatch(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -190,6 +190,81 @@ class RoleDeleteView(AdminSystemRequiredMixin, DeleteView):
         return super().form_valid(form)
 
 
+def _hak_akses_for_user(user):
+    """Deskripsi role dan hak akses untuk ditampilkan pada Edit Profile."""
+    role_names = list(user.groups.values_list('name', flat=True))
+    if user.is_superuser and 'Superuser' not in role_names:
+        role_names.insert(0, 'Superuser')
+
+    akses_map = {
+        'Superuser': [
+            'Akses penuh seluruh fitur dan seluruh satker/unit kerja.',
+            'Dapat mengelola user, role, master data, transaksi, laporan, dan konfigurasi aplikasi.',
+        ],
+        'Admin System': [
+            'Akses penuh pengelolaan sistem dan seluruh data lintas unit kerja.',
+            'Dapat mengelola user, role, master data, transaksi, laporan, dan konfigurasi aplikasi.',
+        ],
+        'Biro Umum': [
+            'Dapat melihat dan mengelola data lintas satker sesuai kewenangan Biro Umum.',
+            'Dapat mengelola master data, penghapusan BMN, PSP BMN, laporan, dan konfigurasi unit kerja.',
+        ],
+        'Pengelola BMN': [
+            'Dapat mengelola master pegawai, kendaraan, dan rumah negara sesuai scope unit kerja/satker.',
+            'Dapat membuat Draft/Konsep SIP Kendaraan lalu mengajukan ke pejabat penerbit.',
+            'Tidak dapat menyetujui/menolak SIP dan tidak mengupload dokumen SIP final/TTE BSrE.',
+        ],
+        'Pemeliharaan Kendaraan': [
+            'Dapat mengelola data service/pemeliharaan kendaraan sesuai kewenangan.',
+            'Tidak mendapat menu master pegawai, rumah negara, SIP Rumah Negara, Penghapusan, PSP, dan Export Rumah Negara.',
+        ],
+        'Kepala Biro Umum': [
+            'Dapat mereview pengajuan SIP Kendaraan dari unit di bawah Sekretariat Jenderal.',
+            'Dapat generate konsep/final PDF SIP Kendaraan, menyetujui/menolak, dan mengupload SIP final yang sudah TTE BSrE.',
+            'Tidak menggunakan menu Daftar SIP Kendaraan/Rumah Negara umum.',
+        ],
+        'Sekretaris Ditjen': [
+            'Dapat mereview pengajuan SIP Kendaraan dari unit di bawah Direktorat Jenderal terkait.',
+            'Dapat generate konsep/final PDF SIP Kendaraan, menyetujui/menolak, dan mengupload SIP final yang sudah TTE BSrE.',
+        ],
+        'Sekretaris Eselon I': [
+            'Dapat mereview pengajuan SIP Kendaraan dari unit di bawah Eselon I terkait.',
+            'Dapat generate konsep/final PDF SIP Kendaraan, menyetujui/menolak, dan mengupload SIP final yang sudah TTE BSrE.',
+        ],
+        'Sekretaris UKE II': [
+            'Dapat mereview pengajuan SIP Kendaraan sesuai kewenangan UKE II.',
+            'Dapat generate konsep/final PDF SIP Kendaraan, menyetujui/menolak, dan mengupload SIP final yang sudah TTE BSrE.',
+        ],
+        'Kepala Sentra': [
+            'Dapat mereview pengajuan SIP Kendaraan dari Sentra masing-masing.',
+            'Dapat generate konsep/final PDF SIP Kendaraan, menyetujui/menolak, dan mengupload SIP final yang sudah TTE BSrE.',
+        ],
+        'Kepala Balai': [
+            'Dapat mereview pengajuan SIP Kendaraan dari Balai masing-masing.',
+            'Dapat generate konsep/final PDF SIP Kendaraan, menyetujui/menolak, dan mengupload SIP final yang sudah TTE BSrE.',
+        ],
+        'Pejabat Penerbit SIP': [
+            'Dapat mereview pengajuan SIP Kendaraan sesuai konfigurasi pejabat penerbit pada Master Unit Kerja.',
+            'Dapat generate konsep/final PDF SIP Kendaraan, menyetujui/menolak, dan mengupload SIP final yang sudah TTE BSrE.',
+        ],
+        'Sekretaris Jenderal': [
+            'Dapat mereview dan menyetujui SIP Rumah Negara sesuai alur persetujuan Sekjen.',
+        ],
+    }
+
+    hak_akses = []
+    seen = set()
+    for role in role_names:
+        for item in akses_map.get(role, []):
+            if item not in seen:
+                hak_akses.append(item)
+                seen.add(item)
+    if not role_names:
+        role_names = ['Belum ada role']
+        hak_akses = ['Belum ada hak akses khusus. Hubungi Admin System untuk pengaturan role.']
+    return role_names, hak_akses
+
+
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     """Edit profil pribadi user dari menu kanan atas."""
     model = get_user_model()
@@ -199,6 +274,14 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_object(self, queryset=None):
         return self.request.user
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        role_names, hak_akses = _hak_akses_for_user(self.request.user)
+        ctx['profile_role_names'] = role_names
+        ctx['profile_hak_akses'] = hak_akses
+        ctx['profile_unit_kerja'] = getattr(getattr(self.request.user, 'profile', None), 'unit_kerja', None)
+        return ctx
 
     def form_valid(self, form):
         messages.success(self.request, 'Profil berhasil diperbarui.')

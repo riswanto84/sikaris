@@ -1,16 +1,22 @@
 {% extends 'base.html' %}
 {% load rupiah %}
-{% block page_title %}Permohonan Penghapusan BMN{% endblock %}
+{% block page_title %}{{ page_title|default:'Permohonan Penghapusan BMN' }}{% endblock %}
 {% block content %}
 <div class="toolbar">
   {% include 'includes/list_search.html' %}
   <div style="display:flex;gap:10px;flex-wrap:wrap">
-    <a class="btn btn-primary" href="{% url 'penghapusan:create' %}">+ Ajukan Penghapusan BMN</a>
+    {% if show_create_buttons %}<a class="btn btn-primary" href="{% url 'penghapusan:create' %}">+ Ajukan Penghapusan BMN</a>{% endif %}<a class="btn btn-secondary" href="{% url 'penghapusan:template_import_barang' %}">Download Template Import Barang</a>
   </div>
 </div>
-<div class="message info">
-  Unit kerja mengajukan usulan penghapusan BMN kepada Biro Umum. Kolom lama proses berfungsi sebagai pengingat pemohon dan verifikator Biro Umum agar usulan tidak tertunda.
-</div>
+{% if mode == 'verifikasi' %}
+<div class="message info"><strong>Alur Verifikasi Biro Umum:</strong> Biro Umum memeriksa usulan penghapusan dari seluruh unit kerja, mengembalikan jika perlu perbaikan, atau meneruskan ke Sekjen untuk penetapan SK.</div>
+{% elif mode == 'persetujuan_dirjen_rehsos' %}
+<div class="message info"><strong>Alur Dirjen Rehsos:</strong> Khusus usulan dari Sentra di bawah Ditjen Rehsos. Dirjen Rehsos menyetujui/menolak sebelum usulan diteruskan ke Sekjen.</div>
+{% elif mode == 'persetujuan_sekjen' %}
+<div class="message info"><strong>Alur Penetapan Sekjen:</strong> Sekjen menetapkan SK Penghapusan BMN atas usulan yang telah diverifikasi Biro Umum atau telah disetujui Dirjen Rehsos untuk Sentra Rehsos.</div>
+{% else %}
+<div class="message info">Unit kerja mengajukan usulan penghapusan BMN. Proses selanjutnya dipisahkan pada menu <strong>Verifikasi Usulan Penghapusan</strong> oleh Biro Umum dan <strong>Penetapan SK Penghapusan</strong> oleh Sekjen.</div>
+{% endif %}
 <div class="card table-card">
   <div class="table-responsive">
     <table class="table">
@@ -38,7 +44,7 @@
           <td>{{ o.kode_barang|default:'-' }}<br><small>NUP: {{ o.nup|default:'-' }}</small></td>
           <td>{{ o.nilai_perolehan|rupiah }}</td>
           <td>{{ o.get_alasan_penghapusan_display }}</td>
-          <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
+          <td><span class="badge {{ o.status }}">{{ o.status_label_alur }}</span></td>
           <td>
             <strong>{{ o.lama_proses_hari }} hari</strong><br>
             <span class="status-badge {{ o.status_pengingat_class }}">{{ o.status_pengingat_label }}</span>
@@ -47,14 +53,17 @@
           </td>
           <td>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <a class="btn btn-secondary" href="{% url 'penghapusan:detail' o.pk %}">Detail</a>
-              <a class="btn btn-secondary" href="{% url 'penghapusan:update' o.pk %}">Edit</a>
-              <a class="btn btn-danger" href="{% url 'penghapusan:delete' o.pk %}">Hapus</a>
+              <a class="btn btn-secondary" href="{% url 'penghapusan:detail' o.pk %}{% if mode == 'verifikasi' %}?from=penghapusan:verifikasi{% elif mode == 'persetujuan_sekjen' %}?from=penghapusan:persetujuan_sekjen{% elif mode == 'persetujuan_dirjen_rehsos' %}?from=penghapusan:persetujuan_dirjen_rehsos{% endif %}">Detail</a>
+              {% if show_unit_edit_actions %}
+                <a class="btn btn-secondary" href="{% url 'penghapusan:update' o.pk %}">Edit</a>
+                <a class="btn btn-secondary" href="{% url 'penghapusan:import_barang' o.pk %}">Import Barang</a>
+                <a class="btn btn-danger" href="{% url 'penghapusan:delete' o.pk %}">Hapus</a>
+              {% endif %}
             </div>
           </td>
         </tr>
       {% empty %}
-        <tr><td colspan="10" class="empty-state">Belum ada permohonan penghapusan BMN.</td></tr>
+        <tr><td colspan="10" class="empty-state">{{ empty_message|default:'Belum ada permohonan penghapusan BMN.' }}</td></tr>
       {% endfor %}
       </tbody>
     </table>

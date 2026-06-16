@@ -133,7 +133,7 @@ class KendaraanForm(BootstrapModelForm):
 
     class Meta:
         model = Kendaraan
-        exclude = ['foto']
+        exclude = ['foto', 'pengguna']
 
         labels = {
             'kode_kendaraan': 'Kode Kendaraan',
@@ -150,7 +150,6 @@ class KendaraanForm(BootstrapModelForm):
             'kode_barang': 'Kode Barang',
             'nilai_perolehan': 'Nilai Perolehan',
             'unit_kerja': 'Unit Kerja',
-            'pengguna': 'Pengguna',
             'jenis_kendaraan': 'Jenis Kendaraan',
             'status_pemanfaatan': 'Status Pemanfaatan',
             'kilometer_terakhir': 'Kilometer Terakhir',
@@ -161,10 +160,6 @@ class KendaraanForm(BootstrapModelForm):
             'unit_kerja': forms.Select(attrs={
                 'class': 'form-control searchable-select',
                 'data-placeholder': 'Cari unit kerja...'
-            }),
-            'pengguna': forms.Select(attrs={
-                'class': 'form-control searchable-select',
-                'data-placeholder': 'Cari nama/NIP pegawai...'
             }),
         }
 
@@ -200,7 +195,7 @@ class KendaraanForm(BootstrapModelForm):
             'tahun_pembuatan', 'tahun_perolehan', 'warna', 'nomor_rangka', 'nomor_mesin',
             'nomor_bpkb', 'dokumen_bpkb', 'nomor_stnk', 'dokumen_stnk',
             'masa_berlaku_stnk', 'jatuh_tempo_pajak', 'nup', 'kode_barang',
-            'nilai_perolehan', 'unit_kerja', 'pengguna', 'kondisi', 'status_pemanfaatan',
+            'nilai_perolehan', 'unit_kerja', 'kondisi', 'status_pemanfaatan',
             'kilometer_terakhir', 'keterangan_status_pemanfaatan', 'foto_kendaraan'
         ])
 

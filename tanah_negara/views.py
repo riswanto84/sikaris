@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.db.models.deletion import ProtectedError
@@ -104,6 +104,85 @@ def _status_tanah(row):
     return normalize_choice(pick(row, 'status_tanah'), TanahNegara.STATUS_TANAH, 'DIGUNAKAN')
 
 
+
+
+# =============================================================
+# Template Excel Import Tanah Negara
+# =============================================================
+def template_import_tanah(request):
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+    except Exception as exc:
+        return HttpResponse(f'openpyxl belum tersedia: {exc}', status=500, content_type='text/plain')
+
+    headers = [
+        'kode_tanah', 'kode_satker', 'nama_satker', 'unit_kerja', 'kode_barang', 'nup',
+        'nama_barang', 'nama_aset', 'nama_tanah', 'status_bmn', 'kondisi', 'intra_extra',
+        'jenis_dokumen', 'nomor_dokumen', 'status_sertifikasi', 'jenis_sertipikat',
+        'nomor_sertifikat', 'atas_nama_sertifikat', 'tanggal_sertifikat', 'tanggal_buku_pertama',
+        'tanggal_perolehan', 'nilai_perolehan', 'nilai_buku', 'luas_tanah',
+        'luas_tanah_untuk_bangunan', 'luas_tanah_untuk_sarana_lingkungan', 'luas_lahan_kosong',
+        'luas_pemanfaatan', 'status_penggunaan', 'status_pemanfaatan', 'status_tanah',
+        'no_psp', 'tanggal_psp', 'alamat', 'rt_rw', 'kelurahan_desa', 'kecamatan',
+        'kabupaten_kota', 'provinsi', 'kode_pos', 'latitude', 'longitude', 'penghuni',
+        'pengguna', 'digunakan_oleh', 'kode_kpknl', 'uraian_kpknl', 'kode_register',
+        'status_pmk', 'keterangan'
+    ]
+    sample = [
+        'TN-001', '027.01.01', 'Biro Umum', 'Biro Umum', '2.01.01.01.001', '001',
+        'Tanah Bangunan Kantor Pemerintah', 'Tanah Kantor Contoh', 'Tanah Kantor Contoh',
+        'Aktif', 'Baik', 'Intra', 'Sertifikat', 'SHM-001', 'Sertifikat', 'SHM',
+        'SHM-001', 'Kementerian Sosial RI', '2020-01-01', '2020-01-01', '2020-01-01',
+        1500000000, 1500000000, 1000, 600, 200, 200, 0, 'Digunakan', 'Digunakan',
+        'Digunakan', 'PSP-001', '2021-01-01', 'Jl. Contoh No. 1', '001/002', 'Senen',
+        'Senen', 'Jakarta Pusat', 'DKI Jakarta', '10410', -6.175392, 106.827153,
+        '', 'Biro Umum', 'Biro Umum', 'KPKNL-JKT', 'KPKNL Jakarta', 'REG-001', 'Aktif',
+        'Contoh data tanah negara'
+    ]
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Template Import'
+    ws['A1'] = 'Template Import Tanah Negara'
+    ws['A1'].font = Font(bold=True, size=14, color='0F172A')
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
+    ws.append([])
+    ws.append(headers)
+    ws.append(sample)
+
+    header_fill = PatternFill('solid', fgColor='1D4ED8')
+    header_font = Font(bold=True, color='FFFFFF')
+    thin = Side(style='thin', color='CBD5E1')
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    for cell in ws[3]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        cell.border = border
+    for cell in ws[4]:
+        cell.border = border
+        cell.alignment = Alignment(vertical='top', wrap_text=True)
+    for idx, header in enumerate(headers, start=1):
+        ws.column_dimensions[get_column_letter(idx)].width = min(max(len(str(header)) + 4, 14), 34)
+    ws.freeze_panes = 'A4'
+    ws.auto_filter.ref = f'A3:{get_column_letter(len(headers))}4'
+
+    info = wb.create_sheet('Petunjuk')
+    info['A1'] = 'Petunjuk Import Tanah Negara'
+    info['A1'].font = Font(bold=True, size=14)
+    info['A3'] = 'Isi data mulai baris ke-4. Jangan mengubah header pada baris ke-3.'
+    info['A4'] = 'Format tanggal: YYYY-MM-DD. Nilai rupiah dan luas diisi angka saja.'
+    info['A5'] = 'Kolom latitude/longitude boleh dikosongkan jika belum tersedia.'
+    info.column_dimensions['A'].width = 110
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="template_import_tanah_negara.xlsx"'
+    wb.save(response)
+    return response
+
+
 class TanahNegaraImportView(AdminSystemRequiredMixin, FormView):
     form_class = ImportFileForm
     template_name = 'includes/import_form.html'
@@ -115,6 +194,7 @@ class TanahNegaraImportView(AdminSystemRequiredMixin, FormView):
             'title': 'Impor Tanah Negara',
             'description': 'Upload Excel/CSV sesuai template: kode_tanah, kode_satker, nama_satker, unit_kerja, kode_barang, nup, nama_barang, nama_aset, status_bmn, kondisi, data sertifikat, luas, PSP, alamat, KPKNL, kode_register, status_pmk, keterangan. Latitude/longitude tetap didukung jika tersedia.',
             'back_url': reverse_lazy('tanah_negara:list'),
+            'template_url': reverse_lazy('tanah_negara:template_import'),
         })
         return ctx
 

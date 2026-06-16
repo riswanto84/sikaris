@@ -2,6 +2,102 @@
 {% load rupiah %}
 {% block page_title %}Dashboard{% endblock %}
 {% block content %}
+
+<style>
+/* Dashboard proporsional - 2026-06-16
+   Membatasi lebar dashboard agar tidak terlalu melebar pada monitor besar,
+   merapikan grid card, grafik, dan panel kanan. */
+[data-dashboard-live]{
+    max-width:1480px;
+    margin:0 auto;
+}
+[data-dashboard-live] .welcome-panel{
+    padding:22px 26px;
+    margin-bottom:20px;
+}
+[data-dashboard-live] .stats-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(230px,1fr));
+    gap:16px;
+    margin-bottom:20px;
+}
+[data-dashboard-live] .summary-card{
+    min-height:108px;
+    padding:18px 20px;
+    align-items:center;
+    border-radius:18px;
+}
+[data-dashboard-live] .summary-card > div:last-child{
+    min-width:0;
+}
+[data-dashboard-live] .summary-icon{
+    width:52px;
+    height:52px;
+    flex-basis:52px;
+    font-size:22px;
+}
+[data-dashboard-live] .summary-label{
+    line-height:1.25;
+    min-height:34px;
+    display:flex;
+    align-items:flex-end;
+}
+[data-dashboard-live] .summary-value{
+    font-size:24px;
+    line-height:1.05;
+    margin:4px 0 7px;
+}
+[data-dashboard-live] .dashboard-main-grid{
+    display:grid;
+    grid-template-columns:minmax(0,2fr) minmax(360px,.95fr);
+    gap:20px;
+    align-items:start;
+}
+[data-dashboard-live] .panel-grid.two-col{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+}
+[data-dashboard-live] .panel-card{
+    border-radius:18px;
+    padding:20px 22px;
+}
+[data-dashboard-live] .chart-row{
+    gap:22px;
+    justify-content:flex-start;
+}
+[data-dashboard-live] .ring-chart{
+    width:148px;
+    height:148px;
+    flex-basis:148px;
+}
+[data-dashboard-live] .ring-chart::before{
+    inset:17px;
+}
+[data-dashboard-live] .ring-center strong{
+    font-size:28px;
+}
+[data-dashboard-live] .list-item,
+[data-dashboard-live] .activity-row,
+[data-dashboard-live] .vehicle-action-item,
+[data-dashboard-live] .house-action-item{
+    min-height:auto;
+}
+@media (max-width:1400px){
+    [data-dashboard-live]{max-width:1240px;}
+    [data-dashboard-live] .stats-grid{grid-template-columns:repeat(3,minmax(220px,1fr));}
+    [data-dashboard-live] .dashboard-main-grid{grid-template-columns:1fr;}
+}
+@media (max-width:980px){
+    [data-dashboard-live] .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    [data-dashboard-live] .panel-grid.two-col{grid-template-columns:1fr;}
+    [data-dashboard-live] .welcome-panel{flex-direction:column;align-items:flex-start;gap:12px;}
+}
+@media (max-width:640px){
+    [data-dashboard-live] .stats-grid{grid-template-columns:1fr;}
+    [data-dashboard-live] .summary-card{min-height:92px;}
+    [data-dashboard-live] .chart-row{flex-direction:column;align-items:flex-start;}
+}
+</style>
+
 <div data-dashboard-live>
     <div class="welcome-panel card">
         <div>
@@ -13,6 +109,14 @@
     </div>
 
     <div class="stats-grid">
+        <div class="summary-card">
+            <div class="summary-icon blue">👤</div>
+            <div>
+                <div class="summary-label">Total Pegawai</div>
+                <div class="summary-value" data-counter data-stat="total_pegawai">{{ total_pegawai }}</div>
+                <a href="{% url 'master:pegawai_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
         <div class="summary-card">
             <div class="summary-icon blue">🚘</div>
             <div>
@@ -46,13 +150,41 @@
             </div>
         </div>
 
-        {% if can_access_sip %}
+        {% if can_access_sip or can_access_persetujuan_kabiro or is_admin_system %}
         <div class="summary-card">
             <div class="summary-icon purple">🧾</div>
             <div>
-                <div class="summary-label">SIP Kendaraan Aktif</div>
-                <div class="summary-value" data-counter data-stat="sip_kendaraan_aktif">{{ sip_kendaraan_aktif }}</div>
-                <a href="{% url 'kendaraan:sip_list' %}" class="mini-link">Lihat detail →</a>
+                <div class="summary-label">Total Permohonan SIP Kendaraan</div>
+                <div class="summary-value" data-counter data-stat="total_sip_kendaraan">{{ total_sip_kendaraan }}</div>
+                {% if can_access_sip %}
+                    <a href="{% url 'kendaraan:sip_list' %}" class="mini-link">Lihat detail →</a>
+                {% elif can_access_persetujuan_kabiro %}
+                    <a href="{% url 'kendaraan:kabiro_sip_kendaraan_list' %}" class="mini-link">Lihat detail →</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon blue">📝</div>
+            <div>
+                <div class="summary-label">SIP Kendaraan Draft</div>
+                <div class="summary-value" data-counter data-stat="sip_kendaraan_draft">{{ sip_kendaraan_draft }}</div>
+                {% if can_access_sip %}
+                    <a href="{% url 'kendaraan:sip_list' %}" class="mini-link">Lihat detail →</a>
+                {% elif can_access_persetujuan_kabiro %}
+                    <a href="{% url 'kendaraan:kabiro_sip_kendaraan_list' %}" class="mini-link">Lihat detail →</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon green">✅</div>
+            <div>
+                <div class="summary-label">SIP Kendaraan Terbit</div>
+                <div class="summary-value good" data-counter data-stat="sip_kendaraan_terbit">{{ sip_kendaraan_terbit }}</div>
+                {% if can_access_sip %}
+                    <a href="{% url 'kendaraan:sip_list' %}" class="mini-link">Lihat detail →</a>
+                {% elif can_access_persetujuan_kabiro %}
+                    <a href="{% url 'kendaraan:kabiro_sip_kendaraan_list' %}" class="mini-link">Lihat detail →</a>
+                {% endif %}
             </div>
         </div>
         <div class="summary-card">
@@ -60,7 +192,11 @@
             <div>
                 <div class="summary-label">SIP Kendaraan Akan Berakhir</div>
                 <div class="summary-value warn" data-counter data-stat="sip_kendaraan_akan_berakhir">{{ sip_kendaraan_akan_berakhir }}</div>
-                <a href="{% url 'kendaraan:sip_list' %}" class="mini-link">Lihat detail →</a>
+                {% if can_access_sip %}
+                    <a href="{% url 'kendaraan:sip_list' %}" class="mini-link">Lihat detail →</a>
+                {% elif can_access_persetujuan_kabiro %}
+                    <a href="{% url 'kendaraan:kabiro_sip_kendaraan_list' %}" class="mini-link">Lihat detail →</a>
+                {% endif %}
             </div>
         </div>
         {% endif %}
@@ -75,11 +211,78 @@
             </div>
         </div>
         <div class="summary-card">
+            <div class="summary-icon green">✅</div>
+            <div>
+                <div class="summary-label">Rumah Negara Baik</div>
+                <div class="summary-value good" data-counter data-stat="rumah_baik">{{ rumah_baik }}</div>
+                <a href="{% url 'master:rumah_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon amber">⚠</div>
+            <div>
+                <div class="summary-label">Rumah Negara Rusak Ringan</div>
+                <div class="summary-value warn" data-counter data-stat="rumah_rusak_ringan">{{ rumah_rusak_ringan }}</div>
+                <a href="{% url 'master:rumah_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon red">⛔</div>
+            <div>
+                <div class="summary-label">Rumah Negara Rusak Berat</div>
+                <div class="summary-value danger" data-counter data-stat="rumah_rusak_berat">{{ rumah_rusak_berat }}</div>
+                <a href="{% url 'master:rumah_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        <div class="summary-card">
             <div class="summary-icon lime">📑</div>
             <div>
-                <div class="summary-label">SIP Rumah Negara Aktif</div>
-                <div class="summary-value" data-counter data-stat="sip_rumah_aktif">{{ sip_rumah_aktif }}</div>
+                <div class="summary-label">Total Permohonan SIP Rumah Negara</div>
+                <div class="summary-value" data-counter data-stat="total_sip_rumah">{{ total_sip_rumah }}</div>
                 <a href="{% url 'rumah_dinas:sip_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon green">✅</div>
+            <div>
+                <div class="summary-label">SIP Rumah Negara Terbit</div>
+                <div class="summary-value good" data-counter data-stat="sip_rumah_terbit">{{ sip_rumah_terbit }}</div>
+                <a href="{% url 'rumah_dinas:sip_list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if can_access_psp %}
+        <div class="summary-card">
+            <div class="summary-icon blue">✅</div>
+            <div>
+                <div class="summary-label">Total Permohonan PSP</div>
+                <div class="summary-value" data-counter data-stat="total_psp">{{ total_psp }}</div>
+                <a href="{% url 'psp:list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon orange">⏳</div>
+            <div>
+                <div class="summary-label">PSP Dalam Proses</div>
+                <div class="summary-value warn" data-counter data-stat="psp_proses">{{ psp_proses }}</div>
+                <a href="{% url 'psp:list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon amber">🔁</div>
+            <div>
+                <div class="summary-label">PSP Perlu Perbaikan</div>
+                <div class="summary-value warn" data-counter data-stat="psp_perlu_perbaikan">{{ psp_perlu_perbaikan }}</div>
+                <a href="{% url 'psp:list' %}" class="mini-link">Lihat detail →</a>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon green">🏁</div>
+            <div>
+                <div class="summary-label">PSP Selesai / SK Terbit</div>
+                <div class="summary-value good" data-counter data-stat="psp_selesai">{{ psp_selesai }}</div>
+                <a href="{% url 'psp:list' %}" class="mini-link">Lihat detail →</a>
             </div>
         </div>
         {% endif %}
@@ -91,7 +294,7 @@
                 <div class="panel-card">
                     <div class="panel-title">Grafik Kondisi Kendaraan</div>
                     <div class="chart-row">
-                        <div class="ring-chart ring-vehicles">
+                        <div class="ring-chart ring-vehicles" style="background: {{ kendaraan_ring_gradient|safe }};">
                             <div class="ring-center">
                                 <strong>{{ total_kendaraan }}</strong>
                                 <span>Total</span>
@@ -109,7 +312,7 @@
                 <div class="panel-card">
                     <div class="panel-title">Grafik Kondisi Rumah Negara</div>
                     <div class="chart-row">
-                        <div class="ring-chart ring-houses">
+                        <div class="ring-chart ring-houses" style="background: {{ rumah_ring_gradient|safe }};">
                             <div class="ring-center">
                                 <strong>{{ total_rumah }}</strong>
                                 <span>Total</span>
@@ -133,6 +336,21 @@
                     <div class="mini-stat-card"><span class="mini-stat-icon green">💵</span><div><strong>{{ service_bulan_ini_biaya|rupiah }}</strong><small>Total Biaya</small></div></div>
                     <div class="mini-stat-card"><span class="mini-stat-icon amber">🗓</span><div><strong>{{ service_terakhir|length }}</strong><small>Service Tercatat</small></div></div>
                     <div class="mini-stat-card"><span class="mini-stat-icon red">❗</span><div><strong>{{ kendaraan_rusak_ringan|add:kendaraan_rusak_berat }}</strong><small>Perlu Tindakan</small></div></div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if can_access_psp %}
+            <div class="panel-card mt-20">
+                <div class="panel-header">
+                    <div class="panel-title">Ringkasan PSP BMN</div>
+                    <a href="{% url 'psp:list' %}" class="mini-link">Lihat semua</a>
+                </div>
+                <div class="mini-stats-grid">
+                    <div class="mini-stat-card"><span class="mini-stat-icon blue">📨</span><div><strong data-counter data-stat="psp_diajukan">{{ psp_diajukan }}</strong><small>Diajukan</small></div></div>
+                    <div class="mini-stat-card"><span class="mini-stat-icon amber">⏳</span><div><strong data-counter data-stat="psp_proses">{{ psp_proses }}</strong><small>Dalam Proses</small></div></div>
+                    <div class="mini-stat-card"><span class="mini-stat-icon red">🔁</span><div><strong data-counter data-stat="psp_perlu_perbaikan">{{ psp_perlu_perbaikan }}</strong><small>Perlu Perbaikan</small></div></div>
+                    <div class="mini-stat-card"><span class="mini-stat-icon green">✅</span><div><strong data-counter data-stat="psp_selesai">{{ psp_selesai }}</strong><small>Selesai/SK Terbit</small></div></div>
                 </div>
             </div>
             {% endif %}
@@ -167,7 +385,7 @@
             <div class="panel-card">
                 <div class="panel-header">
                     <div class="panel-title">SIP Akan Berakhir (30 Hari ke Depan)</div>
-                    <a href="{% url 'kendaraan:sip_list' %}" class="mini-link">Lihat semua</a>
+                    {% if can_access_sip %}<a href="{% url 'kendaraan:sip_list' %}" class="mini-link">Lihat semua</a>{% elif can_access_persetujuan_kabiro %}<a href="{% url 'kendaraan:kabiro_sip_kendaraan_list' %}" class="mini-link">Lihat semua</a>{% endif %}
                 </div>
                 <div class="tab-pills">
                     <button class="tab-pill active">Kendaraan ({{ sip_akan_berakhir|length }})</button>
@@ -212,6 +430,32 @@
                 {% endif %}
             </div>
 
+            {% if can_access_psp %}
+            <div class="panel-card mt-20">
+                <div class="panel-header">
+                    <div class="panel-title">PSP Perlu Tindak Lanjut</div>
+                    <a href="{% url 'psp:list' %}" class="mini-link">Lihat semua</a>
+                </div>
+                <div class="list-stack">
+                    {% for p in psp_perlu_tindak_lanjut_list %}
+                    <div class="list-item">
+                        <div class="list-icon amber">✅</div>
+                        <div class="list-main">
+                            <strong>{{ p.nomor_permohonan }}</strong>
+                            <span>{{ p.unit_kerja.nama_unit|default:p.nama_satuan_kerja }}</span>
+                        </div>
+                        <div class="list-meta">
+                            <span>{{ p.tanggal_permohonan }}</span>
+                            <small class="pill-warning">{{ p.get_status_display }}</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-inline">Tidak ada PSP yang perlu tindak lanjut.</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
             <div class="panel-card mt-20">
                 <div class="panel-header">
                     <div class="panel-title">Kendaraan Perlu Tindakan</div>
@@ -230,10 +474,35 @@
                         </div>
                     </div>
                     {% empty %}
-                    <div class="empty-inline">Belum ada data kendaraan.</div>
+                    <div class="empty-inline">Tidak ada kendaraan yang perlu tindakan.</div>
                     {% endfor %}
                 </div>
             </div>
+
+            {% if can_access_house %}
+            <div class="panel-card mt-20">
+                <div class="panel-header">
+                    <div class="panel-title">Rumah Negara Perlu Tindakan</div>
+                    <a href="{% url 'master:rumah_list' %}" class="mini-link">Lihat semua</a>
+                </div>
+                <div class="list-stack">
+                    {% for r in rumah_perlu_tindakan %}
+                    <div class="list-item">
+                        <div class="list-icon teal">🏠</div>
+                        <div class="list-main">
+                            <strong>{{ r.kode_rumah }}</strong>
+                            <span>{{ r.nama_rumah }}</span>
+                        </div>
+                        <div class="list-meta">
+                            <span class="status-pill {{ r.kondisi|lower }}">{{ r.get_kondisi_display }}</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-inline">Tidak ada rumah negara yang perlu tindakan.</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

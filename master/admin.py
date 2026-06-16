@@ -4,7 +4,9 @@ from .models import UnitKerja, Pegawai, Kendaraan, FotoKendaraan, RumahDinas, Fo
 
 @admin.register(UnitKerja)
 class UnitKerjaAdmin(admin.ModelAdmin):
-    search_fields = ['nama_unit']
+    list_display = ['nama_unit', 'jenis_unit', 'nama_jabatan_penerbit_sip_kendaraan', 'pejabat_penerbit_sip_kendaraan']
+    search_fields = ['nama_unit', 'nama_jabatan_penerbit_sip_kendaraan', 'pejabat_penerbit_sip_kendaraan__nama']
+    list_filter = ['jenis_unit']
 
 
 @admin.register(Pegawai)

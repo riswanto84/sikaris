@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ approval_title }}{% endblock %}
+{% block content %}
+<div class="toolbar">
+  {% include 'includes/list_search.html' %}
+</div>
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr><th>No SIP</th><th>Tanggal Pengajuan</th><th>Kendaraan</th><th>Pegawai</th><th>Masa Berlaku</th><th>Status</th><th>Konsep</th><th>Aksi</th></tr>
+      </thead>
+      <tbody>
+      {% for o in object_list %}
+      <tr>
+        <td><strong>{{ o.nomor_sip }}</strong></td>
+        <td>{{ o.tanggal_pengajuan|date:'d/m/Y H:i'|default:'-' }}</td>
+        <td>{{ o.kendaraan }}</td>
+        <td>{{ o.pegawai }}</td>
+        <td>{{ o.masa_berlaku_display }}</td>
+        <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
+        <td>
+          {% if o.status == 'DIAJUKAN' and o.file_konsep_pdf %}
+            <a class="btn btn-secondary" target="_blank" href="{{ o.file_konsep_pdf.url }}">Preview</a>
+          {% else %}
+            -
+          {% endif %}
+        </td>
+        <td>
+          {% if o.status == 'DIAJUKAN' %}
+            <a class="btn btn-primary btn-detail" href="{% url 'kendaraan:sip_detail' o.pk %}?from=approval&next={{ request.get_full_path|urlencode }}">Review</a>
+          {% else %}
+            <a class="btn btn-secondary btn-detail" href="{% url 'kendaraan:sip_detail' o.pk %}?from=approval&next={{ request.get_full_path|urlencode }}">Detail</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="8" class="empty-state">Belum ada SIP Kendaraan yang diajukan ke pejabat penerbit.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'includes/pagination.html' %}
+</div>
+{% endblock %}

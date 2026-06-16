@@ -1,56 +1,84 @@
 {% extends 'base.html' %}
 {% load rupiah %}
-{% block page_title %}Permohonan PSP BMN{% endblock %}
+{% block page_title %}{{ page_title|default:'Permohonan PSP BMN' }}{% endblock %}
 {% block content %}
 <div class="toolbar">
   {% include 'includes/list_search.html' %}
   <div style="display:flex;gap:10px;flex-wrap:wrap">
-    <a class="btn btn-primary" href="{% url 'psp:create' %}">+ Ajukan PSP BMN</a>
+    {% if show_create_buttons %}
+      <a class="btn btn-primary" href="{% url 'psp:create' %}">+ Ajukan PSP BMN</a>
+      <a class="btn btn-secondary" href="{% url 'psp:template_import_barang' %}">Download Template Import Barang</a>
+    {% endif %}
   </div>
 </div>
+
+{% if mode == 'verifikasi' %}
 <div class="message info">
-  Unit kerja mengajukan permohonan Penetapan Status Penggunaan (PSP) BMN kepada Biro Umum. Kolom lama proses berfungsi sebagai pengingat pemohon dan verifikator.
+  <strong>Alur Verifikasi Biro Umum:</strong> Biro Umum memeriksa usulan PSP dari seluruh unit kerja, mengembalikan jika perlu perbaikan, atau meneruskan ke Sekjen untuk penetapan.
 </div>
+{% elif mode == 'persetujuan_sekjen' %}
+<div class="message info">
+  <strong>Alur Penetapan Sekjen:</strong> Sekjen melihat semua usulan PSP yang telah diteruskan Biro Umum dan menetapkan/menolak PSP sesuai kewenangan.
+</div>
+{% else %}
+<div class="message info">
+  Modul PSP dipisahkan antara <strong>Permohonan PSP</strong> oleh unit kerja, <strong>Verifikasi Usulan PSP</strong> oleh Biro Umum, dan <strong>Penetapan PSP</strong> oleh Sekjen.
+</div>
+{% endif %}
+
 <div class="card table-card">
   <div class="table-responsive">
     <table class="table">
       <thead>
         <tr>
           <th>Nomor/Tanggal</th>
+          <th>Paket / SIMAN</th>
           <th>Unit Kerja</th>
-          <th>Jenis Barang</th>
-          <th>Nilai PSP</th>
-          <th>Kategori Validasi</th>
+          <th>Jenis</th>
+          <th>Validasi</th>
           <th>Status</th>
-          <th>Lama Proses/Pengingat</th>
+          <th>Dokumen/e-Meterai</th>
+          <th>Lama Proses</th>
           <th>Aksi</th>
         </tr>
       </thead>
       <tbody>
       {% for o in object_list %}
         <tr>
-          <td><strong>{{ o.nomor_permohonan }}</strong><br><small>{{ o.tanggal_permohonan|date:'d/m/Y' }}</small></td>
+          <td>
+            <strong>{{ o.nomor_permohonan }}</strong><br>
+            <small>{{ o.tanggal_permohonan|date:'d/m/Y' }}</small><br>
+            <small>Nota: {{ o.nomor_nota_permohonan_psp|default:'otomatis saat simpan' }}</small>
+          </td>
+          <td>
+            <strong>{{ o.judul_paket|default:o.nama_barang|default:'-' }}</strong><br>
+            <small>SIMAN: {{ o.nomor_tiket_siman|default:'-' }}</small>
+          </td>
           <td>{{ o.unit_kerja|default:'-' }}<br><small>{{ o.pemohon|default:'-' }}</small></td>
           <td>{{ o.get_jenis_barang_display }}</td>
-          <td>{{ o.nilai_psp|rupiah }}</td>
           <td>{{ o.kategori_nilai_display }}</td>
           <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
           <td>
+            <small>Dokumen: {{ o.status_dokumen_final_display }}</small><br>
+            <small>e-Meterai: {{ o.get_status_emeterai_display }}</small>
+          </td>
+          <td>
             <strong>{{ o.lama_proses_hari }} hari</strong><br>
             <span class="status-badge {{ o.status_pengingat_class }}">{{ o.status_pengingat_label }}</span>
-            {% if o.pesan_pengingat_pemohon %}<br><small>{{ o.pesan_pengingat_pemohon }}</small>{% endif %}
-            {% if o.pesan_pengingat_verifikator %}<br><small>{{ o.pesan_pengingat_verifikator }}</small>{% endif %}
           </td>
           <td>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <a class="btn btn-secondary" href="{% url 'psp:detail' o.pk %}">Detail</a>
-              <a class="btn btn-secondary" href="{% url 'psp:update' o.pk %}">Edit</a>
-              <a class="btn btn-danger" href="{% url 'psp:delete' o.pk %}">Hapus</a>
+              <a class="btn btn-secondary" href="{% url 'psp:detail' o.pk %}{% if mode == 'verifikasi' %}?from=psp:verifikasi{% elif mode == 'persetujuan_sekjen' %}?from=psp:persetujuan_sekjen{% endif %}">Detail</a>
+              {% if show_unit_edit_actions %}
+                <a class="btn btn-secondary" href="{% url 'psp:update' o.pk %}">Edit</a>
+                <a class="btn btn-secondary" href="{% url 'psp:import_barang' o.pk %}">Import Barang</a>
+                <a class="btn btn-danger" href="{% url 'psp:delete' o.pk %}">Hapus</a>
+              {% endif %}
             </div>
           </td>
         </tr>
       {% empty %}
-        <tr><td colspan="8" class="empty-state">Belum ada permohonan PSP BMN.</td></tr>
+        <tr><td colspan="9" class="empty-state">{{ empty_message|default:'Belum ada permohonan PSP BMN.' }}</td></tr>
       {% endfor %}
       </tbody>
     </table>

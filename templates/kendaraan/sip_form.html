@@ -9,7 +9,7 @@ Form SIP Kendaraan
     <div class="form-header">
         <div>
             <h2>Form SIP Kendaraan</h2>
-            <p>Lengkapi data Surat Izin Pemakaian kendaraan. Dokumen SIP hanya diperbolehkan dalam format PDF.</p>
+            <p>Lengkapi data dasar Surat Izin Pemakaian kendaraan. Dokumen PDF SIP akan digenerate dan diupload oleh pejabat penerbit setelah proses persetujuan/TTE BSrE.</p>
         </div>
     </div>
 
@@ -24,18 +24,13 @@ Form SIP Kendaraan
 
         <div class="form-grid">
             {% for field in form %}
-                <p class="{% if field.name == 'tujuan_pemakaian' or field.name == 'dasar_penerbitan' or field.name == 'catatan' or field.name == 'dokumen_sip' %}full{% endif %}">
+                <p class="{% if field.name == 'tujuan_pemakaian' or field.name == 'dasar_penerbitan' or field.name == 'catatan' or field.name == 'dokumen_lainnya' %}full{% endif %}">
                     <label for="{{ field.id_for_label }}">
                         {{ field.label }}
                     </label>
 
                     {{ field }}
 
-                    {% if field.name == 'dokumen_sip' %}
-                        <small class="hint">
-                            Hanya file PDF yang diperbolehkan.
-                        </small>
-                    {% endif %}
 
                     {% if field.help_text %}
                         <small class="hint">{{ field.help_text }}</small>
@@ -48,32 +43,11 @@ Form SIP Kendaraan
             {% endfor %}
         </div>
 
-        {% if object and object.dokumen_sip %}
-            <div class="document-section">
-                <div class="document-header">
-                    <div>
-                        <h3>Preview Dokumen SIP Kendaraan</h3>
-                        <p>Dokumen SIP kendaraan yang sudah diupload ditampilkan di bawah ini.</p>
-                    </div>
-                </div>
+        
+        <div class="message info" style="margin-top:18px;">
+            Dokumen SIP Kendaraan utama tidak diupload dari form ini. Konsep/final PDF dibuat melalui alur persetujuan. Lampiran pendukung opsional dapat diupload melalui field Dokumen Lainnya.
+        </div>
 
-                <div class="pdf-preview">
-                    <object
-                        data="{{ object.dokumen_sip.url }}#toolbar=1&navpanes=0&scrollbar=1"
-                        type="application/pdf"
-                        width="100%"
-                        height="100%">
-
-                        <iframe
-                            src="{{ object.dokumen_sip.url }}#toolbar=1&navpanes=0&scrollbar=1"
-                            width="100%"
-                            height="100%"
-                            style="border: none;">
-                        </iframe>
-                    </object>
-                </div>
-            </div>
-        {% endif %}
 
         <div class="form-actions">
             <button class="btn btn-primary" type="submit">

@@ -5,39 +5,293 @@
 <div class="card detail-card">
   <div class="detail-header">
     <h2>{{ object.nomor_permohonan }}</h2>
-    <p>{{ object.get_jenis_barang_display }} - {{ object.nilai_psp|rupiah }}</p>
+    <p>{{ object.judul_paket|default:object.get_jenis_barang_display }} - {{ object.total_nilai_barang|default:object.nilai_psp|rupiah }}</p>
   </div>
 
   <div class="mini-stats-grid">
     <div class="mini-stat-card"><div><small>Status</small><strong>{{ object.get_status_display }}</strong></div></div>
-    <div class="mini-stat-card"><div><small>Unit Kerja</small><strong>{{ object.unit_kerja|default:'-' }}</strong></div></div>
-    <div class="mini-stat-card"><div><small>Tanggal Usul</small><strong>{{ object.tanggal_permohonan|date:'d/m/Y' }}</strong></div></div>
-    <div class="mini-stat-card"><div><small>Nilai PSP</small><strong>{{ object.nilai_psp|rupiah }}</strong></div></div>
-    <div class="mini-stat-card"><div><small>Lama Proses</small><strong>{{ object.lama_proses_hari }} hari</strong></div></div>
+    <div class="mini-stat-card"><div><small>Jumlah Barang</small><strong>{{ object.jumlah_barang }} unit</strong></div></div>
+    <div class="mini-stat-card"><div><small>Total Nilai</small><strong>{{ object.total_nilai_barang|rupiah }}</strong></div></div>
+    <div class="mini-stat-card"><div><small>Nilai Tertinggi/Unit</small><strong>{{ object.nilai_tertinggi_per_unit|rupiah }}</strong></div></div>
+    <div class="mini-stat-card"><div><small>Status Dokumen Final</small><strong>{{ object.status_dokumen_final_display }}</strong></div></div>
   </div>
+
   <div style="height:18px"></div>
   <div class="message {{ object.status_pengingat_class }}">
     <strong>{{ object.status_pengingat_label }}</strong><br>
-    Lama proses dihitung sejak tanggal permohonan sampai tanggal proses terakhir atau hari ini.
+    Lama proses: {{ object.lama_proses_hari }} hari. {{ object.kategori_nilai_display }}.
     {% if object.pesan_pengingat_pemohon %}<br>{{ object.pesan_pengingat_pemohon }}{% endif %}
     {% if object.pesan_pengingat_verifikator %}<br>{{ object.pesan_pengingat_verifikator }}{% endif %}
   </div>
 
+  
+  <div style="height:18px"></div>
+  <div class="card" style="padding:18px">
+    {% if can_penetapan_psp %}
+      <h3>Generate SK Penetapan PSP - Sekjen</h3>
+      <p class="small-muted">Untuk role Sekjen, dokumen Word yang digenerate hanya konsep SK Penetapan PSP. Nomor SK, redaksi, dan tanda tangan dapat diedit manual di Word. Lampiran daftar barang tidak digenerate dari menu ini.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <a class="btn btn-primary" target="_blank" href="{% url 'psp:generate_dokumen' object.pk 'sk' %}">Generate Word SK Penetapan PSP</a>
+      </div>
+    {% else %}
+      <h3>Generate Dokumen PSP SIKARIS</h3>
+      <p class="small-muted">Dokumen berikut digenerate oleh aplikasi dalam format Word (.docx) agar nomor surat, redaksi, dan tanda tangan dapat diedit manual. Setelah selesai ditandatangani/TTE dan diberi meterai biasa atau e-Meterai sesuai kebutuhan, upload hasil akhirnya sebagai PDF Dokumen PSP SIKARIS sebelum diteruskan ke Sekjen.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <a class="btn btn-secondary" target="_blank" href="{% url 'psp:generate_dokumen' object.pk 'nota' %}">Generate Word Nota Dinas</a>
+        <a class="btn btn-secondary" target="_blank" href="{% url 'psp:generate_dokumen' object.pk 'keterangan' %}">Generate Word Surat Keterangan Dokumen Digital</a>
+        <a class="btn btn-secondary" target="_blank" href="{% url 'psp:generate_dokumen' object.pk 'pernyataan' %}">Generate Word Surat Pernyataan e-Meterai</a>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if can_verifikasi_psp or can_penetapan_psp %}
+  <div style="height:18px"></div>
+  <div class="card" style="padding:18px">
+    {% if can_verifikasi_psp %}
+      <h3>Verifikasi Usulan PSP - Biro Umum</h3>
+      <p class="small-muted">Biro Umum melakukan verifikasi kelengkapan usulan, mengembalikan untuk perbaikan, atau meneruskan ke Sekjen. Sebelum diteruskan ke Sekjen, wajib upload PDF Dokumen PSP SIKARIS final/gabungan. PDF dapat memakai TTE BSrE atau tanda tangan manual, serta meterai biasa atau e-Meterai sesuai kebutuhan.</p>
+      <form method="post" enctype="multipart/form-data" action="{% url 'psp:proses' object.pk %}" style="display:grid;gap:12px;margin-top:12px">
+        {% csrf_token %}
+        <textarea class="form-control" name="catatan" rows="3" placeholder="Catatan Biro Umum / alasan perbaikan">{{ object.catatan_biro_umum|default:'' }}</textarea>
+        <label><strong>Upload Dokumen PSP SIKARIS Final/Gabungan (PDF)</strong></label>
+        <input class="form-control" type="file" name="dokumen_permohonan_psp" accept="application/pdf,.pdf">
+        <small class="hint">Wajib sebelum diteruskan ke Sekjen. File dapat hasil TTE BSrE atau tanda tangan manual; meterai dapat meterai biasa/e-Meterai.</small>
+        {% if object.dokumen_permohonan_psp %}<small class="hint">File saat ini: <a href="{{ object.dokumen_permohonan_psp.url }}" target="_blank">Lihat Dokumen PSP SIKARIS PDF</a></small>{% endif %}
+
+        <style>
+          .psp-check-card {
+            margin-top: 6px;
+            padding: 20px;
+            border: 1px solid #dbeafe;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+          }
+          .psp-check-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 16px;
+          }
+          .psp-check-head h4 {
+            margin: 0 0 4px 0;
+            font-size: 18px;
+            color: #0f172a;
+          }
+          .psp-check-head p {
+            margin: 0;
+            max-width: 760px;
+          }
+          .psp-check-summary {
+            white-space: nowrap;
+            border-radius: 999px;
+            padding: 8px 12px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-weight: 800;
+            font-size: 13px;
+          }
+          .psp-check-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+          }
+          .psp-check-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            border: 1px solid #e5edf8;
+            border-radius: 14px;
+            background: #ffffff;
+            cursor: pointer;
+            transition: .18s ease;
+          }
+          .psp-check-item:hover {
+            border-color: #bfdbfe;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 22px rgba(37, 99, 235, 0.08);
+          }
+          .psp-check-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #2563eb;
+            flex: 0 0 auto;
+          }
+          .psp-check-text {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+          }
+          .psp-check-title {
+            font-weight: 800;
+            color: #1e293b;
+            line-height: 1.25;
+          }
+          .psp-check-subtitle {
+            color: #64748b;
+            font-size: 12px;
+            line-height: 1.35;
+          }
+          .psp-check-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 16px 0 0;
+            margin-top: 4px;
+            border-top: 1px dashed #dbeafe;
+          }
+          @media (max-width: 900px) {
+            .psp-check-head { flex-direction: column; }
+            .psp-check-summary { white-space: normal; }
+            .psp-check-list { grid-template-columns: 1fr; }
+            .psp-check-actions { justify-content: stretch; }
+            .psp-check-actions .btn { width: 100%; }
+          }
+        </style>
+
+        <div class="psp-check-card">
+          <div class="psp-check-head">
+            <div>
+              <h4>Checklist Verifikasi Dokumen PSP - Biro Umum</h4>
+              <p class="small-muted">Centang dokumen yang sudah tersedia/tergabung dalam PDF final sebelum usulan diteruskan ke Sekretaris Jenderal.</p>
+            </div>
+            <div class="psp-check-summary">Verifikasi Dokumen</div>
+          </div>
+
+          <div class="psp-check-list">
+            <label class="psp-check-item">
+              <input type="checkbox" name="check_dokumen_psp_final" value="1" {% if object.dokumen_permohonan_psp %}checked{% endif %}>
+              <span class="psp-check-text">
+                <span class="psp-check-title">Dokumen PSP SIKARIS Final/Gabungan</span>
+                <span class="psp-check-subtitle">PDF final sudah tersedia dan siap menjadi dokumen utama untuk Sekjen.</span>
+              </span>
+            </label>
+            <label class="psp-check-item">
+              <input type="checkbox" name="check_surat_permohonan_satker" value="1" {% if object.surat_permohonan_satker or object.dokumen_permohonan_psp %}checked{% endif %}>
+              <span class="psp-check-text">
+                <span class="psp-check-title">Surat Permohonan Satker</span>
+                <span class="psp-check-subtitle">Sudah ada atau tergabung dalam PDF final.</span>
+              </span>
+            </label>
+            <label class="psp-check-item">
+              <input type="checkbox" name="check_surat_pengantar_eselon1" value="1" {% if object.surat_pengantar_eselon1 or object.dokumen_permohonan_psp %}checked{% endif %}>
+              <span class="psp-check-text">
+                <span class="psp-check-title">Surat Pengantar Eselon I</span>
+                <span class="psp-check-subtitle">Sudah ada atau tergabung dalam PDF final.</span>
+              </span>
+            </label>
+            <label class="psp-check-item">
+              <input type="checkbox" name="check_daftar_kondisi_barang" value="1" {% if object.daftar_kondisi_barang or object.dokumen_permohonan_psp %}checked{% endif %}>
+              <span class="psp-check-text">
+                <span class="psp-check-title">Daftar Kondisi Barang</span>
+                <span class="psp-check-subtitle">Sudah ada atau tergabung dalam PDF final.</span>
+              </span>
+            </label>
+            <label class="psp-check-item">
+              <input type="checkbox" name="check_laporan_sub_kelompok" value="1" {% if object.laporan_sub_kelompok_barang or object.dokumen_permohonan_psp %}checked{% endif %}>
+              <span class="psp-check-text">
+                <span class="psp-check-title">Laporan Sub-Sub Kelompok</span>
+                <span class="psp-check-subtitle">Sudah ada atau tergabung dalam PDF final.</span>
+              </span>
+            </label>
+            <label class="psp-check-item">
+              <input type="checkbox" name="check_surat_pernyataan_kepala_satker" value="1" {% if object.surat_pernyataan_kepala_satker or object.dokumen_permohonan_psp %}checked{% endif %}>
+              <span class="psp-check-text">
+                <span class="psp-check-title">Surat Pernyataan Kepala Satker</span>
+                <span class="psp-check-subtitle">Sudah ada atau tergabung dalam PDF final.</span>
+              </span>
+            </label>
+          </div>
+
+          <div class="psp-check-actions">
+            <button class="btn btn-secondary" name="action" value="verifikasi_biro">Tandai Diverifikasi</button>
+            <button class="btn btn-primary" name="action" value="teruskan_sekjen">Teruskan ke Sekjen</button>
+            <button class="btn btn-danger" name="action" value="kembalikan_biro">Kembalikan untuk Perbaikan</button>
+          </div>
+        </div>
+      </form>
+    {% endif %}
+
+    {% if can_penetapan_psp %}
+      <h3>Penetapan PSP - Sekjen</h3>
+      <p class="small-muted">Sekjen menetapkan PSP berdasarkan usulan yang telah diteruskan Biro Umum. SK final/TTE BSrE dapat diunggah jika sudah tersedia.</p>
+      <form method="post" enctype="multipart/form-data" action="{% url 'psp:proses' object.pk %}" style="display:grid;gap:12px;margin-top:12px">
+        {% csrf_token %}
+        <textarea class="form-control" name="catatan" rows="3" placeholder="Catatan Sekjen / alasan penolakan"></textarea>
+        <label><strong>SK Penetapan PSP Final (PDF, opsional)</strong></label>
+        <input class="form-control" type="file" name="sk_penetapan_psp" accept="application/pdf,.pdf">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" name="action" value="tetapkan_sekjen">Tetapkan PSP / SK Terbit</button>
+          <button class="btn btn-danger" name="action" value="tolak_sekjen">Tolak PSP</button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <div style="height:18px"></div>
   <div class="detail-grid">
+    <div class="detail-item"><div class="detail-label">Unit Kerja</div><div class="detail-value">{{ object.unit_kerja|default:'-' }}</div></div>
+    <div class="detail-item"><div class="detail-label">Tiket SIMAN V2</div><div class="detail-value">{{ object.nomor_tiket_siman|default:'-' }}</div></div>
     <div class="detail-item"><div class="detail-label">Jenis Barang</div><div class="detail-value">{{ object.get_jenis_barang_display }}</div></div>
-    <div class="detail-item"><div class="detail-label">Kategori Validasi</div><div class="detail-value">{{ object.kategori_nilai_display }}</div></div>
-    <div class="detail-item wide"><div class="detail-label">Keterangan Barang</div><div class="detail-value">{{ object.keterangan_barang|default:'-'|linebreaksbr }}</div></div>
+    <div class="detail-item"><div class="detail-label">Batas Nilai Per Unit</div><div class="detail-value">{{ object.batas_nilai_per_unit|rupiah }}</div></div>
+    <div class="detail-item wide"><div class="detail-label">Keterangan</div><div class="detail-value">{{ object.keterangan_barang|default:'-'|linebreaksbr }}</div></div>
   </div>
 
   <div style="height:18px"></div>
   <div class="card" style="padding:18px">
-    <h3>Dokumen Permohonan PSP</h3>
+    <h3>Nomor Surat Dokumen PSP SIKARIS</h3>
+    <table class="table" style="margin-top:14px">
+      <tbody>
+        <tr><th>Nota Permohonan PSP ke Sekjen (manual di Word)</th><td>{{ object.nomor_nota_permohonan_psp|default:'-' }}{% if object.tanggal_nota_permohonan_psp %} - {{ object.tanggal_nota_permohonan_psp|date:'d/m/Y' }}{% endif %}</td></tr>
+        <tr><th>Surat Keterangan Dokumen Digital (manual di Word)</th><td>{{ object.nomor_surat_keterangan_digital|default:'-' }}{% if object.tanggal_surat_keterangan_digital %} - {{ object.tanggal_surat_keterangan_digital|date:'d/m/Y' }}{% endif %}</td></tr>
+        <tr><th>Surat Pernyataan Formil dan Materiil (manual di Word)</th><td>{{ object.nomor_surat_pernyataan_formil_materiil|default:'-' }}{% if object.tanggal_surat_pernyataan_formil_materiil %} - {{ object.tanggal_surat_pernyataan_formil_materiil|date:'d/m/Y' }}{% endif %}</td></tr>
+        <tr><th>Nota Dinas ke Biro Hukum</th><td>{{ object.nomor_nota_biro_hukum|default:'-' }}{% if object.tanggal_nota_biro_hukum %} - {{ object.tanggal_nota_biro_hukum|date:'d/m/Y' }}{% endif %}</td></tr>
+        <tr><th>SK PSP</th><td>{{ object.nomor_sk_psp|default:'-' }}{% if object.tanggal_sk_psp %} - {{ object.tanggal_sk_psp|date:'d/m/Y' }}{% endif %}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  <div style="height:18px"></div>
+  <div class="card" style="padding:18px">
+    <h3>Dokumen Permohonan dan e-Meterai</h3>
     <div class="list-stack">
-      <div class="list-item"><div class="list-main"><strong>Dokumen Permohonan PSP Gabungan</strong><span>{% if object.dokumen_permohonan_psp %}<a href="{{ object.dokumen_permohonan_psp.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
-      <div class="list-item"><div class="list-main"><strong>Dokumen Kepemilikan</strong><span>{% if object.dokumen_kepemilikan %}<a href="{{ object.dokumen_kepemilikan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
-      <div class="list-item"><div class="list-main"><strong>Surat Pernyataan Pengganti Kepemilikan</strong><span>{% if object.surat_pernyataan_pengganti_kepemilikan %}<a href="{{ object.surat_pernyataan_pengganti_kepemilikan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
-      <div class="list-item"><div class="list-main"><strong>SK Penetapan PSP</strong><span>{% if object.sk_penetapan_psp %}<a href="{{ object.sk_penetapan_psp.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Dokumen PSP SIKARIS Final/Gabungan</strong><span>{% if object.dokumen_permohonan_psp %}<a href="{{ object.dokumen_permohonan_psp.url }}" target="_blank">Lihat Dokumen PSP SIKARIS PDF</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Surat Pernyataan Kepala Satker</strong><span>{% if object.surat_pernyataan_kepala_satker %}<a href="{{ object.surat_pernyataan_kepala_satker.url }}" target="_blank">Lihat Dokumen PSP SIKARIS PDF</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Dokumen Bermeterai Elektronik</strong><span>{{ object.get_status_emeterai_display }}{% if object.dokumen_bermeterai %} - <a href="{{ object.dokumen_bermeterai.url }}" target="_blank">Lihat PDF e-Meterai</a>{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>File Sebelum TTE BSrE</strong><span>{% if object.file_sebelum_tte %}<a href="{{ object.file_sebelum_tte.url }}" target="_blank">Lihat PDF</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>SK Penetapan PSP</strong><span>{% if object.sk_penetapan_psp %}<a href="{{ object.sk_penetapan_psp.url }}" target="_blank">Lihat SK PSP</a>{% else %}-{% endif %}</span></div></div>
+    </div>
+  </div>
+
+  <div style="height:18px"></div>
+  <div class="card" style="padding:18px">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+      <h3>Detail Barang PSP{% if detail_barang_count %} ({{ detail_barang_count }} baris){% endif %}</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        {% if not is_sekretaris_jenderal %}<a class="btn btn-secondary" href="{% url 'psp:import_barang' object.pk %}">Import Excel Barang</a>{% endif %}
+      </div>
+    </div>
+    <div class="table-responsive" style="margin-top:14px">
+      <table class="table">
+        <thead><tr><th>No</th><th>Kode Barang</th><th>NUP</th><th>Nama Barang</th><th>Tipe</th><th>Tahun</th><th>Qty</th><th>Nilai</th><th>Kondisi</th></tr></thead>
+        <tbody>
+          {% for item in detail_barang %}
+          <tr>
+            <td>{{ item.nomor_urut }}</td><td>{{ item.kode_barang }}</td><td>{{ item.nup }}</td><td>{{ item.nama_barang }}</td><td>{{ item.tipe_barang|default:'-' }}</td><td>{{ item.tahun_perolehan|default:'-' }}</td><td>{{ item.kuantitas }}</td><td>{{ item.nilai_perolehan|rupiah }}</td><td>{{ item.get_kondisi_barang_display }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="9" class="empty-state">Belum ada detail barang. Gunakan tombol Import Excel Barang.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if detail_barang_count > 100 %}<small class="hint">Yang ditampilkan hanya 100 baris pertama.</small>{% endif %}
     </div>
   </div>
 
@@ -58,21 +312,24 @@
 
   <div style="height:18px"></div>
   <div class="card" style="padding:18px">
-    <h3>Proses Biro Umum</h3>
+    <h3>Proses</h3>
     <table class="table" style="margin-top:14px">
       <tbody>
         <tr><th>Catatan Unit</th><td>{{ object.catatan_unit|default:'-'|linebreaksbr }}</td></tr>
         <tr><th>Catatan Biro Umum</th><td>{{ object.catatan_biro_umum|default:'-'|linebreaksbr }}</td></tr>
+        <tr><th>Catatan Biro Hukum</th><td>{{ object.catatan_biro_hukum|default:'-'|linebreaksbr }}</td></tr>
         <tr><th>Diverifikasi Oleh</th><td>{{ object.diverifikasi_oleh|default:'-' }}{% if object.tanggal_verifikasi %} - {{ object.tanggal_verifikasi|date:'d/m/Y' }}{% endif %}</td></tr>
-        <tr><th>Lama Proses/Pengingat</th><td><strong>{{ object.lama_proses_hari }} hari</strong><br><span class="status-badge {{ object.status_pengingat_class }}">{{ object.status_pengingat_label }}</span></td></tr>
-        <tr><th>SK PSP</th><td>{{ object.nomor_sk_psp|default:'-' }}{% if object.tanggal_sk_psp %} - {{ object.tanggal_sk_psp|date:'d/m/Y' }}{% endif %}</td></tr>
+        <tr><th>Disetujui Sekjen Oleh</th><td>{{ object.disetujui_sekjen_oleh|default:'-' }}{% if object.tanggal_persetujuan_sekjen %} - {{ object.tanggal_persetujuan_sekjen|date:'d/m/Y' }}{% endif %}</td></tr>
+        <tr><th>Status Dokumen Final</th><td>{{ object.status_dokumen_final_display }}</td></tr>
       </tbody>
     </table>
   </div>
 
   <div class="form-actions">
-    <a class="btn btn-secondary" href="{% url 'psp:update' object.pk %}">Edit</a>
-    <a class="btn btn-secondary" href="{% url 'psp:list' %}">Kembali</a>
+    {% if not is_sekretaris_jenderal and not can_verifikasi_psp %}
+      <a class="btn btn-secondary" href="{% url 'psp:update' object.pk %}">Edit</a>
+    {% endif %}
+    <a class="btn btn-secondary" href="{% url back_url_name %}">Kembali</a>
   </div>
 </div>
 {% endblock %}

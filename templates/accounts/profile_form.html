@@ -1,6 +1,39 @@
 {% extends 'base.html' %}
 {% block page_title %}Edit Profile{% endblock %}
 {% block content %}
+
+<div class="card form-card" style="margin-bottom: 24px;">
+  <div class="form-header">
+    <h2>Informasi Role dan Hak Akses</h2>
+    <p>Informasi berikut dibaca dari role/group user dan konfigurasi unit kerja.</p>
+  </div>
+
+  <div class="profile-access-grid">
+    <div class="access-box">
+      <strong>Role Pengguna</strong>
+      <div class="role-chip-wrap">
+        {% for role in profile_role_names %}
+          <span class="role-chip">{{ role }}</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="access-box">
+      <strong>Unit Kerja/Satker</strong>
+      <p>{{ profile_unit_kerja|default:'Belum diatur' }}</p>
+    </div>
+  </div>
+
+  <div class="access-box full-access">
+    <strong>Hak Akses</strong>
+    <ul class="access-list">
+      {% for akses in profile_hak_akses %}
+        <li>{{ akses }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
 <div class="card form-card">
   <div class="form-header">
     <h2>Edit Profile</h2>
@@ -26,4 +59,40 @@
     </div>
   </form>
 </div>
+
+<style>
+.profile-access-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.access-box {
+  border: 1px solid #dbe5f0;
+  border-radius: 18px;
+  padding: 18px 20px;
+  background: #f8fbff;
+}
+.access-box strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #0f172a;
+}
+.access-box p { margin: 0; color: #334155; }
+.role-chip-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #e8f1ff;
+  color: #0b4fb3;
+  font-weight: 800;
+  font-size: 13px;
+}
+.full-access { margin-top: 16px; }
+.access-list { margin: 0; padding-left: 20px; color: #334155; }
+.access-list li { margin: 6px 0; }
+@media (max-width: 768px) { .profile-access-grid { grid-template-columns: 1fr; } }
+</style>
 {% endblock %}

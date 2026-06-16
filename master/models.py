@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from core.constants import KONDISI_ASET, STATUS_PEMANFAATAN_KENDARAAN, STATUS_PEMANFAATAN_RUMAH, JENIS_KENDARAAN_CHOICES
+from core.constants import KONDISI_ASET, STATUS_PEMANFAATAN_KENDARAAN, STATUS_PEMANFAATAN_RUMAH, JENIS_KENDARAAN_CHOICES, JENIS_UNIT_KERJA_CHOICES
 
 class TimeStampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -10,10 +10,48 @@ class TimeStampedModel(models.Model):
 
 class UnitKerja(TimeStampedModel):
     nama_unit = models.CharField(max_length=150, unique=True)
+    jenis_unit = models.CharField(
+        max_length=30,
+        choices=JENIS_UNIT_KERJA_CHOICES,
+        default='LAINNYA',
+        help_text='Dipakai untuk menentukan pejabat penerbit SIP Kendaraan.'
+    )
+    pejabat_penerbit_sip_kendaraan = models.ForeignKey(
+        'Pegawai',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='unit_penerbit_sip_kendaraan',
+        help_text='Pegawai yang menjadi pejabat penerbit/penandatangan SIP Kendaraan untuk unit ini.'
+    )
+    nama_jabatan_penerbit_sip_kendaraan = models.CharField(
+        max_length=180,
+        blank=True,
+        null=True,
+        help_text='Contoh: Kepala Biro Umum, Sekretaris Ditjen Rehabilitasi Sosial, Kepala Sentra, Kepala Balai.'
+    )
     keterangan = models.TextField(blank=True, null=True)
     class Meta:
         ordering = ['nama_unit']
     def __str__(self): return self.nama_unit
+
+    @property
+    def jabatan_penerbit_sip_kendaraan_display(self):
+        if self.nama_jabatan_penerbit_sip_kendaraan:
+            return self.nama_jabatan_penerbit_sip_kendaraan
+        if self.pejabat_penerbit_sip_kendaraan and self.pejabat_penerbit_sip_kendaraan.jabatan:
+            return self.pejabat_penerbit_sip_kendaraan.jabatan
+        if self.jenis_unit == 'BIRO_UMUM':
+            return 'Kepala Biro Umum'
+        if self.jenis_unit in ['DITJEN', 'ITJEN', 'BADAN']:
+            return f'Sekretaris {self.nama_unit}'
+        if self.jenis_unit == 'SENTRA':
+            return f'Kepala {self.nama_unit}'
+        if self.jenis_unit == 'BALAI':
+            return f'Kepala {self.nama_unit}'
+        if self.jenis_unit == 'PUSAT':
+            return f'Kepala {self.nama_unit}'
+        return 'Pejabat Penerbit SIP Kendaraan'
 
 class Pegawai(TimeStampedModel):
     nip = models.CharField(max_length=30, unique=True)
