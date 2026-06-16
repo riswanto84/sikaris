@@ -4,6 +4,7 @@ from . import views
 app_name = 'psp'
 
 urlpatterns = [
+    path('export/<str:fmt>/', views.export_psp, name='export'),
     path('', views.PermohonanPSPListView.as_view(), name='list'),
     path('verifikasi/', views.VerifikasiPSPListView.as_view(), name='verifikasi'),
     path('persetujuan-sekjen/', views.PersetujuanSekjenPSPListView.as_view(), name='persetujuan_sekjen'),

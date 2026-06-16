@@ -2,6 +2,7 @@ from decimal import Decimal, InvalidOperation
 from io import BytesIO
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q
@@ -16,6 +17,7 @@ from openpyxl import Workbook, load_workbook
 
 from core.access import is_biro_umum_user, is_global_bmn_scope_user, get_user_unit_kerja, require_user_unit_or_all, scope_queryset_by_user
 from core.listing import SearchListMixin
+from core.export_utils import apply_search_filter, export_queryset
 from core.roles import is_sekretaris_jenderal, is_dirjen_rehsos
 from .forms import ImportBarangPenghapusanForm, PermohonanPenghapusanBMNForm
 from .models import BarangPenghapusanBMN, PermohonanPenghapusanBMN, FotoKondisiPenghapusanBMN
@@ -548,3 +550,56 @@ class PermohonanPenghapusanDeleteView(PermohonanPenghapusanAccessMixin, DeleteVi
         except ProtectedError:
             messages.error(request, 'Data tidak dapat dihapus karena masih digunakan oleh data lain.')
         return redirect(self.get_success_url())
+
+
+# =============================================================
+# Export daftar Permohonan Penghapusan BMN (PDF, Excel, CSV)
+# =============================================================
+def _penghapusan_columns():
+    return [
+        ('No', '__no__'),
+        ('Nomor Permohonan', 'nomor_permohonan'),
+        ('Tanggal Permohonan', 'tanggal_permohonan'),
+        ('Unit Kerja', 'unit_kerja__nama_unit'),
+        ('Pemohon', 'pemohon__nama'),
+        ('NIP Pemohon', 'pemohon__nip'),
+        ('Jenis Aset', 'display:jenis_aset'),
+        ('Nama Barang', 'nama_barang'),
+        ('Kode Barang', 'kode_barang'),
+        ('NUP', 'nup'),
+        ('Nilai Perolehan', 'nilai_perolehan'),
+        ('Alasan Penghapusan', 'display:alasan_penghapusan'),
+        ('Status', lambda o: getattr(o, 'status_label_alur', '') or getattr(o, 'status', '')),
+        ('Lama Proses (Hari)', lambda o: getattr(o, 'lama_proses_hari', '') or ''),
+        ('Nomor Persetujuan', 'nomor_persetujuan'),
+        ('Nomor SK Penghapusan', 'nomor_sk_penghapusan'),
+        ('Catatan Biro Umum', 'catatan_biro_umum'),
+        ('Catatan Sekjen', 'catatan_sekjen'),
+    ]
+
+
+def _penghapusan_queryset_for_mode(request, mode):
+    view = PermohonanPenghapusanListView()
+    view.request = request
+    view.mode = mode or 'permohonan'
+    if mode == 'verifikasi':
+        view.__class__ = VerifikasiPenghapusanListView
+    elif mode == 'persetujuan_sekjen':
+        view.__class__ = PersetujuanSekjenPenghapusanListView
+    elif mode == 'persetujuan_dirjen_rehsos':
+        view.__class__ = PersetujuanDirjenRehsosPenghapusanListView
+    qs = view.get_base_queryset_for_mode()
+    return apply_search_filter(qs, request, PermohonanPenghapusanListView.search_fields)
+
+
+@login_required
+def export_penghapusan(request, fmt):
+    mode = (request.GET.get('mode') or 'permohonan').strip()
+    qs = _penghapusan_queryset_for_mode(request, mode)
+    title_map = {
+        'verifikasi': 'Verifikasi Usulan Penghapusan BMN',
+        'persetujuan_sekjen': 'Penetapan SK Penghapusan BMN',
+        'persetujuan_dirjen_rehsos': 'Persetujuan Penghapusan BMN Dirjen Rehsos',
+    }
+    filename = f'transaksi_penghapusan_bmn_{mode}'
+    return export_queryset(request, qs, fmt, filename, title_map.get(mode, 'Permohonan Penghapusan BMN'), _penghapusan_columns(), order_by=['-tanggal_permohonan', '-id'])

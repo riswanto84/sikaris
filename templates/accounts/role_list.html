@@ -3,6 +3,7 @@
 {% block content %}
 <div class="toolbar">
   {% include 'includes/list_search.html' %}
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="{% url 'role_export' 'pdf' %}?{{ request.GET.urlencode }}">Export PDF</a><a class="btn btn-secondary" href="{% url 'role_export' 'xlsx' %}?{{ request.GET.urlencode }}">Export Excel</a><a class="btn btn-secondary" href="{% url 'role_export' 'csv' %}?{{ request.GET.urlencode }}">Export CSV</a></div>
   <a class="btn btn-primary" href="{% url 'role_create' %}">+ Tambah Role</a>
 </div>
 

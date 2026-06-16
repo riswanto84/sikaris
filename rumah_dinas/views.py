@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
@@ -8,8 +9,9 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, UpdateView, DetailView, DeleteView, ListView
 
-from core.access import UnitScopedQuerysetMixin, UnitScopedFormMixin
+from core.access import UnitScopedQuerysetMixin, UnitScopedFormMixin, scope_queryset_by_user
 from core.detail import GenericDetailMixin
+from core.export_utils import apply_search_filter, export_queryset
 from core.listing import SearchListMixin
 from core.pdf_sip import generate_sip_rumah_pdf
 from core.roles import (
@@ -393,3 +395,47 @@ class SekjenSIPRumahListView(SekjenRequiredMixin, SearchListMixin, ListView):
         ctx = super().get_context_data(**kwargs)
         ctx['approval_title'] = 'Persetujuan Sekjen - SIP Rumah Negara'
         return ctx
+
+
+# =============================================================
+# Export daftar/transaksi SIP Rumah Negara (PDF, Excel, CSV)
+# =============================================================
+def _sip_rumah_columns():
+    return [
+        ('No', '__no__'),
+        ('Nomor SIP', 'nomor_sip'),
+        ('Tanggal SIP', 'tanggal_sip'),
+        ('Kode Rumah', 'rumah_dinas__kode_rumah'),
+        ('Rumah Negara', 'rumah_dinas'),
+        ('Alamat Rumah', 'rumah_dinas__alamat'),
+        ('Pemegang SIP', 'pegawai__nama'),
+        ('NIP Pemegang', 'pegawai__nip'),
+        ('Unit Kerja Pemegang', 'pegawai__unit_kerja__nama_unit'),
+        ('Penghuni Aktual', 'penghuni__nama'),
+        ('Periode Mulai', 'tanggal_mulai'),
+        ('Periode Akhir', 'tanggal_akhir'),
+        ('Masa Berlaku', lambda o: getattr(o, 'masa_berlaku_display', '') or ''),
+        ('Status PNBP', 'display:status_bayar_pnbp'),
+        ('Tahun PNBP', 'tahun_pnbp'),
+        ('Status SIP', 'display:status'),
+        ('Tanggal Pengajuan', 'tanggal_pengajuan'),
+        ('Tanggal Persetujuan', 'tanggal_persetujuan'),
+        ('Catatan', 'catatan'),
+    ]
+
+
+@login_required
+def export_sip_rumah(request, fmt):
+    qs = SIPRumahDinas.objects.select_related('rumah_dinas', 'pegawai', 'pegawai__unit_kerja', 'penghuni', 'penghuni__unit_kerja')
+    qs = scope_queryset_by_user(qs, request.user, 'sip_rumah')
+    qs = apply_search_filter(qs, request, SIPRumahDinasListView.search_fields)
+    return export_queryset(request, qs, fmt, 'transaksi_sip_rumah_negara', 'Daftar SIP Rumah Negara', _sip_rumah_columns(), order_by=['-tanggal_sip', '-id'])
+
+
+@login_required
+def export_persetujuan_sip_rumah(request, fmt):
+    if not _user_can_approve_sip_rumah_as_sekjen(request.user):
+        raise PermissionDenied('Anda tidak memiliki hak akses export persetujuan SIP Rumah Negara.')
+    qs = SIPRumahDinas.objects.select_related('rumah_dinas', 'pegawai', 'pegawai__unit_kerja', 'penghuni', 'penghuni__unit_kerja').exclude(status='DRAFT')
+    qs = apply_search_filter(qs, request, SIPRumahDinasListView.search_fields)
+    return export_queryset(request, qs, fmt, 'persetujuan_sip_rumah_negara', 'Persetujuan SIP Rumah Negara', _sip_rumah_columns(), order_by=['-tanggal_pengajuan', '-tanggal_sip', '-id'])

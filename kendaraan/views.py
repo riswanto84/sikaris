@@ -11,6 +11,7 @@ from django.views.generic import CreateView, UpdateView, DetailView, DeleteView
 from core.roles import BMNRequiredMixin, MaintenanceRequiredMixin, VehicleViewRequiredMixin, SIPEditRequiredMixin
 from core.listing import SearchListMixin
 from core.detail import GenericDetailMixin
+from core.export_utils import apply_search_filter, export_queryset
 from core.access import UnitScopedQuerysetMixin, UnitScopedFormMixin, scope_queryset_by_user
 from master.models import Kendaraan
 
@@ -712,3 +713,105 @@ class KepalaBiroUmumSIPKendaraanListView(KepalaBiroUmumRequiredMixin, UnitScoped
 
 # Alias class lama agar name URL lama tetap kompatibel bila masih dipakai.
 SekjenSIPKendaraanListView = KepalaBiroUmumSIPKendaraanListView
+
+
+# =============================================================
+# Export daftar/transaksi Kendaraan (PDF, Excel, CSV)
+# =============================================================
+def _sip_kendaraan_columns():
+    return [
+        ('No', '__no__'),
+        ('Nomor SIP', 'nomor_sip'),
+        ('Tanggal SIP', 'tanggal_sip'),
+        ('Nomor Polisi', 'kendaraan__nomor_polisi'),
+        ('Kendaraan', 'kendaraan'),
+        ('Pemegang/Pegawai', 'pegawai__nama'),
+        ('NIP', 'pegawai__nip'),
+        ('Unit Kerja Pegawai', 'pegawai__unit_kerja__nama_unit'),
+        ('Periode Mulai', 'tanggal_mulai'),
+        ('Periode Akhir', 'tanggal_akhir'),
+        ('Masa Berlaku', lambda o: getattr(o, 'masa_berlaku_display', '') or ''),
+        ('Jenis Pemakaian', 'display:jenis_pemakaian'),
+        ('Tujuan', 'tujuan_pemakaian'),
+        ('Lokasi Penggunaan', 'lokasi_penggunaan'),
+        ('Status', 'display:status'),
+        ('Tanggal Pengajuan', 'tanggal_pengajuan'),
+        ('Tanggal Persetujuan', 'tanggal_persetujuan'),
+        ('Catatan', 'catatan'),
+    ]
+
+
+def _service_kendaraan_columns():
+    return [
+        ('No', '__no__'),
+        ('Tanggal Service', 'tanggal_service'),
+        ('Nomor Polisi', 'kendaraan__nomor_polisi'),
+        ('Kendaraan', 'kendaraan'),
+        ('Unit Kerja', 'kendaraan__unit_kerja__nama_unit'),
+        ('Jenis Service', 'display:jenis_service'),
+        ('Kilometer', 'kilometer'),
+        ('Bengkel', 'bengkel'),
+        ('Uraian Pekerjaan', 'uraian_pekerjaan'),
+        ('Sparepart Diganti', 'sparepart_diganti'),
+        ('Biaya Jasa', 'biaya_jasa'),
+        ('Biaya Sparepart', 'biaya_sparepart'),
+        ('Total Biaya', 'total_biaya'),
+        ('Kondisi Sebelum', 'display:kondisi_sebelum'),
+        ('Kondisi Sesudah', 'display:kondisi_sesudah'),
+        ('Petugas', 'dicatat_oleh__username'),
+    ]
+
+
+def _kondisi_kendaraan_columns():
+    return [
+        ('No', '__no__'),
+        ('Tanggal', 'tanggal'),
+        ('Nomor Polisi', 'kendaraan__nomor_polisi'),
+        ('Kendaraan', 'kendaraan'),
+        ('Unit Kerja', 'kendaraan__unit_kerja__nama_unit'),
+        ('Kondisi', 'display:kondisi'),
+        ('Uraian Kondisi', 'uraian_kondisi'),
+        ('Petugas', 'dicatat_oleh__username'),
+    ]
+
+
+@login_required
+def export_sip_kendaraan(request, fmt):
+    qs = scope_queryset_by_user(
+        SIPKendaraan.objects.select_related('kendaraan', 'pegawai', 'kendaraan__unit_kerja', 'pegawai__unit_kerja'),
+        request.user,
+        'sip_kendaraan',
+    )
+    qs = apply_search_filter(qs, request, SIPKendaraanListView.search_fields)
+    return export_queryset(request, qs, fmt, 'transaksi_sip_kendaraan', 'Daftar SIP Kendaraan', _sip_kendaraan_columns(), order_by=['-tanggal_sip', '-id'])
+
+
+@login_required
+def export_persetujuan_sip_kendaraan(request, fmt):
+    if not can_approve_sip_kendaraan(request.user):
+        raise PermissionDenied('Anda tidak memiliki hak akses export persetujuan SIP Kendaraan.')
+    qs = SIPKendaraan.objects.select_related('kendaraan', 'pegawai', 'kendaraan__unit_kerja', 'pegawai__unit_kerja').filter(status__in=['DIAJUKAN', 'DISETUJUI', 'DITOLAK', 'TERBIT', 'AKTIF'])
+    qs = apply_search_filter(qs, request, SIPKendaraanListView.search_fields)
+    return export_queryset(request, qs, fmt, 'persetujuan_sip_kendaraan', 'Persetujuan SIP Kendaraan', _sip_kendaraan_columns(), order_by=['-tanggal_pengajuan', '-tanggal_sip', '-id'])
+
+
+@login_required
+def export_service_kendaraan(request, fmt):
+    qs = scope_queryset_by_user(
+        ServiceKendaraan.objects.select_related('kendaraan', 'kendaraan__unit_kerja', 'dicatat_oleh'),
+        request.user,
+        'service_kendaraan',
+    )
+    qs = apply_search_filter(qs, request, ServiceKendaraanListView.search_fields)
+    return export_queryset(request, qs, fmt, 'transaksi_service_kendaraan', 'Daftar Service Kendaraan', _service_kendaraan_columns(), order_by=['-tanggal_service', '-id'])
+
+
+@login_required
+def export_kondisi_kendaraan(request, fmt):
+    qs = scope_queryset_by_user(
+        RiwayatKondisiKendaraan.objects.select_related('kendaraan', 'kendaraan__unit_kerja', 'dicatat_oleh'),
+        request.user,
+        'kondisi_kendaraan',
+    )
+    qs = apply_search_filter(qs, request, RiwayatKondisiListView.search_fields)
+    return export_queryset(request, qs, fmt, 'transaksi_riwayat_kondisi_kendaraan', 'Riwayat Kondisi Kendaraan', _kondisi_kendaraan_columns(), order_by=['-tanggal', '-id'])

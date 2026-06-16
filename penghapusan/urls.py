@@ -4,6 +4,7 @@ from . import views
 app_name = 'penghapusan'
 
 urlpatterns = [
+    path('export/<str:fmt>/', views.export_penghapusan, name='export'),
     path('', views.PermohonanPenghapusanListView.as_view(), name='list'),
     path('verifikasi/', views.VerifikasiPenghapusanListView.as_view(), name='verifikasi'),
     path('persetujuan-sekjen/', views.PersetujuanSekjenPenghapusanListView.as_view(), name='persetujuan_sekjen'),
