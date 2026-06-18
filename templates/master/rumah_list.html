@@ -9,7 +9,7 @@
 <div class="card table-card">
   <div class="table-responsive">
     <table class="table">
-      <thead><tr><th>Kode</th><th>Nama Rumah Negara</th><th>Jenis</th><th>Unit Kerja</th><th>Alamat</th><th>Nilai Perolehan</th><th>Kondisi</th><th>Status</th><th>Koordinat</th><th>Aksi</th></tr></thead>
+      <thead><tr><th>Kode Register</th><th>Nama Rumah Negara</th><th>Jenis</th><th>Unit Kerja</th><th>Alamat</th><th>Nilai Perolehan</th><th>Kondisi</th><th>Status</th><th>Koordinat</th><th>Aksi</th></tr></thead>
       <tbody>
       {% for o in object_list %}
       <tr>
@@ -20,9 +20,9 @@
         <td>{{ o.alamat|truncatechars:60 }}</td>
         <td>{{ o.nilai_perolehan|rupiah }}</td>
         <td><span class="badge {{ o.kondisi }}">{{ o.get_kondisi_display }}</span></td>
-        <td>{{ o.get_status_pemanfaatan_display }}</td>
+        <td>{{ o.status_penggunaan|default:o.get_status_pemanfaatan_display }}</td>
         <td>{{ o.latitude|default:'-' }}, {{ o.longitude|default:'-' }}</td>
-        <td><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-secondary btn-detail" href="{% url 'master:rumah_detail' o.pk %}">Detail</a><a class="btn btn-secondary" href="{% url 'master:rumah_update' o.pk %}">Edit</a><a class="btn btn-danger" href="{% url 'master:rumah_delete' o.pk %}">Hapus</a></div></td>
+        <td><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-secondary btn-detail" href="{% url 'master:rumah_detail' o.pk %}">Detail</a><a class="btn btn-secondary" href="{% url 'master:rumah_update' o.pk %}">Edit</a></div></td>
       </tr>
       {% empty %}<tr><td colspan="10" class="empty-state">Belum ada data rumah negara.</td></tr>{% endfor %}
       </tbody>

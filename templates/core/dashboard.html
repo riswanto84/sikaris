@@ -199,6 +199,15 @@
                 {% endif %}
             </div>
         </div>
+
+        <div class="summary-card">
+            <div class="summary-icon orange">🧾</div>
+            <div>
+                <div class="summary-label">Pajak Kendaraan Akan Jatuh Tempo</div>
+                <div class="summary-value warn" data-counter data-stat="pajak_kendaraan_akan_berakhir">{{ pajak_kendaraan_akan_berakhir }}</div>
+                <a href="{% url 'master:kendaraan_list' %}" class="mini-link">Lihat kendaraan →</a>
+            </div>
+        </div>
         {% endif %}
 
         {% if can_access_house %}

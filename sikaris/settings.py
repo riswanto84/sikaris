@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "penghapusan",
     "psp",
     "laporan",
+    "barang_lainnya",
 ]
 
 MIDDLEWARE = [

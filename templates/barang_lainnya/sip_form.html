@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block page_title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ page_title }}</h1></div>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+  <div class="card">
+    <h2>Form SIP Barang Lainnya</h2>
+    <p>Fitur SIP Barang Lainnya mengikuti alur SIP Kendaraan, namun nama barang diinput manual dan dapat berisi lebih dari satu barang. Field NUP dan Serial Number (opsional) tersedia pada setiap baris barang.</p>
+    <div class="form-grid form-grid-2">
+      {% for field in form %}
+      <div class="form-field{% if field.name == 'keterangan_tambahan' %} full-width{% endif %}">
+        <label>{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="help-text">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<div class="errorlist">{{ error }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <h2>Daftar Barang</h2>
+      <button type="button" class="btn btn-secondary" id="add-form-row">+ Tambah Barang</button>
+    </div>
+    {{ formset.management_form }}
+    <div class="table-responsive">
+      <table class="table" id="items-table">
+        <thead>
+          <tr><th>No</th><th>Urutan</th><th>Nama Barang</th><th>Spesifikasi (Merk/Tipe)</th><th>Satuan</th><th>Jumlah</th><th>NUP</th><th>Serial Number (Opsional)</th><th>Keterangan</th><th>Hapus</th></tr>
+        </thead>
+        <tbody>
+          {% for item_form in formset %}
+          <tr class="formset-row">
+            <td class="row-number">{{ forloop.counter }}</td>
+            {% for hidden in item_form.hidden_fields %}{{ hidden }}{% endfor %}
+            <td>{{ item_form.urutan }}</td>
+            <td>{{ item_form.nama_barang }}</td>
+            <td>{{ item_form.spesifikasi }}</td>
+            <td>{{ item_form.satuan }}</td>
+            <td>{{ item_form.jumlah }}</td>
+            <td>{{ item_form.nup }}</td>
+            <td>{{ item_form.serial_number }}</td>
+            <td>{{ item_form.keterangan }}</td>
+            <td>{% if item_form.DELETE %}{{ item_form.DELETE }}{% else %}-{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;display:flex;justify-content:flex-end;gap:12px">
+    <button type="submit" class="btn btn-primary">Simpan Draft</button>
+  </div>
+</form>
+
+<script>
+(function(){
+  const addBtn = document.getElementById('add-form-row');
+  const totalForms = document.getElementById('id_items-TOTAL_FORMS');
+  const tbody = document.querySelector('#items-table tbody');
+  if (!addBtn || !totalForms || !tbody) return;
+  function renumber(){
+    tbody.querySelectorAll('tr.formset-row').forEach((row, idx) => {
+      const num = row.querySelector('.row-number');
+      if (num) num.textContent = idx + 1;
+    });
+  }
+  addBtn.addEventListener('click', function(){
+    const forms = tbody.querySelectorAll('tr.formset-row');
+    const last = forms[forms.length - 1];
+    const newIndex = parseInt(totalForms.value, 10);
+    const clone = last.cloneNode(true);
+    clone.querySelectorAll('input,select,textarea').forEach(function(el){
+      ['name','id','for'].forEach(function(attr){
+        const val = el.getAttribute(attr);
+        if (val) el.setAttribute(attr, val.replace(/items-(\d+)-/g, 'items-' + newIndex + '-'));
+      });
+      if (el.type === 'checkbox') { el.checked = false; } else { el.value = ''; }
+    });
+    tbody.appendChild(clone);
+    totalForms.value = newIndex + 1;
+    renumber();
+  });
+  renumber();
+})();
+</script>
+{% endblock %}

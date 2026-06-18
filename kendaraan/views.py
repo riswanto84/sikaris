@@ -1,17 +1,19 @@
+import json
+
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, UpdateView, DetailView, DeleteView
+from django.views.generic import CreateView, UpdateView, DetailView, DeleteView, ListView
 
 from core.roles import BMNRequiredMixin, MaintenanceRequiredMixin, VehicleViewRequiredMixin, SIPEditRequiredMixin
 from core.listing import SearchListMixin
 from core.detail import GenericDetailMixin
-from core.export_utils import apply_search_filter, export_queryset
 from core.access import UnitScopedQuerysetMixin, UnitScopedFormMixin, scope_queryset_by_user
 from master.models import Kendaraan
 
@@ -95,6 +97,69 @@ class SIPKendaraanListView(VehicleViewRequiredMixin, UnitScopedQuerysetMixin, Se
         ('catatan', 'Catatan'),
     ]
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        # Tombol Teruskan ke Pejabat Penerbit ditampilkan pada Daftar SIP
+        # untuk Pengelola BMN/Admin System selama status masih Draft atau Ditolak.
+        # Proses submit tetap divalidasi ulang di view sip_ajukan_kabiro.
+        ctx['can_submit_sip_kendaraan_from_list'] = can_manage_sip(self.request.user)
+        ctx['submit_sip_kendaraan_button_label'] = 'Teruskan'
+        ctx['hide_status_aktif_for_pengelola_bmn'] = is_pengelola_bmn(self.request.user) and not is_admin_system(self.request.user)
+        return ctx
+
+
+def _sip_kendaraan_form_context(obj=None):
+    kendaraan_qs = Kendaraan.objects.select_related('unit_kerja', 'pejabat_penandatangan_sip').all()
+    kendaraan_master_map = {}
+    for k in kendaraan_qs:
+        try:
+            jenis_display = k.get_jenis_kendaraan_display()
+        except Exception:
+            jenis_display = k.jenis_kendaraan or ''
+        pejabat = getattr(k, 'pejabat_penandatangan_sip', None)
+        pejabat_display = ''
+        pejabat_id = ''
+        pejabat_nama = ''
+        pejabat_nip = ''
+        pejabat_jabatan = ''
+        if pejabat:
+            pejabat_id = str(getattr(pejabat, 'pk', '') or '')
+            pejabat_nama = getattr(pejabat, 'nama', '') or ''
+            pejabat_nip = getattr(pejabat, 'nip', '') or ''
+            pejabat_jabatan = getattr(pejabat, 'jabatan', '') or 'Pejabat Penandatangan SIP Kendaraan'
+            pejabat_display = f'{pejabat_nama} - {pejabat_nip} ({pejabat_jabatan})'
+        kendaraan_master_map[str(k.pk)] = {
+            'jenis_kendaraan': jenis_display or '',
+            'jenis_kendaraan_value': k.jenis_kendaraan or '',
+            'kode_barang': k.kode_barang or '',
+            'nup': k.nup or '',
+            'nomor_polisi': k.nomor_polisi or '',
+            'merek_tipe': f"{k.merek or ''} {k.tipe or ''}".strip(),
+            'unit_kerja': getattr(k.unit_kerja, 'nama_unit', '') or '',
+            'pejabat_penandatangan': pejabat_display,
+            'pejabat_penandatangan_id': pejabat_id,
+            'pejabat_penandatangan_nama': pejabat_nama,
+            'pejabat_penandatangan_nip': pejabat_nip,
+            'pejabat_penandatangan_jabatan': pejabat_jabatan,
+        }
+
+    preview_docs = []
+    if obj:
+        def add_doc(label, f):
+            if not f:
+                return
+            try:
+                preview_docs.append({'label': label, 'url': f.url, 'is_pdf': str(f.name).lower().endswith('.pdf')})
+            except Exception:
+                pass
+        add_doc('Preview Konsep PDF SIP Kendaraan', getattr(obj, 'file_konsep_pdf', None))
+        add_doc('Preview SIP Final TTE Pejabat Penerbit', getattr(obj, 'file_signed_pdf', None) or getattr(obj, 'dokumen_sip', None))
+
+    return {
+        'kendaraan_master_json': json.dumps(kendaraan_master_map),
+        'sip_form_preview_docs': preview_docs,
+    }
+
 
 class SIPKendaraanCreateView(BMNRequiredMixin, UnitScopedFormMixin, CreateView):
     model = SIPKendaraan
@@ -103,11 +168,28 @@ class SIPKendaraanCreateView(BMNRequiredMixin, UnitScopedFormMixin, CreateView):
     success_url = reverse_lazy('kendaraan:sip_list')
 
     def form_valid(self, form):
-        # Pengelola BMN hanya membuat Draft/Konsep.
-        # Pengajuan dilakukan lewat tombol Ajukan pada halaman detail.
+        # Pengelola BMN mengisi data SIP lalu menekan Buat/Generate SIP Kendaraan.
+        # Setelah tersimpan, sistem langsung membuat konsep PDF untuk dipreview.
         form.instance.dibuat_oleh = self.request.user
         form.instance.status = 'DRAFT'
-        return super().form_valid(form)
+        if form.instance.kendaraan_id:
+            form.instance.jenis_pemakaian = form.instance.kendaraan.jenis_kendaraan
+        response = super().form_valid(form)
+        try:
+            generate_sip_kendaraan_pdf(self.object, concept=True)
+            messages.success(self.request, 'SIP Kendaraan berhasil dibuat dan konsep PDF otomatis digenerate. Silakan cek preview PDF di bawah halaman detail, lalu ajukan ke pejabat penerbit.')
+        except Exception as exc:
+            messages.warning(self.request, f'SIP Kendaraan berhasil dibuat, tetapi konsep PDF belum berhasil digenerate: {exc}')
+        return response
+
+    def get_success_url(self):
+        return reverse('kendaraan:sip_detail', kwargs={'pk': self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update(_sip_kendaraan_form_context(self.object if hasattr(self, 'object') else None))
+        ctx['submit_label'] = 'Buat / Generate SIP Kendaraan'
+        return ctx
 
 
 class SIPKendaraanUpdateView(SIPEditRequiredMixin, UnitScopedQuerysetMixin, UnitScopedFormMixin, UpdateView):
@@ -119,8 +201,8 @@ class SIPKendaraanUpdateView(SIPEditRequiredMixin, UnitScopedQuerysetMixin, Unit
 
     def dispatch(self, request, *args, **kwargs):
         self.object = self.get_object()
-        if self.object.status not in ['DRAFT', 'DITOLAK'] and not request.user.is_superuser:
-            messages.error(request, 'SIP Kendaraan hanya dapat diedit saat berstatus Draft/Konsep atau Ditolak.')
+        if self.object.status not in ['DRAFT', 'DITOLAK', 'DIAJUKAN', 'TERBIT'] and not request.user.is_superuser:
+            messages.error(request, 'SIP Kendaraan hanya dapat diedit saat berstatus Draft/Konsep, Diajukan, Ditolak, atau Terbit.')
             return redirect('kendaraan:sip_detail', pk=self.object.pk)
         return super().dispatch(request, *args, **kwargs)
 
@@ -128,7 +210,24 @@ class SIPKendaraanUpdateView(SIPEditRequiredMixin, UnitScopedQuerysetMixin, Unit
         # Jika revisi dari status Ditolak, kembalikan menjadi Draft/Konsep.
         if form.instance.status == 'DITOLAK':
             form.instance.status = 'DRAFT'
-        return super().form_valid(form)
+        if form.instance.kendaraan_id:
+            form.instance.jenis_pemakaian = form.instance.kendaraan.jenis_kendaraan
+        response = super().form_valid(form)
+        try:
+            generate_sip_kendaraan_pdf(self.object, concept=True)
+            messages.success(self.request, 'Data SIP Kendaraan berhasil diperbarui dan konsep PDF otomatis digenerate ulang.')
+        except Exception as exc:
+            messages.warning(self.request, f'Data berhasil diperbarui, tetapi konsep PDF belum berhasil digenerate ulang: {exc}')
+        return response
+
+    def get_success_url(self):
+        return reverse('kendaraan:sip_detail', kwargs={'pk': self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update(_sip_kendaraan_form_context(self.object))
+        ctx['submit_label'] = 'Simpan / Generate Ulang SIP Kendaraan'
+        return ctx
 
 
 class SIPKendaraanDetailView(VehicleViewRequiredMixin, UnitScopedQuerysetMixin, GenericDetailMixin, DetailView):
@@ -185,26 +284,32 @@ class SIPKendaraanDetailView(VehicleViewRequiredMixin, UnitScopedQuerysetMixin, 
         status_tte = str(getattr(obj, 'status_tte', '') or '').upper()
 
         if final_pdf and (status in ['TERBIT', 'SELESAI', 'MENUNGGU_TTE', 'DISETUJUI'] or status_tte == 'SUDAH_TTE'):
-            add_approval_doc('Preview SIP Kendaraan Final TTE BSrE', final_pdf)
+            add_approval_doc('Preview SIP Kendaraan Final TTE', final_pdf)
         elif pengusul_pdf:
             add_approval_doc('Preview SIP Kendaraan TTE Pegawai Pengusul', pengusul_pdf)
         elif konsep_pdf:
             add_approval_doc('Preview Konsep PDF SIP Kendaraan', konsep_pdf)
         user = self.request.user
         from .sip_penerbit import get_label_tujuan_pengajuan_sip_kendaraan
-        can_edit_draft = obj.status in ['DRAFT', 'DITOLAK']
-        is_bmn_operator = is_pengelola_bmn(user) and not is_admin_system(user)
+        can_edit_draft = obj.status in ['DRAFT', 'DIAJUKAN', 'TERBIT']
+        is_bmn_operator = (is_pengelola_bmn(user) or is_admin_system(user))
 
         # Pengelola BMN tetap sebagai pengusul, tetapi sesuai aturan koreksi terakhir
         # pada detail SIP Kendaraan tombol Edit, Hapus, dan Generate Konsep PDF tetap tersedia
-        # selama status masih belum final/dapat direvisi. Upload PDF TTE BSrE tetap hanya untuk pejabat penerbit.
-        can_approve_obj = False if is_bmn_operator else can_approve_sip_kendaraan_object(user, obj)
+        # selama status masih belum final/dapat direvisi. Upload PDF TTE tetap hanya untuk pejabat penerbit.
+        # Tombol/fitur Setujui SIP dan Tolak SIP harus tampil pada halaman Detail
+        # untuk Admin System dan pejabat penerbit/Kepala Unit Kerja-Satker yang berwenang
+        # saat status SIP masih DIAJUKAN. Pengelola BMN murni tetap tidak boleh menyetujui.
+        is_pengelola_bmn_only = is_pengelola_bmn(user) and not is_admin_system(user)
+        can_approve_obj = (not is_pengelola_bmn_only) and can_approve_sip_kendaraan_object(user, obj)
         can_generate_concept_as_bmn = is_bmn_operator and obj.status in ['DRAFT', 'DITOLAK', 'DIAJUKAN']
 
         # Preview SIP Kendaraan dikelola melalui approval_docs agar hanya satu versi dokumen
         # yang muncul sesuai tahap proses. Hindari duplikasi dari preview dokumen_sip generic.
         ctx['dokumen_sip_url'] = None
         ctx['dokumen_sip_is_pdf'] = False
+
+        ctx['sip_service_history'] = obj.kendaraan.service.all().order_by('-tanggal_service', '-created_at')[:10] if getattr(obj, 'kendaraan_id', None) else []
 
         ctx.update({
             'approval_docs': approval_docs,
@@ -213,7 +318,7 @@ class SIPKendaraanDetailView(VehicleViewRequiredMixin, UnitScopedQuerysetMixin, 
             'can_generate_concept_pdf': can_generate_concept_as_bmn,
             # Tampilkan form upload TTE calon pemegang untuk Pengelola BMN selama status belum final.
             # Gunakan status_upper agar data lama dengan status 'Draft', 'draft', atau variasi label lain tetap terbaca.
-            'can_upload_tte_pengusul': is_bmn_operator and status in ['DRAFT', 'DITOLAK', 'DIAJUKAN', 'KONSEP'] and str(getattr(obj, 'status_tte_pengusul', 'BELUM') or '').upper() != 'SUDAH_TTE',
+            'can_upload_tte_pengusul': False,
             'has_konsep_pdf_for_tte_pengusul': bool(getattr(obj, 'file_konsep_pdf', None) or getattr(obj, 'dokumen_sip', None)),
             'can_submit_to_kabiro': is_bmn_operator and can_edit_draft,
             'can_submit_to_sekjen': False,
@@ -237,8 +342,8 @@ class SIPKendaraanDetailView(VehicleViewRequiredMixin, UnitScopedQuerysetMixin, 
         elif from_page in ['approval', 'persetujuan'] or 'persetujuan-kabiro/sip-kendaraan' in referer or 'persetujuan-sekjen/sip-kendaraan' in referer:
             ctx['back_url'] = reverse('kendaraan:kabiro_sip_kendaraan_list')
 
-        # Tombol Edit/Hapus tetap ada untuk Pengelola BMN selama status DRAFT/DITOLAK.
-        # Untuk status yang sudah masuk proses/final, tombol edit/hapus disembunyikan.
+        # Tombol Edit tetap ada untuk Pengelola BMN/Admin pada status DRAFT, DIAJUKAN, dan TERBIT.
+        # Status lain disembunyikan dari edit sesuai permintaan.
         if not can_edit_draft:
             ctx['edit_url'] = None
             ctx['delete_url'] = None
@@ -472,7 +577,7 @@ def sip_generate_konsep_pdf(request, pk):
         return redirect('kendaraan:sip_detail', pk=pk)
 
     generate_sip_kendaraan_pdf(sip, concept=True)
-    messages.success(request, 'Konsep/Draft PDF SIP Kendaraan berhasil dibuat. Selanjutnya lakukan TTE oleh pegawai pengusul, lalu upload file PDF yang sudah TTE pengusul sebelum diajukan ke pejabat penerbit.')
+    messages.success(request, 'Konsep/Draft PDF SIP Kendaraan berhasil dibuat. Preview PDF tampil di bawah halaman detail. Selanjutnya ajukan ke pejabat penerbit untuk persetujuan.')
     return redirect('kendaraan:sip_detail', pk=pk)
 
 
@@ -520,9 +625,6 @@ def sip_ajukan_kabiro(request, pk):
     if not sip.file_konsep_pdf:
         messages.error(request, 'Generate Konsep PDF terlebih dahulu sebelum SIP diajukan.')
         return redirect('kendaraan:sip_detail', pk=pk)
-    if not getattr(sip, 'file_tte_pengusul', None) or getattr(sip, 'status_tte_pengusul', 'BELUM') != 'SUDAH_TTE':
-        messages.error(request, 'SIP belum dapat diajukan. Pengelola BMN wajib upload file Konsep SIP yang sudah TTE oleh pegawai pengusul terlebih dahulu.')
-        return redirect('kendaraan:sip_detail', pk=pk)
     from .sip_penerbit import apply_snapshot_penerbit_sip_kendaraan, get_label_tujuan_pengajuan_sip_kendaraan
     apply_snapshot_penerbit_sip_kendaraan(sip, force=True)
     sip.save(update_fields=[
@@ -533,7 +635,7 @@ def sip_ajukan_kabiro(request, pk):
     if not sip.pejabat_penerbit_sip_kendaraan_id and not sip.nama_pejabat_penerbit_sip_kendaraan:
         messages.error(request, 'Pejabat penerbit SIP Kendaraan belum dikonfigurasi pada Master Unit Kerja. Silakan lengkapi pejabat penerbit terlebih dahulu.')
         return redirect('kendaraan:sip_detail', pk=pk)
-    # Pengelola BMN hanya mengajukan data. Konsep/final PDF dibuat oleh pejabat penerbit.
+    # Pengelola BMN mengajukan konsep PDF yang sudah dibuat ke pejabat penerbit.
     sip.status = 'DIAJUKAN'
     sip.tanggal_pengajuan = timezone.now()
     sip.catatan_penolakan = ''
@@ -559,25 +661,27 @@ def sip_setujui_kabiro(request, pk):
     if sip.status != 'DIAJUKAN':
         messages.error(request, 'Hanya SIP berstatus Diajukan yang dapat disetujui.')
         return redirect('kendaraan:sip_detail', pk=pk)
-    # Pejabat penerbit cukup menyetujui atau menolak usulan.
-    # Sesuai aturan proses bisnis terakhir: setelah pejabat klik Setujui SIP,
-    # status langsung menjadi TERBIT. Pejabat tidak generate ulang PDF dan
-    # tidak upload ulang dokumen; file PDF TTE pengusul dipakai sebagai dokumen
-    # final terakhir yang dipreview pada Detail SIP Kendaraan.
+    # Pejabat penerbit/Kepala Unit Kerja-Satker menyetujui usulan melalui menu Review.
+    # Form review menyediakan keterangan persetujuan agar keputusan pejabat terdokumentasi.
     now = timezone.now()
+    keterangan_persetujuan = (request.POST.get('keterangan_persetujuan') or request.POST.get('keterangan') or '').strip()
     sip.status = 'TERBIT'
     sip.tanggal_persetujuan = now
     sip.disetujui_oleh = request.user
     sip.catatan_penolakan = ''
+    if keterangan_persetujuan:
+        sip.catatan = keterangan_persetujuan
 
     update_fields = ['status', 'tanggal_persetujuan', 'disetujui_oleh', 'catatan_penolakan', 'updated_at']
+    if keterangan_persetujuan:
+        update_fields.append('catatan')
 
     # Status langsung TERBIT, tetapi dokumen final pejabat belum dianggap lengkap
     # sampai pejabat penerbit mengupload file SIP yang sudah TTE Kepala Biro/
     # Sekretaris/Kepala Sentra/Kepala Balai. File TTE pengusul tetap disimpan
     # sebagai dokumen usulan, bukan sebagai final pejabat.
     if hasattr(sip, 'status_tte'):
-        sip.status_tte = 'MENUNGGU_TTE'
+        sip.status_tte = 'SIAP_TTE'
         update_fields.append('status_tte')
     if hasattr(sip, 'tanggal_tte'):
         sip.tanggal_tte = None
@@ -604,10 +708,14 @@ def sip_tolak_kabiro(request, pk):
         messages.error(request, 'Anda bukan pejabat penerbit SIP Kendaraan untuk unit kerja ini.')
         return redirect('kendaraan:sip_detail', pk=pk)
     sip = get_object_or_404(SIPKendaraan, pk=pk)
-    catatan = (request.POST.get('catatan_penolakan') or '').strip()
-    if not catatan:
-        messages.error(request, 'Catatan penolakan wajib diisi.')
+    alasan = (request.POST.get('alasan_penolakan') or request.POST.get('catatan_penolakan') or '').strip()
+    keterangan = (request.POST.get('keterangan_penolakan') or request.POST.get('keterangan') or '').strip()
+    if not alasan:
+        messages.error(request, 'Alasan penolakan wajib diisi.')
         return redirect('kendaraan:sip_detail', pk=pk)
+    catatan = alasan
+    if keterangan:
+        catatan = f'Alasan: {alasan}\nKeterangan: {keterangan}'
     if sip.status != 'DIAJUKAN':
         messages.error(request, 'Hanya SIP berstatus Diajukan yang dapat ditolak.')
         return redirect('kendaraan:sip_detail', pk=pk)
@@ -628,7 +736,7 @@ sip_tolak_sekjen = sip_tolak_kabiro
 def sip_upload_bsre_pdf(request, pk):
     sip = get_object_or_404(SIPKendaraan, pk=pk)
     if is_pengelola_bmn(request.user) and not is_admin_system(request.user):
-        messages.error(request, 'Pengelola BMN tidak dapat upload PDF TTE BSrE. Upload dilakukan oleh pejabat penerbit.')
+        messages.error(request, 'Pengelola BMN tidak dapat upload PDF TTE. Upload dilakukan oleh pejabat penerbit.')
         return redirect('kendaraan:sip_detail', pk=pk)
     if not can_approve_sip_kendaraan_object(request.user, sip):
         messages.error(request, 'Anda bukan pejabat penerbit SIP Kendaraan untuk unit kerja ini.')
@@ -655,6 +763,87 @@ def sip_upload_bsre_pdf(request, pk):
     sip.save(update_fields=['file_signed_pdf', 'dokumen_sip', 'status', 'status_tte', 'tanggal_tte', 'catatan_tte', 'updated_at'])
     messages.success(request, 'SIP Kendaraan final yang sudah TTE pejabat penerbit berhasil diupload.')
     return redirect('kendaraan:sip_detail', pk=pk)
+
+
+def _stringify(value):
+    if value is None:
+        return ''
+    if hasattr(value, 'strftime'):
+        return value.strftime('%d/%m/%Y')
+    return str(value)
+
+
+def _sip_kendaraan_export_rows(qs):
+    rows = []
+    for o in qs.select_related('kendaraan', 'pegawai', 'kendaraan__unit_kerja'):
+        rows.append([
+            o.nomor_sip,
+            o.tanggal_sip,
+            getattr(o.kendaraan, 'kode_kendaraan', '') if o.kendaraan_id else '',
+            getattr(o.kendaraan, 'nomor_polisi', '') if o.kendaraan_id else '',
+            getattr(o.kendaraan, 'jenis_kendaraan', '') if o.kendaraan_id else '',
+            getattr(o.kendaraan, 'kode_barang', '') if o.kendaraan_id else '',
+            getattr(o.kendaraan, 'nup', '') if o.kendaraan_id else '',
+            getattr(o.kendaraan.unit_kerja, 'nama_unit', '') if o.kendaraan_id and o.kendaraan.unit_kerja_id else '',
+            getattr(o.pegawai, 'nama', '') if o.pegawai_id else '',
+            getattr(o.pegawai, 'nip', '') if o.pegawai_id else '',
+            o.tanggal_mulai,
+            o.tanggal_akhir,
+            o.get_status_display(),
+            o.status_aktif_display,
+            o.pejabat_penandatangan or o.jabatan_pejabat_penerbit_sip_kendaraan or '',
+        ])
+    return rows
+
+
+def _export_rows_response(fmt, filename_base, title, headers, rows):
+    fmt = (fmt or 'xlsx').lower()
+    if fmt == 'csv':
+        import csv
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = f'attachment; filename="{filename_base}.csv"'
+        response.write('\ufeff')
+        writer = csv.writer(response)
+        writer.writerow(headers)
+        for row in rows:
+            writer.writerow([_stringify(v) for v in row])
+        return response
+    if fmt == 'pdf':
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4, landscape
+        from reportlab.lib.units import cm
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename_base}.pdf"'
+        doc = SimpleDocTemplate(response, pagesize=landscape(A4), leftMargin=0.8*cm, rightMargin=0.8*cm, topMargin=0.8*cm, bottomMargin=0.8*cm)
+        styles = getSampleStyleSheet()
+        data = [headers] + [[Paragraph(_stringify(v), styles['BodyText']) for v in row] for row in rows[:500]]
+        table = Table(data, repeatRows=1)
+        table.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor('#1D4ED8')),('TEXTCOLOR',(0,0),(-1,0),colors.white),('GRID',(0,0),(-1,-1),0.25,colors.HexColor('#CBD5E1')),('FONTSIZE',(0,0),(-1,-1),7),('VALIGN',(0,0),(-1,-1),'TOP')]))
+        doc.build([Paragraph(f'<b>{title}</b>', styles['Title']), Spacer(1,0.2*cm), table])
+        return response
+    from openpyxl import Workbook
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="{filename_base}.xlsx"'
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Export SIP'
+    ws.append(headers)
+    for row in rows:
+        ws.append([_stringify(v) for v in row])
+    ws.auto_filter.ref = ws.dimensions
+    ws.freeze_panes = 'A2'
+    wb.save(response)
+    return response
+
+
+@login_required
+def sip_export(request, fmt):
+    qs = scope_queryset_by_user(SIPKendaraan.objects.all(), request.user, 'sip_kendaraan')
+    qs = _apply_search_filter(request, qs, SIPKendaraanListView.search_fields).order_by('-tanggal_sip')
+    headers = ['Nomor SIP', 'Tanggal SIP', 'Kode Register', 'Nomor Polisi', 'Jenis Kendaraan', 'Kode Barang', 'NUP', 'Unit Kerja', 'Pengguna', 'NIP', 'Tanggal Mulai', 'Tanggal Akhir', 'Status Proses', 'Status Aktif/Non Aktif', 'Pejabat Penerbit']
+    return _export_rows_response(fmt, 'export_sip_kendaraan', 'Export SIP Kendaraan', headers, _sip_kendaraan_export_rows(qs))
 
 
 class KepalaBiroUmumSIPKendaraanListView(KepalaBiroUmumRequiredMixin, UnitScopedQuerysetMixin, SearchListMixin, ListView):
@@ -713,105 +902,3 @@ class KepalaBiroUmumSIPKendaraanListView(KepalaBiroUmumRequiredMixin, UnitScoped
 
 # Alias class lama agar name URL lama tetap kompatibel bila masih dipakai.
 SekjenSIPKendaraanListView = KepalaBiroUmumSIPKendaraanListView
-
-
-# =============================================================
-# Export daftar/transaksi Kendaraan (PDF, Excel, CSV)
-# =============================================================
-def _sip_kendaraan_columns():
-    return [
-        ('No', '__no__'),
-        ('Nomor SIP', 'nomor_sip'),
-        ('Tanggal SIP', 'tanggal_sip'),
-        ('Nomor Polisi', 'kendaraan__nomor_polisi'),
-        ('Kendaraan', 'kendaraan'),
-        ('Pemegang/Pegawai', 'pegawai__nama'),
-        ('NIP', 'pegawai__nip'),
-        ('Unit Kerja Pegawai', 'pegawai__unit_kerja__nama_unit'),
-        ('Periode Mulai', 'tanggal_mulai'),
-        ('Periode Akhir', 'tanggal_akhir'),
-        ('Masa Berlaku', lambda o: getattr(o, 'masa_berlaku_display', '') or ''),
-        ('Jenis Pemakaian', 'display:jenis_pemakaian'),
-        ('Tujuan', 'tujuan_pemakaian'),
-        ('Lokasi Penggunaan', 'lokasi_penggunaan'),
-        ('Status', 'display:status'),
-        ('Tanggal Pengajuan', 'tanggal_pengajuan'),
-        ('Tanggal Persetujuan', 'tanggal_persetujuan'),
-        ('Catatan', 'catatan'),
-    ]
-
-
-def _service_kendaraan_columns():
-    return [
-        ('No', '__no__'),
-        ('Tanggal Service', 'tanggal_service'),
-        ('Nomor Polisi', 'kendaraan__nomor_polisi'),
-        ('Kendaraan', 'kendaraan'),
-        ('Unit Kerja', 'kendaraan__unit_kerja__nama_unit'),
-        ('Jenis Service', 'display:jenis_service'),
-        ('Kilometer', 'kilometer'),
-        ('Bengkel', 'bengkel'),
-        ('Uraian Pekerjaan', 'uraian_pekerjaan'),
-        ('Sparepart Diganti', 'sparepart_diganti'),
-        ('Biaya Jasa', 'biaya_jasa'),
-        ('Biaya Sparepart', 'biaya_sparepart'),
-        ('Total Biaya', 'total_biaya'),
-        ('Kondisi Sebelum', 'display:kondisi_sebelum'),
-        ('Kondisi Sesudah', 'display:kondisi_sesudah'),
-        ('Petugas', 'dicatat_oleh__username'),
-    ]
-
-
-def _kondisi_kendaraan_columns():
-    return [
-        ('No', '__no__'),
-        ('Tanggal', 'tanggal'),
-        ('Nomor Polisi', 'kendaraan__nomor_polisi'),
-        ('Kendaraan', 'kendaraan'),
-        ('Unit Kerja', 'kendaraan__unit_kerja__nama_unit'),
-        ('Kondisi', 'display:kondisi'),
-        ('Uraian Kondisi', 'uraian_kondisi'),
-        ('Petugas', 'dicatat_oleh__username'),
-    ]
-
-
-@login_required
-def export_sip_kendaraan(request, fmt):
-    qs = scope_queryset_by_user(
-        SIPKendaraan.objects.select_related('kendaraan', 'pegawai', 'kendaraan__unit_kerja', 'pegawai__unit_kerja'),
-        request.user,
-        'sip_kendaraan',
-    )
-    qs = apply_search_filter(qs, request, SIPKendaraanListView.search_fields)
-    return export_queryset(request, qs, fmt, 'transaksi_sip_kendaraan', 'Daftar SIP Kendaraan', _sip_kendaraan_columns(), order_by=['-tanggal_sip', '-id'])
-
-
-@login_required
-def export_persetujuan_sip_kendaraan(request, fmt):
-    if not can_approve_sip_kendaraan(request.user):
-        raise PermissionDenied('Anda tidak memiliki hak akses export persetujuan SIP Kendaraan.')
-    qs = SIPKendaraan.objects.select_related('kendaraan', 'pegawai', 'kendaraan__unit_kerja', 'pegawai__unit_kerja').filter(status__in=['DIAJUKAN', 'DISETUJUI', 'DITOLAK', 'TERBIT', 'AKTIF'])
-    qs = apply_search_filter(qs, request, SIPKendaraanListView.search_fields)
-    return export_queryset(request, qs, fmt, 'persetujuan_sip_kendaraan', 'Persetujuan SIP Kendaraan', _sip_kendaraan_columns(), order_by=['-tanggal_pengajuan', '-tanggal_sip', '-id'])
-
-
-@login_required
-def export_service_kendaraan(request, fmt):
-    qs = scope_queryset_by_user(
-        ServiceKendaraan.objects.select_related('kendaraan', 'kendaraan__unit_kerja', 'dicatat_oleh'),
-        request.user,
-        'service_kendaraan',
-    )
-    qs = apply_search_filter(qs, request, ServiceKendaraanListView.search_fields)
-    return export_queryset(request, qs, fmt, 'transaksi_service_kendaraan', 'Daftar Service Kendaraan', _service_kendaraan_columns(), order_by=['-tanggal_service', '-id'])
-
-
-@login_required
-def export_kondisi_kendaraan(request, fmt):
-    qs = scope_queryset_by_user(
-        RiwayatKondisiKendaraan.objects.select_related('kendaraan', 'kendaraan__unit_kerja', 'dicatat_oleh'),
-        request.user,
-        'kondisi_kendaraan',
-    )
-    qs = apply_search_filter(qs, request, RiwayatKondisiListView.search_fields)
-    return export_queryset(request, qs, fmt, 'transaksi_riwayat_kondisi_kendaraan', 'Riwayat Kondisi Kendaraan', _kondisi_kendaraan_columns(), order_by=['-tanggal', '-id'])

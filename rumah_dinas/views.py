@@ -1,7 +1,7 @@
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.http import HttpResponse
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
@@ -9,9 +9,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, UpdateView, DetailView, DeleteView, ListView
 
-from core.access import UnitScopedQuerysetMixin, UnitScopedFormMixin, scope_queryset_by_user
+from core.access import UnitScopedQuerysetMixin, UnitScopedFormMixin
 from core.detail import GenericDetailMixin
-from core.export_utils import apply_search_filter, export_queryset
 from core.listing import SearchListMixin
 from core.pdf_sip import generate_sip_rumah_pdf
 from core.roles import (
@@ -26,6 +25,7 @@ from core.roles import (
 
 from .forms import SIPRumahDinasForm, SIPRumahCalonPenggunaTTEUploadForm, SIPRumahSekjenTTEUploadForm
 from .models import SIPRumahDinas
+from master.models import Pegawai
 
 
 class SafeDeleteMixin:
@@ -102,7 +102,31 @@ class SIPRumahDinasListView(BMNRequiredMixin, UnitScopedQuerysetMixin, SearchLis
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['can_access_sip'] = can_manage_sip(self.request.user)
+        ctx['can_submit_sip_rumah_from_list'] = can_manage_sip(self.request.user)
+        ctx['submit_sip_rumah_button_label'] = 'Teruskan'
         return ctx
+
+
+def _sip_rumah_form_context(obj=None):
+    preview_docs = []
+    if obj:
+        def add_doc(label, f):
+            if not f:
+                return
+            try:
+                preview_docs.append({'label': label, 'url': f.url, 'is_pdf': str(f.name).lower().endswith('.pdf')})
+            except Exception:
+                pass
+        add_doc('Preview Konsep PDF SIP Rumah Negara', getattr(obj, 'file_konsep_pdf', None))
+        add_doc('Preview SIP Rumah Negara Final TTE Sekjen/BSrE', getattr(obj, 'file_signed_pdf', None) or getattr(obj, 'dokumen_sip', None))
+    return {'sip_form_preview_docs': preview_docs}
+
+
+def _pejabat_penandatangan_jabatan_map():
+    return {
+        str(p.id): (p.jabatan or '')
+        for p in Pegawai.objects.only('id', 'jabatan').order_by('nama')
+    }
 
 
 class SIPRumahDinasCreateView(BMNRequiredMixin, UnitScopedFormMixin, CreateView):
@@ -113,9 +137,25 @@ class SIPRumahDinasCreateView(BMNRequiredMixin, UnitScopedFormMixin, CreateView)
 
     def form_valid(self, form):
         form.instance.dibuat_oleh = self.request.user
-        # Samakan dengan alur SIP Kendaraan: Pengelola BMN hanya membuat Draft/Konsep.
+        # Pengelola BMN mengisi data lalu sistem membuat konsep PDF.
         form.instance.status = 'DRAFT'
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        try:
+            generate_sip_rumah_pdf(self.object, concept=True)
+            messages.success(self.request, 'SIP Rumah Negara berhasil dibuat dan konsep PDF otomatis digenerate. Silakan cek preview PDF di bawah halaman detail, lalu ajukan ke Sekretaris Jenderal.')
+        except Exception as exc:
+            messages.warning(self.request, f'SIP Rumah Negara berhasil dibuat, tetapi konsep PDF belum berhasil digenerate: {exc}')
+        return response
+
+    def get_success_url(self):
+        return reverse('rumah_dinas:sip_detail', kwargs={'pk': self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update(_sip_rumah_form_context(self.object if hasattr(self, 'object') else None))
+        ctx['pejabat_penandatangan_jabatan_map'] = _pejabat_penandatangan_jabatan_map()
+        ctx['submit_label'] = 'Buat / Generate SIP Rumah Negara'
+        return ctx
 
 
 class SIPRumahDinasUpdateView(SIPEditRequiredMixin, UnitScopedQuerysetMixin, UnitScopedFormMixin, UpdateView):
@@ -135,7 +175,23 @@ class SIPRumahDinasUpdateView(SIPEditRequiredMixin, UnitScopedQuerysetMixin, Uni
     def form_valid(self, form):
         if form.instance.status == 'DITOLAK':
             form.instance.status = 'DRAFT'
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        try:
+            generate_sip_rumah_pdf(self.object, concept=True)
+            messages.success(self.request, 'Data SIP Rumah Negara berhasil diperbarui dan konsep PDF otomatis digenerate ulang.')
+        except Exception as exc:
+            messages.warning(self.request, f'Data berhasil diperbarui, tetapi konsep PDF belum berhasil digenerate ulang: {exc}')
+        return response
+
+    def get_success_url(self):
+        return reverse('rumah_dinas:sip_detail', kwargs={'pk': self.object.pk})
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update(_sip_rumah_form_context(self.object))
+        ctx['pejabat_penandatangan_jabatan_map'] = _pejabat_penandatangan_jabatan_map()
+        ctx['submit_label'] = 'Simpan / Generate Ulang SIP Rumah Negara'
+        return ctx
 
 
 class SIPRumahDinasDetailView(VehicleViewRequiredMixin, UnitScopedQuerysetMixin, GenericDetailMixin, DetailView):
@@ -188,11 +244,11 @@ class SIPRumahDinasDetailView(VehicleViewRequiredMixin, UnitScopedQuerysetMixin,
             'approval_docs': approval_docs,
             'can_generate_concept_pdf': is_bmn_operator and status in ['DRAFT', 'DITOLAK', 'DIAJUKAN', 'KONSEP'],
             'can_submit_to_sekjen': is_bmn_operator and can_edit_draft,
-            'can_upload_tte_calon_pengguna_rumah': is_bmn_operator and status in ['DRAFT', 'DITOLAK', 'DIAJUKAN', 'KONSEP'] and str(getattr(obj, 'status_tte_calon_pengguna', 'BELUM') or '').upper() != 'SUDAH_TTE',
+            'can_upload_tte_calon_pengguna_rumah': False,
             'has_konsep_pdf_rumah_for_tte': bool(getattr(obj, 'file_konsep_pdf', None) or getattr(obj, 'dokumen_sip', None)),
             'can_approve_as_sekjen': can_approve,
             'can_upload_tte_sekjen_rumah': can_approve and status == 'TERBIT' and status_tte != 'SUDAH_TTE',
-            'approval_title': 'Persetujuan Sekjen - SIP Rumah Negara',
+            'approval_title': 'Persetujuan Pejabat Penandatangan - SIP Rumah Negara',
         })
 
         next_url = (self.request.GET.get('next') or '').strip()
@@ -244,7 +300,7 @@ def sip_generate_konsep_pdf(request, pk):
         messages.error(request, 'Generate Konsep PDF SIP Rumah Negara hanya dapat dilakukan oleh Pengelola BMN pada data yang belum final.')
         return redirect('rumah_dinas:sip_detail', pk=pk)
     generate_sip_rumah_pdf(sip, concept=True)
-    messages.success(request, 'Konsep/Draft PDF SIP Rumah Negara berhasil dibuat. Selanjutnya lakukan TTE oleh calon pengguna rumah, lalu upload file PDF yang sudah TTE sebelum diajukan ke Sekjen.')
+    messages.success(request, 'Konsep/Draft PDF SIP Rumah Negara berhasil dibuat. Preview PDF tampil di bawah halaman detail. Selanjutnya ajukan ke Sekretaris Jenderal untuk persetujuan.')
     return redirect('rumah_dinas:sip_detail', pk=pk)
 
 
@@ -277,23 +333,20 @@ def sip_upload_tte_calon_pengguna_pdf(request, pk):
 @require_POST
 def sip_ajukan_sekjen(request, pk):
     if not _user_can_manage_sip(request):
-        messages.error(request, 'Anda tidak memiliki akses untuk mengajukan SIP ke Sekretaris Jenderal.')
+        messages.error(request, 'Anda tidak memiliki akses untuk meneruskan SIP ke Pejabat Penandatangan.')
         return redirect('rumah_dinas:sip_detail', pk=pk)
     sip = get_object_or_404(SIPRumahDinas, pk=pk)
     if sip.status not in ['DRAFT', 'DITOLAK']:
-        messages.error(request, 'Hanya SIP berstatus Draft/Konsep atau Ditolak yang dapat diajukan.')
+        messages.error(request, 'Hanya SIP berstatus Draft/Konsep atau Ditolak yang dapat diteruskan.')
         return redirect('rumah_dinas:sip_detail', pk=pk)
     if not sip.file_konsep_pdf:
-        messages.error(request, 'Generate Konsep PDF terlebih dahulu sebelum SIP Rumah Negara diajukan.')
-        return redirect('rumah_dinas:sip_detail', pk=pk)
-    if not getattr(sip, 'file_tte_calon_pengguna', None) or getattr(sip, 'status_tte_calon_pengguna', 'BELUM') != 'SUDAH_TTE':
-        messages.error(request, 'SIP Rumah Negara belum dapat diajukan. Upload terlebih dahulu file PDF SIP yang sudah TTE oleh calon pengguna rumah.')
+        messages.error(request, 'Generate Konsep PDF terlebih dahulu sebelum SIP Rumah Negara diteruskan.')
         return redirect('rumah_dinas:sip_detail', pk=pk)
     sip.status = 'DIAJUKAN'
     sip.tanggal_pengajuan = timezone.now()
     sip.catatan_penolakan = ''
     sip.save(update_fields=['status', 'tanggal_pengajuan', 'catatan_penolakan', 'updated_at'])
-    messages.success(request, 'SIP Rumah Negara berhasil diajukan ke Sekretaris Jenderal.')
+    messages.success(request, 'SIP Rumah Negara berhasil diteruskan ke Pejabat Penandatangan untuk persetujuan.')
     return redirect('rumah_dinas:sip_detail', pk=pk)
 
 
@@ -307,13 +360,16 @@ def sip_setujui_sekjen(request, pk):
     if sip.status != 'DIAJUKAN':
         messages.error(request, 'Hanya SIP Rumah Negara berstatus Diajukan yang dapat disetujui.')
         return redirect('rumah_dinas:sip_detail', pk=pk)
+    keterangan_persetujuan = (request.POST.get('keterangan_persetujuan') or '').strip()
     sip.status = 'TERBIT'
     sip.status_tte = 'SIAP_TTE'
     sip.tanggal_persetujuan = timezone.now()
     sip.disetujui_oleh = request.user
     sip.catatan_penolakan = ''
+    if keterangan_persetujuan:
+        sip.catatan = keterangan_persetujuan
     sip.catatan_tte = 'SIP Rumah Negara sudah disetujui dan berstatus Terbit. Menunggu upload SIP final yang sudah TTE Sekjen/BSrE.'
-    sip.save(update_fields=['status', 'status_tte', 'tanggal_persetujuan', 'disetujui_oleh', 'catatan_penolakan', 'catatan_tte', 'updated_at'])
+    sip.save(update_fields=['status', 'status_tte', 'tanggal_persetujuan', 'disetujui_oleh', 'catatan_penolakan', 'catatan', 'catatan_tte', 'updated_at'])
     messages.success(request, 'SIP Rumah Negara disetujui dan status langsung menjadi Terbit. Silakan upload file SIP final yang sudah TTE Sekjen/BSrE.')
     return redirect('rumah_dinas:sip_detail', pk=pk)
 
@@ -356,10 +412,12 @@ def sip_tolak_sekjen(request, pk):
     if sip.status != 'DIAJUKAN':
         messages.error(request, 'Hanya SIP Rumah Negara berstatus Diajukan yang dapat ditolak.')
         return redirect('rumah_dinas:sip_detail', pk=pk)
-    catatan = (request.POST.get('catatan_penolakan') or '').strip()
-    if not catatan:
-        messages.error(request, 'Catatan penolakan wajib diisi.')
+    alasan = (request.POST.get('alasan_penolakan') or request.POST.get('catatan_penolakan') or '').strip()
+    keterangan = (request.POST.get('keterangan_penolakan') or '').strip()
+    if not alasan:
+        messages.error(request, 'Alasan penolakan wajib diisi.')
         return redirect('rumah_dinas:sip_detail', pk=pk)
+    catatan = alasan if not keterangan else f'Alasan: {alasan}\nKeterangan: {keterangan}'
     sip.status = 'DITOLAK'
     sip.catatan_penolakan = catatan
     sip.tanggal_persetujuan = timezone.now()
@@ -367,6 +425,86 @@ def sip_tolak_sekjen(request, pk):
     sip.save(update_fields=['status', 'catatan_penolakan', 'tanggal_persetujuan', 'disetujui_oleh', 'updated_at'])
     messages.warning(request, 'SIP Rumah Negara ditolak dan dikembalikan untuk perbaikan.')
     return redirect('rumah_dinas:sip_detail', pk=pk)
+
+
+def _stringify(value):
+    if value is None:
+        return ''
+    if hasattr(value, 'strftime'):
+        return value.strftime('%d/%m/%Y')
+    return str(value)
+
+
+def _sip_rumah_export_rows(qs):
+    rows = []
+    for o in qs.select_related('rumah_dinas', 'pegawai', 'penghuni', 'rumah_dinas__unit_kerja'):
+        rows.append([
+            o.nomor_sip,
+            o.tanggal_sip,
+            getattr(o.rumah_dinas, 'kode_rumah', '') if o.rumah_dinas_id else '',
+            getattr(o.rumah_dinas, 'nama_rumah', '') if o.rumah_dinas_id else '',
+            getattr(o.rumah_dinas.unit_kerja, 'nama_unit', '') if o.rumah_dinas_id and o.rumah_dinas.unit_kerja_id else '',
+            getattr(o.pegawai, 'nama', '') if o.pegawai_id else '',
+            getattr(o.pegawai, 'nip', '') if o.pegawai_id else '',
+            getattr(o.penghuni, 'nama', '') if o.penghuni_id else '',
+            o.tanggal_mulai,
+            o.tanggal_akhir,
+            o.get_status_display(),
+            o.status_aktif_display,
+            o.pejabat_penandatangan or '',
+        ])
+    return rows
+
+
+def _export_rows_response(fmt, filename_base, title, headers, rows):
+    fmt = (fmt or 'xlsx').lower()
+    if fmt == 'csv':
+        import csv
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = f'attachment; filename="{filename_base}.csv"'
+        response.write('\ufeff')
+        writer = csv.writer(response)
+        writer.writerow(headers)
+        for row in rows:
+            writer.writerow([_stringify(v) for v in row])
+        return response
+    if fmt == 'pdf':
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4, landscape
+        from reportlab.lib.units import cm
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename_base}.pdf"'
+        doc = SimpleDocTemplate(response, pagesize=landscape(A4), leftMargin=0.8*cm, rightMargin=0.8*cm, topMargin=0.8*cm, bottomMargin=0.8*cm)
+        styles = getSampleStyleSheet()
+        data = [headers] + [[Paragraph(_stringify(v), styles['BodyText']) for v in row] for row in rows[:500]]
+        table = Table(data, repeatRows=1)
+        table.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor('#1D4ED8')),('TEXTCOLOR',(0,0),(-1,0),colors.white),('GRID',(0,0),(-1,-1),0.25,colors.HexColor('#CBD5E1')),('FONTSIZE',(0,0),(-1,-1),7),('VALIGN',(0,0),(-1,-1),'TOP')]))
+        doc.build([Paragraph(f'<b>{title}</b>', styles['Title']), Spacer(1,0.2*cm), table])
+        return response
+    from openpyxl import Workbook
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="{filename_base}.xlsx"'
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Export SIP'
+    ws.append(headers)
+    for row in rows:
+        ws.append([_stringify(v) for v in row])
+    ws.auto_filter.ref = ws.dimensions
+    ws.freeze_panes = 'A2'
+    wb.save(response)
+    return response
+
+
+@login_required
+def sip_export(request, fmt):
+    from core.access import scope_queryset_by_user
+    qs = scope_queryset_by_user(SIPRumahDinas.objects.all(), request.user, 'sip_rumah')
+    qs = _apply_search_filter(request, qs, SIPRumahDinasListView.search_fields).order_by('-tanggal_sip')
+    headers = ['Nomor SIP', 'Tanggal SIP', 'Kode Register', 'Rumah Negara', 'Unit Kerja', 'Pemegang SIP', 'NIP', 'Penghuni Aktual', 'Tanggal Mulai', 'Tanggal Akhir', 'Status Proses', 'Status Aktif/Non Aktif', 'Pejabat Penandatangan']
+    return _export_rows_response(fmt, 'export_sip_rumah_negara', 'Export SIP Rumah Negara', headers, _sip_rumah_export_rows(qs))
 
 
 class SekjenSIPRumahListView(SekjenRequiredMixin, SearchListMixin, ListView):
@@ -385,57 +523,13 @@ class SekjenSIPRumahListView(SekjenRequiredMixin, SearchListMixin, ListView):
     ]
 
     def get_queryset(self):
-        # Sekjen melihat seluruh data SIP Rumah Negara dari semua unit kerja.
-        # Tidak dibatasi satker karena Sekjen merupakan pejabat penetap pemakaian Rumah Negara.
+        # Pejabat penandatangan/Sekjen melihat data SIP Rumah Negara yang sudah diteruskan.
+        # Admin System tetap dapat melihat seluruh data untuk pengawasan.
         qs = SIPRumahDinas.objects.select_related(*self.select_related).all()
         qs = _apply_search_filter(self.request, qs, self.search_fields)
         return qs.order_by('-tanggal_pengajuan', '-tanggal_sip', '-created_at')
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['approval_title'] = 'Persetujuan Sekjen - SIP Rumah Negara'
+        ctx['approval_title'] = 'Persetujuan Pejabat Penandatangan - SIP Rumah Negara'
         return ctx
-
-
-# =============================================================
-# Export daftar/transaksi SIP Rumah Negara (PDF, Excel, CSV)
-# =============================================================
-def _sip_rumah_columns():
-    return [
-        ('No', '__no__'),
-        ('Nomor SIP', 'nomor_sip'),
-        ('Tanggal SIP', 'tanggal_sip'),
-        ('Kode Rumah', 'rumah_dinas__kode_rumah'),
-        ('Rumah Negara', 'rumah_dinas'),
-        ('Alamat Rumah', 'rumah_dinas__alamat'),
-        ('Pemegang SIP', 'pegawai__nama'),
-        ('NIP Pemegang', 'pegawai__nip'),
-        ('Unit Kerja Pemegang', 'pegawai__unit_kerja__nama_unit'),
-        ('Penghuni Aktual', 'penghuni__nama'),
-        ('Periode Mulai', 'tanggal_mulai'),
-        ('Periode Akhir', 'tanggal_akhir'),
-        ('Masa Berlaku', lambda o: getattr(o, 'masa_berlaku_display', '') or ''),
-        ('Status PNBP', 'display:status_bayar_pnbp'),
-        ('Tahun PNBP', 'tahun_pnbp'),
-        ('Status SIP', 'display:status'),
-        ('Tanggal Pengajuan', 'tanggal_pengajuan'),
-        ('Tanggal Persetujuan', 'tanggal_persetujuan'),
-        ('Catatan', 'catatan'),
-    ]
-
-
-@login_required
-def export_sip_rumah(request, fmt):
-    qs = SIPRumahDinas.objects.select_related('rumah_dinas', 'pegawai', 'pegawai__unit_kerja', 'penghuni', 'penghuni__unit_kerja')
-    qs = scope_queryset_by_user(qs, request.user, 'sip_rumah')
-    qs = apply_search_filter(qs, request, SIPRumahDinasListView.search_fields)
-    return export_queryset(request, qs, fmt, 'transaksi_sip_rumah_negara', 'Daftar SIP Rumah Negara', _sip_rumah_columns(), order_by=['-tanggal_sip', '-id'])
-
-
-@login_required
-def export_persetujuan_sip_rumah(request, fmt):
-    if not _user_can_approve_sip_rumah_as_sekjen(request.user):
-        raise PermissionDenied('Anda tidak memiliki hak akses export persetujuan SIP Rumah Negara.')
-    qs = SIPRumahDinas.objects.select_related('rumah_dinas', 'pegawai', 'pegawai__unit_kerja', 'penghuni', 'penghuni__unit_kerja').exclude(status='DRAFT')
-    qs = apply_search_filter(qs, request, SIPRumahDinasListView.search_fields)
-    return export_queryset(request, qs, fmt, 'persetujuan_sip_rumah_negara', 'Persetujuan SIP Rumah Negara', _sip_rumah_columns(), order_by=['-tanggal_pengajuan', '-tanggal_sip', '-id'])

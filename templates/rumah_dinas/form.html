@@ -9,7 +9,7 @@ Form SIP Rumah Negara
   <div class="form-header">
     <div>
       <h2>Form SIP Rumah Negara</h2>
-      <p>Lengkapi data Surat Izin Pemakaian Rumah Negara. Dokumen SIP akan digenerate oleh sistem, sehingga tidak perlu upload PDF pada form ini.</p>
+      <p>Lengkapi data SIP Rumah Negara, pilih nama pejabat penandatangan, dan bila sudah tersedia upload file SIP yang sudah TTE. Konsep/final PDF akan tampil sebagai preview di bawah halaman.</p>
     </div>
   </div>
 
@@ -24,7 +24,7 @@ Form SIP Rumah Negara
 
     <div class="form-grid">
       {% for field in form %}
-      <p class="{% if field.name == 'dasar_penerbitan' or field.name == 'catatan' or field.name == 'dokumen_sip' or field.name == 'dokumen_lainnya' or field.name == 'bukti_bayar_pnbp' %}full{% endif %}">
+      <p class="{% if field.name == 'dasar_penerbitan' or field.name == 'catatan' or field.name == 'dokumen_sip' or field.name == 'file_signed_pdf' or field.name == 'dokumen_lainnya' or field.name == 'bukti_bayar_pnbp' %}full{% endif %}">
         <label for="{{ field.id_for_label }}">
           {{ field.label }}
         </label>
@@ -52,7 +52,7 @@ Form SIP Rumah Negara
 
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">
-        Simpan
+        {{ submit_label|default:'Buat / Generate SIP Rumah Negara' }}
       </button>
 
       <a class="btn btn-secondary" href="{% url 'rumah_dinas:sip_list' %}">
@@ -61,6 +61,57 @@ Form SIP Rumah Negara
     </div>
   </form>
 </div>
+
+{% if sip_form_preview_docs %}
+<div class="card form-card document-section">
+  <div class="document-header">
+    <h3>Preview PDF SIP Rumah Negara</h3>
+    <p>Preview dokumen ditampilkan di bawah halaman form sesuai alur penerbitan SIP.</p>
+  </div>
+  {% for doc in sip_form_preview_docs %}
+    <div style="margin-bottom:18px;">
+      <h4 style="margin:0 0 10px;">{{ doc.label }}</h4>
+      {% if doc.is_pdf %}
+        <div class="pdf-preview">
+          <iframe src="{{ doc.url }}#toolbar=1&navpanes=0&scrollbar=1" title="{{ doc.label }}"></iframe>
+        </div>
+        <div class="form-actions" style="margin-top:12px;">
+          <a class="btn btn-secondary" href="{{ doc.url }}" target="_blank" rel="noopener">Buka PDF</a>
+        </div>
+      {% else %}
+        <a class="btn btn-secondary" href="{{ doc.url }}" target="_blank" rel="noopener">Buka Dokumen</a>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if pejabat_penandatangan_jabatan_map %}
+  {{ pejabat_penandatangan_jabatan_map|json_script:"pejabat-penandatangan-jabatan-map" }}
+{% endif %}
+<script>
+  (function () {
+    const select = document.getElementById('id_pejabat_penandatangan_pegawai');
+    const jabatanInput = document.getElementById('id_jabatan_pejabat_penandatangan_display');
+    const dataEl = document.getElementById('pejabat-penandatangan-jabatan-map');
+    if (!select || !jabatanInput || !dataEl) return;
+
+    let jabatanMap = {};
+    try {
+      jabatanMap = JSON.parse(dataEl.textContent || '{}');
+    } catch (err) {
+      jabatanMap = {};
+    }
+
+    function syncJabatanPejabat() {
+      const selectedId = select.value || '';
+      jabatanInput.value = jabatanMap[selectedId] || '';
+    }
+
+    select.addEventListener('change', syncJabatanPejabat);
+    syncJabatanPejabat();
+  })();
+</script>
 
 <style>
   .document-section {

@@ -40,7 +40,7 @@
       <form method="post" enctype="multipart/form-data" action="{% url 'penghapusan:proses' object.pk %}" style="display:grid;gap:12px;margin-top:12px">
         {% csrf_token %}
         <textarea class="form-control" name="catatan" rows="3" placeholder="Catatan Biro Umum / alasan perbaikan">{{ object.catatan_biro_umum|default:'' }}</textarea>
-        <label><strong>Dokumen Penghapusan SIKARIS Final/Gabungan (PDF)</strong></label>
+        <label><strong>Dokumen Penghapusan SIM Pengelolaan BMN Final/Gabungan (PDF)</strong></label>
         <input class="form-control" type="file" name="dokumen_penghapusan_final" accept="application/pdf,.pdf">
         {% if object.dokumen_persetujuan %}<small class="hint">Dokumen final saat ini: <a href="{{ object.dokumen_persetujuan.url }}" target="_blank">Lihat dokumen</a></small>{% else %}<small class="hint">Wajib diupload sebelum diteruskan sesuai alur PSP.</small>{% endif %}
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -128,7 +128,7 @@
       {% if foto_kondisi_list %}
       <div class="list-item"><div class="list-main"><strong>Galeri Foto Kondisi Aset</strong><span>{{ foto_kondisi_list|length }} foto tersimpan</span></div></div>
       {% endif %}
-      <div class="list-item"><div class="list-main"><strong>Dokumen Penghapusan SIKARIS Final/Gabungan</strong><span>{% if object.dokumen_persetujuan %}<a href="{{ object.dokumen_persetujuan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Dokumen Penghapusan SIM Pengelolaan BMN Final/Gabungan</strong><span>{% if object.dokumen_persetujuan %}<a href="{{ object.dokumen_persetujuan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
       <div class="list-item"><div class="list-main"><strong>SK Penghapusan</strong><span>{% if object.dokumen_sk_penghapusan %}<a href="{{ object.dokumen_sk_penghapusan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
       <div class="list-item"><div class="list-main"><strong>Berita Acara</strong><span>{% if object.berita_acara_penghapusan %}<a href="{{ object.berita_acara_penghapusan.url }}" target="_blank">Lihat dokumen</a>{% else %}-{% endif %}</span></div></div>
     </div>

@@ -23,9 +23,9 @@ class FotoKendaraanInline(admin.TabularInline):
 
 @admin.register(Kendaraan)
 class KendaraanAdmin(admin.ModelAdmin):
-    list_display = ['nomor_polisi', 'merek', 'tipe', 'kondisi', 'status_pemanfaatan', 'pengguna']
-    search_fields = ['nomor_polisi', 'merek', 'tipe', 'nomor_rangka', 'nomor_mesin']
-    list_filter = ['kondisi', 'status_pemanfaatan', 'jenis_kendaraan']
+    list_display = ['nomor_polisi', 'merek', 'tipe', 'kondisi', 'status_penggunaan', 'pejabat_penandatangan_sip', 'pengguna']
+    search_fields = ['nomor_polisi', 'merek', 'tipe', 'nomor_rangka', 'nomor_mesin', 'pejabat_penandatangan_sip__nama', 'pejabat_penandatangan_sip__nip']
+    list_filter = ['kondisi', 'status_penggunaan', 'jenis_kendaraan']
     inlines = [FotoKendaraanInline]
 
 

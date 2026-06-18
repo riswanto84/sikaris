@@ -1,5 +1,4 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
@@ -8,7 +7,6 @@ from django.views.generic import CreateView, UpdateView, DetailView, DeleteView,
 
 from core.forms import ImportFileForm
 from core.import_utils import read_tabular_upload, pick, to_decimal, to_date, normalize_choice
-from core.export_utils import apply_search_filter, export_queryset
 from core.listing import SearchListMixin
 from core.roles import AdminSystemRequiredMixin
 from master.models import UnitKerja
@@ -302,46 +300,3 @@ class TanahNegaraImportView(AdminSystemRequiredMixin, FormView):
             return JsonResponse({'ok': True, 'message': msg, 'redirect_url': str(self.success_url)})
         messages.success(self.request, msg)
         return redirect(self.success_url)
-
-
-# =============================================================
-# Export daftar Tanah Negara (PDF, Excel, CSV)
-# =============================================================
-def _tanah_negara_columns():
-    return [
-        ('No', '__no__'),
-        ('Kode Tanah', 'kode_tanah'),
-        ('Kode Satker', 'kode_satker'),
-        ('Nama Satker', 'nama_satker'),
-        ('Unit Kerja', 'unit_kerja__nama_unit'),
-        ('Kode Barang', 'kode_barang'),
-        ('NUP', 'nup'),
-        ('Kode Register', 'kode_register'),
-        ('Nama Tanah/Aset', 'nama_tanah'),
-        ('Nama Barang', 'nama_barang'),
-        ('Alamat', 'alamat'),
-        ('Kelurahan/Desa', 'kelurahan_desa'),
-        ('Kecamatan', 'kecamatan'),
-        ('Kab/Kota', lambda o: getattr(o, 'kab_kota', None) or getattr(o, 'kabupaten_kota', '')),
-        ('Provinsi', 'provinsi'),
-        ('Luas Tanah', lambda o: getattr(o, 'luas_tanah_seluruhnya', None) or getattr(o, 'luas_tanah', '')),
-        ('Nilai Perolehan', 'nilai_perolehan'),
-        ('Status Tanah', 'display:status_tanah'),
-        ('Status Penggunaan', 'status_penggunaan'),
-        ('Status Pemanfaatan', 'status_pemanfaatan'),
-        ('Nomor Sertifikat', 'nomor_sertifikat'),
-        ('No PSP', 'no_psp'),
-        ('Latitude', 'latitude'),
-        ('Longitude', 'longitude'),
-        ('Keterangan', 'keterangan'),
-    ]
-
-
-@login_required
-def export_tanah_negara(request, fmt):
-    if not (request.user.is_superuser or request.user.groups.filter(name='Admin System').exists()):
-        from django.core.exceptions import PermissionDenied
-        raise PermissionDenied('Anda tidak memiliki hak akses export Tanah Negara.')
-    qs = TanahNegara.objects.select_related('unit_kerja')
-    qs = apply_search_filter(qs, request, TanahNegaraListView.search_fields)
-    return export_queryset(request, qs, fmt, 'master_tanah_negara', 'Master Tanah Negara', _tanah_negara_columns(), order_by=['kode_tanah'])

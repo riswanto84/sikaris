@@ -64,7 +64,17 @@ class BootstrapModelForm(forms.ModelForm):
 class UnitKerjaForm(BootstrapModelForm):
     class Meta:
         model = UnitKerja
-        fields = '__all__'
+        exclude = ['jenis_unit']
+        labels = {
+            'kode_satker': 'Kode Satker (SIMAN)',
+            'nama_unit': 'Nama Unit Kerja/Satker',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'kode_satker' in self.fields:
+            self.fields['kode_satker'].disabled = True
+            self.fields['kode_satker'].required = False
 
 
 class PegawaiForm(BootstrapModelForm):
@@ -98,6 +108,13 @@ class KendaraanForm(BootstrapModelForm):
                 'class': 'form-control'
             }
         )
+    )
+
+    tanggal_perolehan = forms.DateField(
+        required=False,
+        label='Tanggal Perolehan',
+        input_formats=['%Y-%m-%d'],
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-control'})
     )
 
     dokumen_stnk = forms.FileField(
@@ -136,7 +153,7 @@ class KendaraanForm(BootstrapModelForm):
         exclude = ['foto', 'pengguna']
 
         labels = {
-            'kode_kendaraan': 'Kode Kendaraan',
+            'kode_kendaraan': 'Kode Register',
             'nomor_polisi': 'Nomor Polisi',
             'nomor_rangka': 'Nomor Rangka',
             'nomor_mesin': 'Nomor Mesin',
@@ -150,9 +167,10 @@ class KendaraanForm(BootstrapModelForm):
             'kode_barang': 'Kode Barang',
             'nilai_perolehan': 'Nilai Perolehan',
             'unit_kerja': 'Unit Kerja',
+            'pejabat_penandatangan_sip': 'Pejabat Penandatangan SIP Kendaraan',
             'jenis_kendaraan': 'Jenis Kendaraan',
-            'status_pemanfaatan': 'Status Pemanfaatan',
-            'kilometer_terakhir': 'Kilometer Terakhir',
+            'status_penggunaan': 'Status Penggunaan',
+            'kilometer_terakhir': 'Kilometer Terakhir (tidak diedit di master)',
             'keterangan_status_pemanfaatan': 'Keterangan Status Pemanfaatan',
         }
 
@@ -192,10 +210,10 @@ class KendaraanForm(BootstrapModelForm):
 
         self.order_fields([
             'kode_kendaraan', 'nomor_polisi', 'merek', 'tipe', 'jenis_kendaraan',
-            'tahun_pembuatan', 'tahun_perolehan', 'warna', 'nomor_rangka', 'nomor_mesin',
+            'tahun_pembuatan', 'tanggal_perolehan', 'tahun_perolehan', 'warna', 'nomor_rangka', 'nomor_mesin',
             'nomor_bpkb', 'dokumen_bpkb', 'nomor_stnk', 'dokumen_stnk',
             'masa_berlaku_stnk', 'jatuh_tempo_pajak', 'nup', 'kode_barang',
-            'nilai_perolehan', 'unit_kerja', 'kondisi', 'status_pemanfaatan',
+            'nilai_perolehan', 'unit_kerja', 'kode_satker', 'pejabat_penandatangan_sip', 'kondisi', 'status_penggunaan',
             'kilometer_terakhir', 'keterangan_status_pemanfaatan', 'foto_kendaraan'
         ])
 
@@ -205,7 +223,27 @@ class KendaraanForm(BootstrapModelForm):
 
             if self.instance.jatuh_tempo_pajak:
                 self.fields['jatuh_tempo_pajak'].initial = self.instance.jatuh_tempo_pajak.strftime('%Y-%m-%d')
+            if hasattr(self.instance, 'tanggal_perolehan') and self.instance.tanggal_perolehan and 'tanggal_perolehan' in self.fields:
+                self.fields['tanggal_perolehan'].initial = self.instance.tanggal_perolehan.strftime('%Y-%m-%d')
+
+            # Pada edit Master Kendaraan, hanya field dokumen dan tanggal administratif berikut yang bisa diubah.
+            # Pejabat penandatangan SIP diset dari Master Kendaraan saat input awal/import SIMAN.
+            # Pada edit administratif kendaraan, field ini ikut dikunci agar snapshot SIP konsisten.
+            editable_fields = {'masa_berlaku_stnk', 'dokumen_bpkb', 'dokumen_stnk', 'jatuh_tempo_pajak'}
+            for name, field in list(self.fields.items()):
+                if name == 'kilometer_terakhir':
+                    self.fields.pop(name, None)
+                    continue
+                if name not in editable_fields:
+                    field.disabled = True
+                    field.required = False
+                    field.widget.attrs['readonly'] = 'readonly'
+        if 'kode_satker' in self.fields:
+            self.fields['kode_satker'].disabled = True
+            self.fields['kode_satker'].required = False
 class RumahDinasForm(BootstrapModelForm):
+    tanggal_perolehan = forms.DateField(required=False, label='Tanggal Perolehan', input_formats=['%Y-%m-%d'], widget=forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-control'}))
+
     dokumen_sertifikat = forms.FileField(
         required=False,
         label='Upload Sertifikat Rumah Negara (PDF)',
@@ -233,11 +271,18 @@ class RumahDinasForm(BootstrapModelForm):
         labels = {
             'nup': 'NUP',
             'kode_barang': 'Kode Barang',
-            'kode_rumah': 'Kode Rumah',
+            'kode_rumah': 'Kode Register',
             'nama_rumah': 'Nama Rumah Negara',
             'dokumen_sertifikat': 'Sertifikat Rumah Negara (PDF)',
             'unit_kerja': 'Unit Kerja/Satker',
-            'status_pemanfaatan': 'Status Pemanfaatan',
+            'kode_satker': 'Kode Satker (SIMAN)',
+            'tanggal_perolehan': 'Tanggal Perolehan',
+            'njop_per_meter_tanah': 'Nilai NJOP/m Tanah',
+            'jumlah_lantai': 'Jumlah Lantai',
+            'status_tanah': 'Status Penggunaan Tanah',
+            'status_penggunaan': 'Status Penggunaan (SIMAN)',
+            'status_hukum': 'Status Hukum',
+            'status_pemanfaatan': 'Status Penggunaan',
             'keterangan_status_pemanfaatan': 'Keterangan Status Pemanfaatan',
         }
 
@@ -246,11 +291,24 @@ class RumahDinasForm(BootstrapModelForm):
         self.order_fields([
             'kode_rumah', 'nama_rumah', 'jenis_rumah', 'alamat',
             'provinsi', 'kabupaten_kota', 'kecamatan', 'kelurahan',
-            'latitude', 'longitude', 'luas_tanah', 'luas_bangunan',
-            'jumlah_kamar_tidur', 'jumlah_kamar_mandi', 'daya_listrik',
-            'tahun_dibangun', 'tahun_perolehan', 'nup', 'kode_barang',
-            'nilai_perolehan', 'unit_kerja', 'nomor_sertifikat', 'dokumen_sertifikat',
-            'status_tanah', 'kondisi', 'status_pemanfaatan',
+            'latitude', 'longitude', 'luas_tanah', 'njop_per_meter_tanah', 'luas_bangunan',
+            'jumlah_lantai', 'jumlah_kamar_tidur', 'jumlah_kamar_mandi', 'daya_listrik',
+            'tanggal_perolehan', 'nup', 'kode_barang',
+            'nilai_perolehan', 'unit_kerja', 'kode_satker', 'nomor_sertifikat', 'dokumen_sertifikat',
+            'status_tanah', 'status_penggunaan', 'status_hukum', 'kondisi', 'status_pemanfaatan',
             'keterangan_status_pemanfaatan', 'foto_rumah_dinas'
         ])
+        if self.instance and self.instance.pk:
+            if getattr(self.instance, 'tanggal_perolehan', None) and 'tanggal_perolehan' in self.fields:
+                self.fields['tanggal_perolehan'].initial = self.instance.tanggal_perolehan.strftime('%Y-%m-%d')
+            editable_fields = {'daya_listrik', 'latitude', 'longitude', 'jumlah_kamar_tidur', 'jumlah_kamar_mandi', 'njop_per_meter_tanah', 'dokumen_sertifikat', 'foto_rumah_dinas'}
+            for name, field in list(self.fields.items()):
+                if name not in editable_fields:
+                    field.disabled = True
+                    field.required = False
+                    field.widget.attrs['readonly'] = 'readonly'
+        for readonly_name in ['kode_satker', 'status_penggunaan']:
+            if readonly_name in self.fields:
+                self.fields[readonly_name].disabled = True
+                self.fields[readonly_name].required = False
 

@@ -71,6 +71,18 @@ def _scoped_psp_qs(user):
         return qs.none()
 
 
+def _scoped_kendaraan_qs(user):
+    from master.models import Kendaraan
+
+    qs = Kendaraan.objects.select_related('unit_kerja')
+    if _can_see_all(user):
+        return qs
+    try:
+        return scope_queryset_by_user(qs, user, 'kendaraan')
+    except PermissionDenied:
+        return qs.none()
+
+
 def _scoped_sip_kendaraan_qs(user):
     from kendaraan.models import SIPKendaraan
 
@@ -214,17 +226,20 @@ def build_notifications(user):
 
         sip_kendaraan_qs = _scoped_sip_kendaraan_qs(user).filter(status__in=['TERBIT', 'DISETUJUI', 'AKTIF'])
         sip_rumah_qs = _scoped_sip_rumah_qs(user).filter(status='AKTIF')
+        kendaraan_pajak_qs = _scoped_kendaraan_qs(user)
 
         sip_kendaraan_habis = sip_kendaraan_qs.filter(tanggal_akhir__lt=today)
         sip_rumah_habis = sip_rumah_qs.filter(tanggal_akhir__lt=today)
         sip_kendaraan_akan_habis = sip_kendaraan_qs.filter(tanggal_akhir__range=[today, soon])
         sip_rumah_akan_habis = sip_rumah_qs.filter(tanggal_akhir__range=[today, soon])
+        pajak_kendaraan_akan_habis = kendaraan_pajak_qs.filter(jatuh_tempo_pajak__range=[today, soon])
 
         total += (
             _safe_count(sip_kendaraan_habis)
             + _safe_count(sip_rumah_habis)
             + _safe_count(sip_kendaraan_akan_habis)
             + _safe_count(sip_rumah_akan_habis)
+            + _safe_count(pajak_kendaraan_akan_habis)
         )
 
         for obj in sip_kendaraan_habis.order_by('tanggal_akhir')[:3]:
@@ -254,6 +269,16 @@ def build_notifications(user):
                 level='warning',
                 icon='🚘',
             )
+        for obj in pajak_kendaraan_akan_habis.order_by('jatuh_tempo_pajak')[:3]:
+            _append_item(
+                items,
+                title='Pajak kendaraan akan jatuh tempo',
+                description=f'{obj.nomor_polisi} jatuh tempo {_fmt_date(obj.jatuh_tempo_pajak)}',
+                url=reverse('master:kendaraan_detail', kwargs={'pk': obj.pk}),
+                level='warning',
+                icon='🧾',
+            )
+
         for obj in sip_rumah_akan_habis.order_by('tanggal_akhir')[:3]:
             _append_item(
                 items,

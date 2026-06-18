@@ -4,12 +4,9 @@ from . import views
 app_name = 'kendaraan'
 
 urlpatterns = [
-    path('sip/export/<str:fmt>/', views.export_sip_kendaraan, name='sip_export'),
-    path('persetujuan-kabiro/sip-kendaraan/export/<str:fmt>/', views.export_persetujuan_sip_kendaraan, name='kabiro_sip_kendaraan_export'),
-    path('service/export/<str:fmt>/', views.export_service_kendaraan, name='service_export'),
-    path('kondisi/export/<str:fmt>/', views.export_kondisi_kendaraan, name='kondisi_export'),
     path('sip/', views.SIPKendaraanListView.as_view(), name='sip_list'),
     path('sip/tambah/', views.SIPKendaraanCreateView.as_view(), name='sip_create'),
+    path('sip/export/<str:fmt>/', views.sip_export, name='sip_export'),
     path('sip/<int:pk>/', views.SIPKendaraanDetailView.as_view(), name='sip_detail'),
     path('sip/<int:pk>/edit/', views.SIPKendaraanUpdateView.as_view(), name='sip_update'),
     path('sip/<int:pk>/hapus/', views.SIPKendaraanDeleteView.as_view(), name='sip_delete'),

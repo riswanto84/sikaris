@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block page_title %}SIP Barang Lainnya{% endblock %}
+{% block content %}
+<div class="page-header"><h1>SIP Barang Lainnya</h1></div>
+<div class="card" style="margin-bottom:16px">
+  <div style="display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap">
+    <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;flex:1">
+      <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Masukkan kata kunci pencarian..." style="min-width:280px;max-width:420px">
+      <button class="btn btn-secondary" type="submit">Cari</button>
+    </form>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a class="btn btn-secondary" href="{% url 'barang_lainnya:sip_export' 'pdf' %}">Export SIP PDF</a>
+      <a class="btn btn-secondary" href="{% url 'barang_lainnya:sip_export' 'xlsx' %}">Export SIP Excel</a>
+      <a class="btn btn-secondary" href="{% url 'barang_lainnya:sip_export' 'csv' %}">Export SIP CSV</a>
+      <a class="btn btn-primary" href="{% url 'barang_lainnya:sip_create' %}">+ Buat SIP Barang Lainnya</a>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>No SIP</th><th>Tanggal</th><th>Uraian Barang</th><th>Pemegang SIP</th><th>Pengguna Aktual</th><th>Periode</th><th>Status Proses</th><th>Status Aktif</th><th>Aksi</th></tr></thead>
+      <tbody>
+        {% for obj in objects %}
+        <tr>
+          <td>{{ obj.nomor_sip }}</td>
+          <td>{{ obj.tanggal_sip|date:'d M Y' }}</td>
+          <td>{{ obj.items.count }} Barang</td>
+          <td>{{ obj.pemegang_sip }}</td>
+          <td>{{ obj.pengguna_aktual|default:'-' }}</td>
+          <td>{{ obj.masa_berlaku_display }}</td>
+          <td><span class="badge {% if obj.status == 'TERBIT' %}success{% elif obj.status == 'DITOLAK' %}danger{% else %}warning{% endif %}">{{ obj.get_status_display }}</span></td>
+          <td><span class="badge {% if obj.status == 'TERBIT' %}success{% else %}danger{% endif %}">{{ obj.status_aktif_display }}</span></td>
+          <td>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <a class="btn btn-sm btn-secondary" href="{% url 'barang_lainnya:sip_detail' obj.pk %}">Detail</a>
+              <a class="btn btn-sm btn-secondary" href="{% url 'barang_lainnya:sip_update' obj.pk %}">Edit</a>
+              {% if obj.status == 'DRAFT' or obj.status == 'DITOLAK' %}
+              <form method="post" action="{% url 'barang_lainnya:sip_teruskan' obj.pk %}">{% csrf_token %}<button class="btn btn-sm btn-primary" onclick="return confirm('Teruskan SIP ini ke pejabat penandatangan?')">Teruskan</button></form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="9" class="empty-state">Belum ada data SIP Barang Lainnya.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

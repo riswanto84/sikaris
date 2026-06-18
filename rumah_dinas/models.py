@@ -45,6 +45,18 @@ class SIPRumahDinas(TimeStampedModel):
     masa_berlaku_sip = models.CharField(max_length=150, blank=True, null=True)
     dasar_penerbitan = models.TextField(blank=True, null=True)
     pejabat_penandatangan = models.CharField(max_length=150, blank=True, null=True)
+    pejabat_penandatangan_pegawai = models.ForeignKey(
+        Pegawai,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sip_rumah_ditandatangani',
+        verbose_name='Nama Pejabat Penandatangan',
+        help_text='Dipilih oleh Pengelola BMN dari Master Pegawai. Data ini akan ditampilkan pada PDF SIP Rumah Negara.'
+    )
+    nama_pejabat_penandatangan = models.CharField(max_length=150, blank=True, null=True)
+    nip_pejabat_penandatangan = models.CharField(max_length=50, blank=True, null=True)
+    jabatan_pejabat_penandatangan = models.CharField(max_length=150, blank=True, null=True)
     jumlah_anggota_keluarga = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=25, choices=STATUS_SIP_RUMAH, default='DRAFT')
     dokumen_sip = models.FileField(upload_to='sip_rumah_dinas/', blank=True, null=True)
@@ -84,6 +96,10 @@ class SIPRumahDinas(TimeStampedModel):
             if qs.filter(tanggal_mulai__lte=self.tanggal_akhir, tanggal_akhir__gte=self.tanggal_mulai).exists():
                 raise ValidationError('Rumah negara sudah memiliki SIP aktif pada periode tersebut.')
     @property
+    def status_aktif_display(self):
+        return 'Aktif' if self.status in ['TERBIT', 'AKTIF'] else 'Non Aktif'
+
+    @property
     def masa_berlaku_display(self):
         if self.masa_berlaku_sip:
             return self.masa_berlaku_sip
@@ -116,8 +132,14 @@ class SIPRumahDinas(TimeStampedModel):
                 kode_klasifikasi='PL.03',
                 start=self._last_nomor_urut_tahun() + 1,
             )
+        if self.pejabat_penandatangan_pegawai_id:
+            pejabat = self.pejabat_penandatangan_pegawai
+            self.nama_pejabat_penandatangan = getattr(pejabat, 'nama', '') or self.nama_pejabat_penandatangan
+            self.nip_pejabat_penandatangan = getattr(pejabat, 'nip', '') or self.nip_pejabat_penandatangan
+            self.jabatan_pejabat_penandatangan = getattr(pejabat, 'jabatan', '') or self.jabatan_pejabat_penandatangan
+            self.pejabat_penandatangan = self.jabatan_pejabat_penandatangan or self.pejabat_penandatangan
         if not self.pejabat_penandatangan:
-            self.pejabat_penandatangan = get_pegawai_by_jabatan('Sekretaris Jenderal', 'Sekretaris Jenderal (TTE BSrE)')
+            self.pejabat_penandatangan = get_pegawai_by_jabatan('Sekretaris Jenderal', 'Sekretaris Jenderal')
         super().save(*args, **kwargs)
 
     def __str__(self): return self.nomor_sip

@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from core.constants import KONDISI_ASET, STATUS_PEMANFAATAN_KENDARAAN, STATUS_PEMANFAATAN_RUMAH, JENIS_KENDARAAN_CHOICES, JENIS_UNIT_KERJA_CHOICES
+from core.constants import KONDISI_ASET, STATUS_PENGGUNAAN_KENDARAAN, STATUS_PEMANFAATAN_RUMAH, JENIS_KENDARAAN_CHOICES, JENIS_UNIT_KERJA_CHOICES, STATUS_HUKUM_CHOICES
 
 class TimeStampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -10,6 +10,7 @@ class TimeStampedModel(models.Model):
 
 class UnitKerja(TimeStampedModel):
     nama_unit = models.CharField(max_length=150, unique=True)
+    kode_satker = models.CharField(max_length=50, blank=True, null=True, unique=True, help_text='Kode Satker dari SIMAN, non-editable pada form manual.')
     jenis_unit = models.CharField(
         max_length=30,
         choices=JENIS_UNIT_KERJA_CHOICES,
@@ -75,9 +76,10 @@ class Kendaraan(TimeStampedModel):
     nomor_polisi = models.CharField(max_length=30, unique=True)
     merek = models.CharField(max_length=100)
     tipe = models.CharField(max_length=100, blank=True, null=True)
-    jenis_kendaraan = models.CharField(max_length=30, choices=JENIS_KENDARAAN_CHOICES, blank=True, null=True)
+    jenis_kendaraan = models.CharField(max_length=100, choices=JENIS_KENDARAAN_CHOICES, blank=True, null=True)
     tahun_pembuatan = models.PositiveIntegerField(blank=True, null=True)
     tahun_perolehan = models.PositiveIntegerField(blank=True, null=True)
+    tanggal_perolehan = models.DateField(blank=True, null=True)
     warna = models.CharField(max_length=50, blank=True, null=True)
     nomor_rangka = models.CharField(max_length=100, blank=True, null=True)
     nomor_mesin = models.CharField(max_length=100, blank=True, null=True)
@@ -85,13 +87,22 @@ class Kendaraan(TimeStampedModel):
     nomor_stnk = models.CharField(max_length=100, blank=True, null=True)
     masa_berlaku_stnk = models.DateField(blank=True, null=True)
     jatuh_tempo_pajak = models.DateField(blank=True, null=True)
-    nup = models.CharField(max_length=100, blank=True, null=True)
+    nup = models.PositiveBigIntegerField(blank=True, null=True)
     kode_barang = models.CharField(max_length=100, blank=True, null=True)
     nilai_perolehan = models.DecimalField(max_digits=18, decimal_places=2, default=0)
     unit_kerja = models.ForeignKey(UnitKerja, on_delete=models.SET_NULL, null=True, blank=True, related_name='kendaraan')
+    kode_satker = models.CharField(max_length=50, blank=True, null=True)
     pengguna = models.ForeignKey(Pegawai, on_delete=models.SET_NULL, null=True, blank=True, related_name='kendaraan_digunakan')
+    pejabat_penandatangan_sip = models.ForeignKey(
+        Pegawai,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='kendaraan_pejabat_penandatangan_sip',
+        help_text='Pejabat penandatangan/penerbit SIP Kendaraan. Data ini menjadi sumber tanda tangan pada PDF SIP.'
+    )
     kondisi = models.CharField(max_length=20, choices=KONDISI_ASET, default='BAIK')
-    status_pemanfaatan = models.CharField(max_length=30, choices=STATUS_PEMANFAATAN_KENDARAAN, default='TERSEDIA')
+    status_penggunaan = models.CharField(max_length=100, choices=STATUS_PENGGUNAAN_KENDARAAN, default='DIGUNAKAN_SENDIRI_OPERASIONAL')
     keterangan_status_pemanfaatan = models.TextField(blank=True, null=True)
     kilometer_terakhir = models.PositiveIntegerField(default=0)
     foto = models.ImageField(upload_to='kendaraan/', blank=True, null=True)
@@ -136,19 +147,25 @@ class RumahDinas(TimeStampedModel):
     latitude = models.DecimalField(max_digits=12, decimal_places=8, blank=True, null=True)
     longitude = models.DecimalField(max_digits=12, decimal_places=8, blank=True, null=True)
     luas_tanah = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    njop_per_meter_tanah = models.DecimalField('Nilai NJOP/m Tanah', max_digits=18, decimal_places=2, default=0, help_text='Editable oleh operator sesuai data NJOP terbaru.')
     luas_bangunan = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     jumlah_kamar_tidur = models.PositiveIntegerField(default=0)
     jumlah_kamar_mandi = models.PositiveIntegerField(default=0)
     daya_listrik = models.CharField(max_length=50, blank=True, null=True)
+    jumlah_lantai = models.PositiveIntegerField(default=1, help_text='Tarikan SIMAN.')
     tahun_dibangun = models.PositiveIntegerField(blank=True, null=True)
     tahun_perolehan = models.PositiveIntegerField(blank=True, null=True)
-    nup = models.CharField(max_length=100, blank=True, null=True)
+    tanggal_perolehan = models.DateField(blank=True, null=True)
+    nup = models.PositiveBigIntegerField(blank=True, null=True)
     kode_barang = models.CharField(max_length=100, blank=True, null=True)
     nilai_perolehan = models.DecimalField(max_digits=18, decimal_places=2, default=0)
     unit_kerja = models.ForeignKey(UnitKerja, on_delete=models.SET_NULL, null=True, blank=True, related_name='rumah_negara')
+    kode_satker = models.CharField(max_length=50, blank=True, null=True)
     nomor_sertifikat = models.CharField(max_length=100, blank=True, null=True)
     dokumen_sertifikat = models.FileField(upload_to='rumah_dinas/dokumen/sertifikat/', blank=True, null=True)
     status_tanah = models.CharField(max_length=100, blank=True, null=True)
+    status_penggunaan = models.CharField(max_length=100, blank=True, null=True, help_text='Tarikan SIMAN, non-editable pada form manual.')
+    status_hukum = models.CharField(max_length=30, choices=STATUS_HUKUM_CHOICES, default='TIDAK_ADA_SENGKETA')
     kondisi = models.CharField(max_length=20, choices=KONDISI_ASET, default='BAIK')
     status_pemanfaatan = models.CharField(max_length=30, choices=STATUS_PEMANFAATAN_RUMAH, default='KOSONG')
     keterangan_status_pemanfaatan = models.TextField(blank=True, null=True)

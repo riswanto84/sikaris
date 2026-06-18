@@ -213,7 +213,7 @@ def _styles():
     styles.add(ParagraphStyle(name='BodySmall', parent=styles['Normal'], alignment=TA_LEFT, fontSize=7.5, leading=9))
     styles.add(ParagraphStyle(name='TableTiny', parent=styles['Normal'], alignment=TA_CENTER, fontSize=6.4, leading=7.6, wordWrap='CJK'))
     styles.add(ParagraphStyle(name='TableTinyLeft', parent=styles['Normal'], alignment=TA_LEFT, fontSize=6.6, leading=8, wordWrap='CJK'))
-    styles.add(ParagraphStyle(name='TableHeaderTiny', parent=styles['Normal'], alignment=TA_CENTER, fontName='Helvetica-Bold', fontSize=6.8, leading=8, wordWrap='CJK'))
+    styles.add(ParagraphStyle(name='TableHeaderTiny', parent=styles['Normal'], alignment=TA_CENTER, fontName='Helvetica-Bold', fontSize=5.6, leading=6.6, wordWrap='LTR'))
     styles.add(ParagraphStyle(name='KeyCell', parent=styles['Normal'], alignment=TA_LEFT, fontSize=7.4, leading=8.8, wordWrap='CJK'))
     styles.add(ParagraphStyle(name='ValueCell', parent=styles['Normal'], alignment=TA_LEFT, fontSize=7.4, leading=8.8, wordWrap='CJK'))
     styles.add(ParagraphStyle(name='Watermark', parent=styles['Normal'], alignment=TA_CENTER, fontName='Helvetica-Bold', fontSize=16, leading=20, textColor=colors.HexColor('#c53030')))
@@ -293,10 +293,18 @@ def _sip_signer_from_snapshot(sip, default_title):
     name = getattr(sip, 'nama_pejabat_penerbit_sip_kendaraan', None) or ''
     nip = getattr(sip, 'nip_pejabat_penerbit_sip_kendaraan', None) or ''
     pegawai = getattr(sip, 'pejabat_penerbit_sip_kendaraan', None)
+
+    # Prioritas tambahan: bila snapshot lama masih kosong, gunakan pejabat penandatangan
+    # yang tersimpan pada Master Kendaraan.
+    kendaraan = getattr(sip, 'kendaraan', None)
+    master_pejabat = getattr(kendaraan, 'pejabat_penandatangan_sip', None) if kendaraan else None
+    if master_pejabat and not pegawai:
+        pegawai = master_pejabat
+
     if pegawai:
         name = name or getattr(pegawai, 'nama', '')
         nip = nip or getattr(pegawai, 'nip', '')
-        title = title or getattr(pegawai, 'jabatan', '')
+        title = (getattr(pegawai, 'jabatan', '') or title or default_title)
     return title or default_title, name or '-', nip or '-'
 
 def _approval_box(styles, sip, approved=False, signer_title='SEKRETARIS JENDERAL'):
@@ -304,7 +312,7 @@ def _approval_box(styles, sip, approved=False, signer_title='SEKRETARIS JENDERAL
 
     Nama dan NIP pihak kiri serta pejabat kanan berada pada baris yang sama,
     sehingga tidak turun/naik walaupun blok tanggal dan jabatan di kanan lebih panjang.
-    Semua tanda tangan diarahkan untuk TTE BSrE.
+    Blok tanda tangan tidak menampilkan teks TTE/BSrE pada PDF hasil generate.
     """
     signer_title_upper = safe(signer_title).upper()
 
@@ -313,6 +321,15 @@ def _approval_box(styles, sip, approved=False, signer_title='SEKRETARIS JENDERAL
         snapshot_title, snapshot_name, snapshot_nip = _sip_signer_from_snapshot(sip, signer_title)
         signer_title_upper = safe(snapshot_title).upper()
         signer_name, signer_nip = snapshot_name, snapshot_nip
+    elif getattr(sip, 'nama_pejabat_penandatangan', None):
+        signer_name = safe(getattr(sip, 'nama_pejabat_penandatangan', None) or '-')
+        signer_nip = safe(getattr(sip, 'nip_pejabat_penandatangan', None) or '-')
+        signer_title_upper = safe(getattr(sip, 'jabatan_pejabat_penandatangan', None) or getattr(sip, 'pejabat_penandatangan', None) or signer_title).upper()
+    elif getattr(sip, 'pejabat_penandatangan_pegawai', None):
+        pejabat = getattr(sip, 'pejabat_penandatangan_pegawai', None)
+        signer_name = safe(getattr(pejabat, 'nama', None) or '-')
+        signer_nip = safe(getattr(pejabat, 'nip', None) or '-')
+        signer_title_upper = safe(getattr(pejabat, 'jabatan', None) or getattr(sip, 'pejabat_penandatangan', None) or signer_title).upper()
     elif 'KEPALA BIRO UMUM' in signer_title_upper:
         signer_name, signer_nip = _pegawai_penandatangan(
             'Kepala Biro Umum',
@@ -333,12 +350,10 @@ def _approval_box(styles, sip, approved=False, signer_title='SEKRETARIS JENDERAL
     left_nip = safe(getattr(sip.pegawai, 'nip', '-'))
 
     right_title = signer_title_upper
-    if approved:
-        right_title = f'{right_title}<br/><font size=7>(TTE BSrE)</font>'
 
     data = [
         [
-            Paragraph(f'{pdf_text(left_title)}<br/><font size=7>(TTE BSrE)</font>', styles['Body']),
+            Paragraph(f'{pdf_text(left_title)}', styles['Body']),
             Paragraph(f'Ditetapkan di&nbsp;&nbsp;: Jakarta<br/>Pada Tanggal&nbsp;: {tanggal_id(getattr(sip, "tanggal_sip", None))}', styles['Body']),
         ],
         ['', Paragraph(right_title, styles['Body'])],
@@ -379,45 +394,74 @@ def generate_sip_kendaraan_pdf(sip, concept=True, save_to_model=True):
     k = sip.kendaraan
 
     def tc(value):
-        return Paragraph(safe(value), styles['TableTiny'])
+        return Paragraph(pdf_text(value), styles['TableTiny'])
+
+    def th(value):
+        # Header dibuat satu baris dengan non-breaking-space agar tidak turun baris.
+        return Paragraph(pdf_text(value).replace(' ', '&nbsp;'), styles['TableHeaderTiny'])
 
     def tl(value):
-        return Paragraph(safe(value), styles['TableTinyLeft'])
+        return Paragraph(pdf_text(value), styles['TableTinyLeft'])
+
+    def tahun_perolehan_kendaraan(kendaraan):
+        tanggal_perolehan = getattr(kendaraan, 'tanggal_perolehan', None)
+        if tanggal_perolehan:
+            try:
+                return tanggal_perolehan.year
+            except Exception:
+                return safe(tanggal_perolehan)
+        return getattr(kendaraan, 'tahun_perolehan', '')
 
     data = [
-        [tc('NO.'), tc('KODE BARANG'), tc('NUP'), tc('JENIS KENDARAAN'), tc('MERK/TIPE'), tc('NO. RANGKA'), tc('NO. MESIN'), tc('NO. POLISI'), tc('TAHUN')],
+        [
+            th('NO.'),
+            th('KODE BARANG'),
+            th('NUP'),
+            th('JENIS KENDARAAN'),
+            th('MERK'),
+            th('NO. RANGKA'),
+            th('NO. MESIN'),
+            th('NO. POLISI'),
+            th('TAHUN PEROLEHAN'),
+        ],
         [
             tc('1'),
             tc(getattr(k, 'kode_barang', '')),
             tc(getattr(k, 'nup', '')),
             tc(getattr(k, 'jenis_kendaraan', '')),
-            tl(f"{safe(getattr(k, 'merek', ''))} {safe(getattr(k, 'tipe', ''), '')}"),
+            tc(getattr(k, 'merek', '')),
             tc(getattr(k, 'nomor_rangka', '')),
             tc(getattr(k, 'nomor_mesin', '')),
             tc(getattr(k, 'nomor_polisi', '')),
-            tc(getattr(k, 'tahun_perolehan', '')),
+            tc(tahun_perolehan_kendaraan(k)),
         ],
         [tc('2'), tl('Kunci Kendaraan'), '', '', '', '', '', '', ''],
         [tc('3'), tl('STNK dan Surat Pajak Kendaraan'), '', '', '', '', '', '', ''],
     ]
     table = Table(
         data,
-        colWidths=[0.65*cm, 1.9*cm, 0.75*cm, 2.0*cm, 3.0*cm, 2.25*cm, 2.05*cm, 1.65*cm, 0.9*cm],
+        colWidths=[
+            0.65 * cm, 2.05 * cm, 0.70 * cm, 2.55 * cm, 2.65 * cm,
+            2.25 * cm, 2.10 * cm, 1.85 * cm, 1.95 * cm,
+        ],
         repeatRows=1,
+        hAlign='CENTER',
     )
     table.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.4, colors.black),
-        ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('LEFTPADDING', (0,0), (-1,-1), 2),
-        ('RIGHTPADDING', (0,0), (-1,-1), 2),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-        ('SPAN', (1,2), (-1,2)),
-        ('SPAN', (1,3), (-1,3)),
-        ('ALIGN', (1,2), (-1,3), 'LEFT'),
+        ('GRID', (0, 0), (-1, -1), 0.45, colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#d9d9d9')),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 2),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+        ('TOPPADDING', (0, 0), (-1, 0), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+        ('TOPPADDING', (0, 1), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 3),
+        ('SPAN', (1, 2), (-1, 2)),
+        ('SPAN', (1, 3), (-1, 3)),
+        ('ALIGN', (1, 2), (-1, 3), 'LEFT'),
     ]))
     story.append(table)
     story.append(Spacer(1, 0.22 * cm))
@@ -444,9 +488,9 @@ def generate_sip_kendaraan_pdf(sip, concept=True, save_to_model=True):
     ketentuan = [
         'Pemegang Kendaraan Dinas bertanggung jawab penuh atas keselamatan dan keamanan kendaraan yang dipercayakan untuk dipergunakan dalam rangka kelancaran tugas dinas di lingkungan Kementerian Sosial RI.',
         'Biaya BBM, pemeliharaan dan perbaikan Kendaraan Dinas ditanggung sesuai ketentuan unit kerja/satker pemilik kendaraan. Kerusakan maupun kehilangan Kendaraan Dinas tersebut atau bagian-bagiannya serta biaya-biaya lainnya akibat kelalaian adalah menjadi tanggung jawab yang bersangkutan.',
-        f'Mutasi Kendaraan Dinas kepada pegawai lain harus mendapat persetujuan {safe(signer_title)}.',
-        f'Apabila pemegang Kendaraan Dinas dimutasikan, maka Kendaraan Dinas tersebut diserahkan kembali kepada unit kerja/satker pemilik kendaraan atau {safe(signer_title)} sesuai kewenangan.',
-        f'Kendaraan Dinas dapat ditarik/dicabut tanpa menuntut ganti rugi apapun apabila {safe(signer_title)} memandang perlu, pemakai berhenti sebagai pejabat, pensiun/meninggal, atau dimutasikan/dipindahkan tugas.',
+        'Mutasi Kendaraan Dinas kepada pegawai lain harus mendapat persetujuan Kepala unit kerja/satker.',
+        'Apabila pemegang Kendaraan Dinas dimutasikan, maka Kendaraan Dinas tersebut diserahkan kembali kepada unit kerja/satker pemilik kendaraan atau Kepala unit kerja/satker sesuai kewenangan.',
+        'Kendaraan Dinas dapat ditarik/dicabut tanpa menuntut ganti rugi apapun apabila Kepala unit kerja/satker memandang perlu, pemakai berhenti sebagai pejabat, pensiun/meninggal, atau dimutasikan/dipindahkan tugas.',
     ]
     story.append(Paragraph('Dengan ketentuan sebagai berikut:', styles['Body']))
     for i, text in enumerate(ketentuan, 1):
@@ -484,7 +528,8 @@ def generate_sip_rumah_pdf(sip, concept=True, save_to_model=True):
     )
     story = []
     story.extend(_header(styles))
-    _watermark_story(story, styles, concept, signer_title='SEKRETARIS JENDERAL')
+    rumah_signer_title = getattr(sip, 'jabatan_pejabat_penandatangan', None) or getattr(sip, 'pejabat_penandatangan', None) or 'SEKRETARIS JENDERAL'
+    _watermark_story(story, styles, concept, signer_title=rumah_signer_title)
 
     story.append(Paragraph('<u>SURAT IZIN PENGHUNIAN RUMAH NEGARA</u>', styles['TitleDoc']))
     story.append(Paragraph(f'Nomor : {pdf_text(sip.nomor_sip)}', styles['CenterSmall']))
@@ -596,7 +641,7 @@ def generate_sip_rumah_pdf(sip, concept=True, save_to_model=True):
     # Foto calon pengguna/pemegang SIP ditampilkan pada konsep, mengikuti
     # contoh dokumen SIP Rumah Negara yang memuat foto pemegang SIP.
     foto_pemegang = _image_or_placeholder(getattr(p, 'foto', None), 'Foto Pemegang SIP', width=2.45 * cm, height=3.0 * cm)
-    sign_area = Table([[foto_pemegang, _approval_box(styles, sip, approved=not concept, signer_title='SEKRETARIS JENDERAL')]], colWidths=[3.1 * cm, 13.2 * cm])
+    sign_area = Table([[foto_pemegang, _approval_box(styles, sip, approved=not concept, signer_title=rumah_signer_title)]], colWidths=[3.1 * cm, 13.2 * cm])
     sign_area.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
         ('LEFTPADDING', (0, 0), (-1, -1), 0),

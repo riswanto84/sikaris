@@ -17,17 +17,11 @@
 
     {% if object.kendaraan %}
       {% if can_submit_to_kabiro and object.status == 'DRAFT' or can_submit_to_kabiro and object.status == 'DITOLAK' %}
-      <form method="post" action="{% url 'kendaraan:sip_ajukan_kabiro' object.pk %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">Ajukan ke {{ tujuan_pengajuan_sip_kendaraan|default:'Pejabat Penerbit' }}</button></form>
-      {% endif %}
-      {% if can_approve_as_kabiro and object.status == 'DIAJUKAN' %}
-      <form method="post" action="{% url 'kendaraan:sip_setujui_kabiro' object.pk %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Setujui SIP</button></form>
+      <form method="post" action="{% url 'kendaraan:sip_ajukan_kabiro' object.pk %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">Teruskan</button></form>
       {% endif %}
     {% elif object.rumah_dinas %}
       {% if can_submit_to_sekjen and object.status == 'DRAFT' or can_submit_to_sekjen and object.status == 'DITOLAK' %}
-      <form method="post" action="{% url 'rumah_dinas:sip_ajukan_sekjen' object.pk %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">Ajukan ke Sekjen</button></form>
-      {% endif %}
-      {% if can_approve_as_sekjen and object.status == 'DIAJUKAN' %}
-      <form method="post" action="{% url 'rumah_dinas:sip_setujui_sekjen' object.pk %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Setujui SIP</button></form>
+      <form method="post" action="{% url 'rumah_dinas:sip_ajukan_sekjen' object.pk %}">{% csrf_token %}<button class="btn btn-secondary" type="submit" onclick="return confirm('Teruskan SIP Rumah Negara ini ke Pejabat Penandatangan?')">Teruskan</button></form>
       {% endif %}
     {% endif %}
   </div>
@@ -119,28 +113,54 @@
 {% endif %}
 
 {% if object.kendaraan and can_approve_as_kabiro and object.status == 'DIAJUKAN' %}
-<div class="card detail-card" style="margin-bottom:18px">
+<div class="card detail-card" style="margin-bottom:18px; border-left: 5px solid #2563eb;">
   <div class="detail-header">
-    <h2>Tolak Pengajuan SIP Kendaraan</h2>
-    <p>Catatan penolakan wajib diisi agar operator dapat memperbaiki konsep SIP.</p>
+    <h2>Review Persetujuan SIP Kendaraan</h2>
+    <p>Kepala Unit Kerja/Satker atau pejabat penerbit dapat menyetujui atau menolak pengajuan. Alasan/keterangan akan tersimpan pada riwayat pengajuan.</p>
   </div>
-  <form method="post" action="{% url 'kendaraan:sip_tolak_kabiro' object.pk %}">
-    {% csrf_token %}
-    <textarea name="catatan_penolakan" class="form-control" rows="3" placeholder="Tuliskan alasan/catatan penolakan"></textarea>
-    <div class="form-actions" style="margin-top:12px"><button type="submit" class="btn btn-danger">Tolak SIP</button></div>
-  </form>
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+    <form method="post" action="{% url 'kendaraan:sip_setujui_kabiro' object.pk %}" style="padding:14px; border:1px solid #dbeafe; border-radius:14px; background:#f8fbff;">
+      {% csrf_token %}
+      <label class="form-label" for="keterangan_persetujuan">Keterangan Persetujuan</label>
+      <textarea id="keterangan_persetujuan" name="keterangan_persetujuan" class="form-control" rows="4" placeholder="Contoh: Data sudah sesuai dan disetujui untuk diterbitkan."></textarea>
+      <div class="form-actions" style="margin-top:12px"><button type="submit" class="btn btn-primary" onclick="return confirm('Setujui SIP Kendaraan ini?')">Setujui SIP</button></div>
+    </form>
+    <form method="post" action="{% url 'kendaraan:sip_tolak_kabiro' object.pk %}" style="padding:14px; border:1px solid #fecaca; border-radius:14px; background:#fffafa;">
+      {% csrf_token %}
+      <label class="form-label" for="alasan_penolakan">Alasan Penolakan <span style="color:#dc2626">*</span></label>
+      <textarea id="alasan_penolakan" name="alasan_penolakan" class="form-control" rows="3" required placeholder="Tuliskan alasan penolakan"></textarea>
+      <label class="form-label" for="keterangan_penolakan" style="margin-top:10px; display:block;">Keterangan Tambahan</label>
+      <textarea id="keterangan_penolakan" name="keterangan_penolakan" class="form-control" rows="3" placeholder="Tuliskan keterangan/catatan perbaikan"></textarea>
+      <div class="form-actions" style="margin-top:12px"><button type="submit" class="btn btn-danger" onclick="return confirm('Tolak SIP Kendaraan ini?')">Tolak SIP</button></div>
+    </form>
+  </div>
 </div>
 {% elif object.rumah_dinas and can_approve_as_sekjen and object.status == 'DIAJUKAN' %}
-<div class="card detail-card" style="margin-bottom:18px">
+<div class="card detail-card" style="margin-bottom:18px; border-left: 5px solid #2563eb;">
   <div class="detail-header">
-    <h2>Tolak Pengajuan SIP Rumah Negara</h2>
-    <p>Catatan penolakan wajib diisi agar operator dapat memperbaiki konsep SIP.</p>
+    <h2>Review Persetujuan SIP Rumah Negara</h2>
+    <p>Sekretaris Jenderal/Admin System dapat menyetujui atau menolak pengajuan SIP. Keterangan persetujuan atau alasan penolakan akan tersimpan pada detail SIP.</p>
   </div>
-  <form method="post" action="{% url 'rumah_dinas:sip_tolak_sekjen' object.pk %}">
-    {% csrf_token %}
-    <textarea name="catatan_penolakan" class="form-control" rows="3" placeholder="Tuliskan alasan/catatan penolakan"></textarea>
-    <div class="form-actions" style="margin-top:12px"><button type="submit" class="btn btn-danger">Tolak SIP</button></div>
-  </form>
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+    <form method="post" action="{% url 'rumah_dinas:sip_setujui_sekjen' object.pk %}" style="padding:14px; border:1px solid #dbeafe; border-radius:14px; background:#f8fbff;">
+      {% csrf_token %}
+      <label class="form-label" for="keterangan_persetujuan_rumah">Keterangan Persetujuan</label>
+      <textarea id="keterangan_persetujuan_rumah" name="keterangan_persetujuan" class="form-control" rows="4" placeholder="Contoh: Data SIP Rumah Negara sudah sesuai dan disetujui untuk diterbitkan."></textarea>
+      <div class="form-actions" style="margin-top:12px">
+        <button type="submit" class="btn btn-primary" onclick="return confirm('Setujui SIP Rumah Negara ini?')">Setujui SIP</button>
+      </div>
+    </form>
+    <form method="post" action="{% url 'rumah_dinas:sip_tolak_sekjen' object.pk %}" style="padding:14px; border:1px solid #fecaca; border-radius:14px; background:#fffafa;">
+      {% csrf_token %}
+      <label class="form-label" for="alasan_penolakan_rumah">Alasan Penolakan <span style="color:#dc2626">*</span></label>
+      <textarea id="alasan_penolakan_rumah" name="alasan_penolakan" class="form-control" rows="3" required placeholder="Tuliskan alasan penolakan"></textarea>
+      <label class="form-label" for="keterangan_penolakan_rumah" style="margin-top:10px; display:block;">Keterangan Tambahan</label>
+      <textarea id="keterangan_penolakan_rumah" name="keterangan_penolakan" class="form-control" rows="3" placeholder="Tuliskan keterangan/catatan perbaikan"></textarea>
+      <div class="form-actions" style="margin-top:12px">
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Tolak SIP Rumah Negara ini?')">Tolak SIP</button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endif %}
 
@@ -202,6 +222,33 @@
 </div>
 {% endif %}
 
+
+
+{% if sip_service_history %}
+<div class="card detail-card detail-preview-card">
+  <div class="detail-header">
+    <h2>Riwayat Service Kendaraan pada SIP</h2>
+    <p>Riwayat service ditampilkan dari kendaraan yang terkait dengan SIP ini.</p>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead><tr><th>Tanggal</th><th>Jenis Service</th><th>Bengkel</th><th>Uraian</th><th>Total Biaya</th><th>Kondisi Sesudah</th></tr></thead>
+      <tbody>
+        {% for s in sip_service_history %}
+        <tr>
+          <td>{{ s.tanggal_service }}</td>
+          <td>{{ s.get_jenis_service_display }}</td>
+          <td>{{ s.bengkel|default:'-' }}</td>
+          <td>{{ s.uraian_pekerjaan|truncatechars:90 }}</td>
+          <td>{{ s.total_biaya }}</td>
+          <td>{{ s.get_kondisi_sesudah_display }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
 
 {% if approval_docs %}
   {% for doc in approval_docs %}

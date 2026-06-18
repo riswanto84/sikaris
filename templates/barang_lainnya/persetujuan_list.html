@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block page_title %}Persetujuan SIP Barang Lainnya{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Persetujuan Pejabat Penandatangan SIP Barang Lainnya</h1></div>
+<div class="card"><div class="table-responsive"><table class="table"><thead><tr><th>No SIP</th><th>Tanggal Pengajuan</th><th>Pemegang SIP</th><th>Periode</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{% for obj in objects %}<tr><td>{{ obj.nomor_sip }}</td><td>{{ obj.tanggal_pengajuan|date:'d/m/Y H:i' }}</td><td>{{ obj.pemegang_sip }}</td><td>{{ obj.masa_berlaku_display }}</td><td>{{ obj.get_status_display }}</td><td><a class="btn btn-secondary btn-sm" href="{% url 'barang_lainnya:sip_detail' obj.pk %}">Review</a></td></tr>{% empty %}<tr><td colspan="6" class="empty-state">Belum ada SIP Barang Lainnya yang diajukan ke pejabat penandatangan.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

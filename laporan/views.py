@@ -384,7 +384,7 @@ def export_kendaraan_excel(request):
         ws.append([
             k.kode_kendaraan, k.nomor_polisi, k.merek, _text(k.tipe), _display(k, 'jenis_kendaraan'),
             _text(k.tahun_pembuatan), _text(k.unit_kerja), _text(k.pengguna), _display(k, 'kondisi'),
-            _display(k, 'status_pemanfaatan'), k.kilometer_terakhir, _money(k.nilai_perolehan),
+            _display(k, 'status_penggunaan'), k.kilometer_terakhir, _money(k.nilai_perolehan),
             _text(sip.nomor_sip if sip else None), _date(sip.tanggal_sip if sip else None),
             _text(sip.pegawai if sip else None),
             f"{_date(sip.tanggal_mulai)} s.d. {_date(sip.tanggal_akhir)}" if sip else '-',
@@ -473,7 +473,7 @@ def export_kendaraan_pdf(request):
         lines.append(f'{no}. {k.nomor_polisi} - {k.merek} {_text(k.tipe, "")}'.strip())
         lines.append(f'   Kode: {k.kode_kendaraan} | Jenis: {_display(k, "jenis_kendaraan")} | Tahun: {_text(k.tahun_pembuatan)}')
         lines.append(f'   Unit Kerja: {_text(k.unit_kerja)} | Pengguna: {_text(k.pengguna)}')
-        lines.append(f'   Kondisi: {_display(k, "kondisi")} | Status: {_display(k, "status_pemanfaatan")} | KM: {k.kilometer_terakhir}')
+        lines.append(f'   Kondisi: {_display(k, "kondisi")} | Status: {_display(k, "status_penggunaan")} | KM: {k.kilometer_terakhir}')
         if sip:
             lines.append(f'   SIP terakhir: {sip.nomor_sip} ({_display(sip, "status")}), tanggal {_date(sip.tanggal_sip)}')
             lines.append(f'   Pemakai SIP: {_text(sip.pegawai)} | Periode: {_date(sip.tanggal_mulai)} s.d. {_date(sip.tanggal_akhir)}')

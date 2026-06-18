@@ -4,18 +4,40 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login | Sistem Informasi Kendaraan dan Rumah Dinas</title>
+    <title>Login | SIM Pengelolaan BMN</title>
     <link rel="icon" href="{% static 'img/favicon.svg' %}">
-    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=20260619sim-pbmn">
+    <link rel="stylesheet" href="{% static 'css/sim_bmn_theme.css' %}?v=20260619sim-pbmn">
 </head>
-<body class="login-body">
-<main>
-    <section class="login-card">
-        <header class="login-header">
+<body class="login-body sim-bmn-login-body">
+<main class="sim-login-shell">
+    <section class="sim-login-hero" aria-label="Informasi aplikasi">
+        <div class="sim-login-brandbar">
             <img src="{% static 'img/logo-kemensos.svg' %}" alt="Logo Kementerian Sosial">
-            <div style="font-weight:900;color:#0f2a56;margin-top:8px">KEMENTERIAN SOSIAL REPUBLIK INDONESIA</div>
-            <h1 class="login-title">SIKARIS</h1>
-            <div class="login-sub">Sistem Informasi Kendaraan dan Rumah Dinas</div>
+            <div>
+                <div class="kemensos-name">KEMENTERIAN SOSIAL<br>REPUBLIK INDONESIA</div>
+                <div class="sim-app-short">SIM PBMN</div>
+            </div>
+        </div>
+        <div class="sim-login-copy">
+            <div class="eyebrow">Sistem Informasi Manajemen</div>
+            <h1>SIM Pengelolaan BMN</h1>
+            <p>Platform pengelolaan Barang Milik Negara untuk SIP, persetujuan, pemeliharaan, PSP, penghapusan, dan laporan aset secara terpadu.</p>
+        </div>
+        <div class="sim-login-points">
+            <span>✓ SIP Kendaraan</span>
+            <span>✓ SIP Rumah Negara</span>
+            <span>✓ SIP Barang Lainnya</span>
+            <span>✓ PSP & Penghapusan BMN</span>
+        </div>
+    </section>
+
+    <section class="login-card sim-login-card">
+        <header class="login-header sim-login-header">
+            <img src="{% static 'img/logo-kemensos.svg' %}" alt="Logo Kementerian Sosial">
+            <div class="login-kemensos">KEMENTERIAN SOSIAL REPUBLIK INDONESIA</div>
+            <h1 class="login-title">SIM Pengelolaan BMN</h1>
+            <div class="login-sub">Sistem Informasi Manajemen Pengelolaan Barang Milik Negara</div>
         </header>
 
         {% if messages %}
@@ -25,12 +47,12 @@
         {% endif %}
 
         {% if form.non_field_errors %}
-            <div class="message" style="background:#fee2e2;color:#991b1b;margin-bottom:16px">
+            <div class="message danger" style="margin-bottom:16px">
                 {{ form.non_field_errors }}
             </div>
         {% endif %}
 
-        <form method="post" action="{% url 'login' %}">
+        <form method="post" action="{% url 'login' %}" class="sim-login-form">
             {% csrf_token %}
             <p>
                 <label for="id_username">Username</label>
@@ -47,10 +69,10 @@
                 {{ form.captcha }}
                 {% for error in form.captcha.errors %}<small style="color:#991b1b">{{ error }}</small>{% endfor %}
             </p>
-            <button class="login-btn" type="submit">Login</button>
+            <button class="login-btn" type="submit">Masuk ke Aplikasi</button>
         </form>
 
-        <div class="message" style="margin-top:20px;background:#eef6ff;color:#334155">
+        <div class="message login-note">
             Masukkan username, password, dan hasil captcha dengan benar untuk masuk ke aplikasi.
         </div>
     </section>

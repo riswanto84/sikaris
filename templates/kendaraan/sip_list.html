@@ -3,13 +3,12 @@
 {% block content %}
 <div class="toolbar">
   {% include 'includes/list_search.html' %}
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="{% url 'kendaraan:sip_export' 'pdf' %}?{{ request.GET.urlencode }}">Export PDF</a><a class="btn btn-secondary" href="{% url 'kendaraan:sip_export' 'xlsx' %}?{{ request.GET.urlencode }}">Export Excel</a><a class="btn btn-secondary" href="{% url 'kendaraan:sip_export' 'csv' %}?{{ request.GET.urlencode }}">Export CSV</a></div>
-  {% if can_access_sip %}<a class="btn btn-primary" href="{% url 'kendaraan:sip_create' %}">+ Buat SIP Kendaraan</a>{% endif %}
+  {% if can_access_sip %}<div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="{% url 'kendaraan:sip_export' 'pdf' %}?{{ request.GET.urlencode }}">Export SIP PDF</a><a class="btn btn-secondary" href="{% url 'kendaraan:sip_export' 'xlsx' %}?{{ request.GET.urlencode }}">Export SIP Excel</a><a class="btn btn-secondary" href="{% url 'kendaraan:sip_export' 'csv' %}?{{ request.GET.urlencode }}">Export SIP CSV</a><a class="btn btn-primary" href="{% url 'kendaraan:sip_create' %}">+ Buat SIP Kendaraan</a></div>{% endif %}
 </div>
 <div class="card table-card">
   <div class="table-responsive">
     <table class="table">
-      <thead><tr><th>No SIP</th><th>Tanggal</th><th>Kendaraan</th><th>Pegawai</th><th>Periode</th><th>Jenis</th><th>Status</th><th>Aksi</th></tr></thead>
+      <thead><tr><th>No SIP</th><th>Tanggal</th><th>Kendaraan</th><th>Pegawai</th><th>Periode</th><th>Jenis</th><th>Status Proses</th>{% if not hide_status_aktif_for_pengelola_bmn %}<th>Status Aktif</th>{% endif %}<th>Aksi</th></tr></thead>
       <tbody>
       {% for o in object_list %}
       <tr>
@@ -19,10 +18,27 @@
         <td>{{ o.pegawai }}</td>
         <td>{{ o.tanggal_mulai }} s.d. {{ o.tanggal_akhir }}</td>
         <td>{{ o.get_jenis_pemakaian_display|default:o.jenis_pemakaian|default:'-' }}</td>
-        <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>
-        <td>{% if can_access_sip %}<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-secondary btn-detail" href="{% url 'kendaraan:sip_detail' o.pk %}">Detail</a>{% if o.status == 'DRAFT' or o.status == 'DITOLAK' %}<a class="btn btn-secondary" href="{% url 'kendaraan:sip_update' o.pk %}">Edit</a><a class="btn btn-danger" href="{% url 'kendaraan:sip_delete' o.pk %}">Hapus</a>{% endif %}</div>{% else %}-{% endif %}</td>
+        <td><span class="badge {{ o.status }}">{{ o.get_status_display }}</span></td>{% if not hide_status_aktif_for_pengelola_bmn %}<td>{% if o.status == 'TERBIT' or o.status == 'AKTIF' %}<span class="badge BAIK">Aktif</span>{% else %}<span class="badge RUSAK_BERAT">Non Aktif</span>{% endif %}</td>{% endif %}
+        <td>
+          {% if can_access_sip %}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <a class="btn btn-secondary btn-detail" href="{% url 'kendaraan:sip_detail' o.pk %}">Detail</a>
+            {% if o.status == 'DRAFT' or o.status == 'DIAJUKAN' or o.status == 'DITOLAK' or o.status == 'TERBIT' %}
+              <a class="btn btn-secondary" href="{% url 'kendaraan:sip_update' o.pk %}">Edit</a>
+            {% endif %}
+            {% if o.status == 'DRAFT' or o.status == 'DITOLAK' %}
+              {% if can_submit_sip_kendaraan_from_list %}
+              <form method="post" action="{% url 'kendaraan:sip_ajukan_kabiro' o.pk %}" style="display:inline;margin:0">
+                {% csrf_token %}
+                <button class="btn btn-primary" type="submit" onclick="return confirm('Teruskan SIP Kendaraan ini ke Pejabat Penerbit?')">{{ submit_sip_kendaraan_button_label|default:'Teruskan' }}</button>
+              </form>
+              {% endif %}
+            {% endif %}
+          </div>
+          {% else %}-{% endif %}
+        </td>
       </tr>
-      {% empty %}<tr><td colspan="8" class="empty-state">Belum ada data SIP kendaraan.</td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="{% if hide_status_aktif_for_pengelola_bmn %}8{% else %}9{% endif %}" class="empty-state">Belum ada data SIP kendaraan.</td></tr>{% endfor %}
       </tbody>
     </table>
   </div>

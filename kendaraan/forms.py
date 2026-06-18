@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from core.access import filter_form_fields_by_user
 
 from .models import (
@@ -118,25 +119,42 @@ class BootstrapModelForm(forms.ModelForm):
 # ============================================================
 
 class SIPKendaraanForm(BootstrapModelForm):
+    jenis_kendaraan_master = forms.CharField(
+        label='Jenis Kendaraan (otomatis dari Master Kendaraan)',
+        required=False,
+        disabled=True,
+    )
+    kode_barang_master = forms.CharField(
+        label='Kode Barang (otomatis dari Master Kendaraan)',
+        required=False,
+        disabled=True,
+    )
+    nup_master = forms.CharField(
+        label='NUP (otomatis dari Master Kendaraan)',
+        required=False,
+        disabled=True,
+    )
     class Meta:
         model = SIPKendaraan
-        exclude = ['dibuat_oleh', 'pejabat_penandatangan', 'pejabat_penerbit_sip_kendaraan', 'nama_pejabat_penerbit_sip_kendaraan', 'nip_pejabat_penerbit_sip_kendaraan', 'jabatan_pejabat_penerbit_sip_kendaraan', 'status_tte', 'tanggal_tte', 'catatan_tte', 'dokumen_sip', 'file_konsep_pdf', 'file_tte_pengusul', 'status_tte_pengusul', 'tanggal_tte_pengusul', 'catatan_tte_pengusul', 'file_final_pdf', 'file_signed_pdf', 'tanggal_pengajuan', 'tanggal_persetujuan', 'disetujui_oleh', 'catatan_penolakan', 'status']
+        exclude = ['dibuat_oleh', 'pejabat_penandatangan', 'nama_pejabat_penerbit_sip_kendaraan', 'nip_pejabat_penerbit_sip_kendaraan', 'jabatan_pejabat_penerbit_sip_kendaraan', 'status_tte', 'tanggal_tte', 'catatan_tte', 'dokumen_sip', 'file_konsep_pdf', 'file_tte_pengusul', 'status_tte_pengusul', 'tanggal_tte_pengusul', 'catatan_tte_pengusul', 'file_final_pdf', 'tanggal_pengajuan', 'tanggal_persetujuan', 'disetujui_oleh', 'catatan_penolakan', 'status']
 
         labels = {
             'nomor_sip': 'Nomor SIP',
             'tanggal_sip': 'Tanggal SIP',
             'kendaraan': 'Kendaraan',
-            'pegawai': 'Pegawai',
+            'pegawai': 'Nama Pemegang SIP',
             'tanggal_mulai': 'Tanggal Mulai SIP',
             'tanggal_akhir': 'Tanggal Akhir / Masa Berlaku SIP',
             'masa_berlaku_sip': 'Keterangan Masa Berlaku SIP',
-            'jenis_pemakaian': 'Jenis Kendaraan',
+            'jenis_pemakaian': 'Jenis Kendaraan (snapshot sistem)',
             'tujuan_pemakaian': 'Tujuan Pemakaian',
             'lokasi_penggunaan': 'Lokasi Penggunaan',
             'dasar_penerbitan': 'Dasar Penerbitan',
+            'pejabat_penerbit_sip_kendaraan': 'Pejabat Penandatangan SIP Kendaraan',
             'pejabat_penandatangan': 'Pejabat Penandatangan',
             'dokumen_sip': 'Dokumen SIP Kendaraan (PDF)',
             'dokumen_lainnya': 'Dokumen Lainnya / Lampiran Pendukung (Opsional)',
+            'file_signed_pdf': 'Upload SIP Kendaraan yang sudah TTE',
             'catatan': 'Catatan',
         }
 
@@ -170,7 +188,19 @@ class SIPKendaraanForm(BootstrapModelForm):
                 'accept': 'application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx',
                 'class': 'form-control'
             }),
+            'file_signed_pdf': forms.ClearableFileInput(attrs={
+                'accept': 'application/pdf,.pdf',
+                'class': 'form-control'
+            }),
         }
+
+
+    def clean_file_signed_pdf(self):
+        dokumen = self.cleaned_data.get('file_signed_pdf')
+        if not dokumen:
+            return dokumen
+        validate_pdf_file(dokumen)
+        return dokumen
 
     def clean_dokumen_lainnya(self):
         dokumen = self.cleaned_data.get('dokumen_lainnya')
@@ -191,21 +221,57 @@ class SIPKendaraanForm(BootstrapModelForm):
         return dokumen
 
 
-    def clean(self):
-        cleaned = super().clean()
-
-        # Pengelola BMN hanya boleh menyusun Draft/Konsep.
-        # Perubahan status dilakukan melalui tombol Ajukan/Setujui/Tolak,
-        # bukan dari form input biasa.
-        if self.instance and self.instance.pk:
-            status = getattr(self.instance, 'status', 'DRAFT')
-            if status not in ['DRAFT', 'DITOLAK'] and not (self.user and self.user.is_superuser):
-                raise ValidationError('SIP Kendaraan hanya dapat diedit saat berstatus Draft/Konsep atau Ditolak.')
-
-        return cleaned
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Jenis kendaraan, kode barang, dan NUP tidak diinput manual pada SIP.
+        # Data diambil otomatis dari Master Kendaraan berdasarkan kendaraan yang dipilih.
+        if 'jenis_pemakaian' in self.fields:
+            self.fields['jenis_pemakaian'].required = False
+            self.fields['jenis_pemakaian'].widget = forms.HiddenInput()
+
+        if 'pejabat_penerbit_sip_kendaraan' in self.fields:
+            from master.models import Pegawai
+            self.fields['pejabat_penerbit_sip_kendaraan'].label = 'Pejabat Penandatangan SIP Kendaraan'
+            self.fields['pejabat_penerbit_sip_kendaraan'].queryset = Pegawai.objects.all().order_by('nama')
+            self.fields['pejabat_penerbit_sip_kendaraan'].required = True
+            self.fields['pejabat_penerbit_sip_kendaraan'].help_text = 'Pilih nama pegawai pejabat penandatangan SIP Kendaraan.'
+
+        kendaraan_obj = getattr(self.instance, 'kendaraan', None)
+        kendaraan_id = None
+        if self.data:
+            kendaraan_id = self.data.get('kendaraan')
+        elif kendaraan_obj:
+            kendaraan_id = getattr(kendaraan_obj, 'pk', None)
+
+        if kendaraan_id and not kendaraan_obj:
+            try:
+                from master.models import Kendaraan
+                kendaraan_obj = Kendaraan.objects.filter(pk=kendaraan_id).first()
+            except Exception:
+                kendaraan_obj = None
+
+        if kendaraan_obj:
+            self.fields['jenis_kendaraan_master'].initial = kendaraan_obj.get_jenis_kendaraan_display() if hasattr(kendaraan_obj, 'get_jenis_kendaraan_display') else (kendaraan_obj.jenis_kendaraan or '')
+            self.fields['kode_barang_master'].initial = kendaraan_obj.kode_barang or ''
+            self.fields['nup_master'].initial = kendaraan_obj.nup or ''
+            if 'jenis_pemakaian' in self.fields:
+                self.fields['jenis_pemakaian'].initial = kendaraan_obj.jenis_kendaraan or ''
+
+        # Letakkan field otomatis tepat setelah pilihan kendaraan agar operator memahami sumber datanya.
+        try:
+            ordered = []
+            for name in self.fields.keys():
+                ordered.append(name)
+                if name == 'kendaraan':
+                    ordered.extend(['jenis_kendaraan_master', 'kode_barang_master', 'nup_master', 'pejabat_penerbit_sip_kendaraan'])
+            seen = []
+            for name in ordered:
+                if name in self.fields and name not in seen:
+                    seen.append(name)
+            self.order_fields(seen)
+        except Exception:
+            pass
 
         # Supaya tanggal tetap tampil saat edit.
         for field_name in ['tanggal_sip', 'tanggal_mulai', 'tanggal_akhir']:
@@ -214,7 +280,52 @@ class SIPKendaraanForm(BootstrapModelForm):
             if self.instance and self.instance.pk and value:
                 self.fields[field_name].initial = value.strftime('%Y-%m-%d')
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        pejabat = self.cleaned_data.get('pejabat_penerbit_sip_kendaraan') if hasattr(self, 'cleaned_data') else None
+        if pejabat:
+            instance.pejabat_penerbit_sip_kendaraan = pejabat
+            instance.nama_pejabat_penerbit_sip_kendaraan = getattr(pejabat, 'nama', '') or ''
+            instance.nip_pejabat_penerbit_sip_kendaraan = getattr(pejabat, 'nip', '') or ''
+            instance.jabatan_pejabat_penerbit_sip_kendaraan = getattr(pejabat, 'jabatan', '') or 'Pejabat Penerbit SIP Kendaraan'
+            instance.pejabat_penandatangan = instance.jabatan_pejabat_penerbit_sip_kendaraan
+        uploaded_tte = self.cleaned_data.get('file_signed_pdf') if hasattr(self, 'cleaned_data') else None
+        if uploaded_tte:
+            # File ini adalah hasil SIP yang sudah TTE; simpan juga sebagai dokumen_sip
+            # agar preview lama dan detail SIP menampilkan dokumen final.
+            instance.dokumen_sip = uploaded_tte
+            instance.status_tte = 'SUDAH_TTE'
+            instance.tanggal_tte = timezone.now()
+            instance.catatan_tte = 'SIP Kendaraan yang sudah TTE diupload melalui Form SIP Kendaraan.'
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
+    def clean(self):
+        cleaned = super().clean()
+
+        # Pengelola BMN hanya boleh menyusun Draft/Konsep.
+        # Perubahan status dilakukan melalui tombol Ajukan/Setujui/Tolak,
+        # bukan dari form input biasa.
+        if self.instance and self.instance.pk:
+            status = getattr(self.instance, 'status', 'DRAFT')
+            if status not in ['DRAFT', 'DITOLAK', 'DIAJUKAN'] and not (self.user and self.user.is_superuser):
+                raise ValidationError('SIP Kendaraan hanya dapat diedit saat berstatus Draft/Konsep, Diajukan, atau Ditolak.')
+
+        kendaraan = cleaned.get('kendaraan')
+        if kendaraan:
+            # Snapshot jenis kendaraan otomatis mengikuti Master Kendaraan.
+            cleaned['jenis_pemakaian'] = kendaraan.jenis_kendaraan
+
+        pejabat = cleaned.get('pejabat_penerbit_sip_kendaraan')
+        if pejabat:
+            self.instance.pejabat_penerbit_sip_kendaraan = pejabat
+            self.instance.nama_pejabat_penerbit_sip_kendaraan = getattr(pejabat, 'nama', '') or ''
+            self.instance.nip_pejabat_penerbit_sip_kendaraan = getattr(pejabat, 'nip', '') or ''
+            self.instance.jabatan_pejabat_penerbit_sip_kendaraan = getattr(pejabat, 'jabatan', '') or 'Pejabat Penerbit SIP Kendaraan'
+            self.instance.pejabat_penandatangan = self.instance.jabatan_pejabat_penerbit_sip_kendaraan
+        return cleaned
 
 
 class SIPKendaraanPengusulTTEUploadForm(forms.ModelForm):
@@ -244,7 +355,7 @@ class SIPKendaraanBSREUploadForm(forms.ModelForm):
         model = SIPKendaraan
         fields = ['file_signed_pdf']
         labels = {
-            'file_signed_pdf': 'Upload SIP Kendaraan yang sudah TTE BSrE',
+            'file_signed_pdf': 'Upload SIP Kendaraan yang sudah TTE',
         }
         widgets = {
             'file_signed_pdf': forms.ClearableFileInput(attrs={
@@ -256,7 +367,7 @@ class SIPKendaraanBSREUploadForm(forms.ModelForm):
     def clean_file_signed_pdf(self):
         dokumen = self.cleaned_data.get('file_signed_pdf')
         if not dokumen:
-            raise ValidationError('File SIP Kendaraan yang sudah TTE BSrE wajib diupload.')
+            raise ValidationError('File SIP Kendaraan yang sudah TTE wajib diupload.')
         validate_pdf_file(dokumen)
         return dokumen
 
@@ -337,8 +448,8 @@ class ServiceKendaraanForm(BootstrapModelForm):
         # bukan dari form input biasa.
         if self.instance and self.instance.pk:
             status = getattr(self.instance, 'status', 'DRAFT')
-            if status not in ['DRAFT', 'DITOLAK'] and not (self.user and self.user.is_superuser):
-                raise ValidationError('SIP Kendaraan hanya dapat diedit saat berstatus Draft/Konsep atau Ditolak.')
+            if status not in ['DRAFT', 'DITOLAK', 'DIAJUKAN'] and not (self.user and self.user.is_superuser):
+                raise ValidationError('SIP Kendaraan hanya dapat diedit saat berstatus Draft/Konsep, Diajukan, atau Ditolak.')
 
         return cleaned
 
@@ -386,8 +497,8 @@ class RiwayatKondisiKendaraanForm(BootstrapModelForm):
         # bukan dari form input biasa.
         if self.instance and self.instance.pk:
             status = getattr(self.instance, 'status', 'DRAFT')
-            if status not in ['DRAFT', 'DITOLAK'] and not (self.user and self.user.is_superuser):
-                raise ValidationError('SIP Kendaraan hanya dapat diedit saat berstatus Draft/Konsep atau Ditolak.')
+            if status not in ['DRAFT', 'DITOLAK', 'DIAJUKAN'] and not (self.user and self.user.is_superuser):
+                raise ValidationError('SIP Kendaraan hanya dapat diedit saat berstatus Draft/Konsep, Diajukan, atau Ditolak.')
 
         return cleaned
 

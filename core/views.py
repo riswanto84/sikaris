@@ -199,6 +199,9 @@ def dashboard_stats(user):
             status__in=['TERBIT', 'AKTIF'],
             tanggal_akhir__range=[today, soon],
         ).count(),
+        'pajak_kendaraan_akan_berakhir': qs['kendaraan'].filter(
+            jatuh_tempo_pajak__range=[today, soon],
+        ).count(),
         'sip_rumah_akan_berakhir': qs['sip_rumah'].filter(
             status__in=['TERBIT', 'AKTIF'],
             tanggal_akhir__range=[today, soon],
@@ -239,6 +242,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 status__in=['TERBIT', 'AKTIF'],
                 tanggal_akhir__range=[today, soon],
             ).order_by('tanggal_akhir')[:5],
+            'pajak_kendaraan_akan_berakhir_list': qs['kendaraan'].filter(
+                jatuh_tempo_pajak__range=[today, soon],
+            ).order_by('jatuh_tempo_pajak')[:5],
             'sip_rumah_akan_berakhir_list': qs['sip_rumah'].filter(
                 status__in=['TERBIT', 'AKTIF'],
                 tanggal_akhir__range=[today, soon],

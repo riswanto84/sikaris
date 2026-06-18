@@ -2,17 +2,14 @@ import random
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib.auth.views import LoginView, PasswordChangeView
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 
 from core.listing import SearchListMixin
-from core.export_utils import apply_search_filter, export_queryset
 from core.roles import AdminSystemRequiredMixin
 from .models import LoginHistory, UserVisitCounter
 from .forms import CaptchaLoginForm, RoleForm, UserCreateForm, UserUpdateForm, ProfileUpdateForm
@@ -298,81 +295,3 @@ class UserPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
     def form_valid(self, form):
         messages.success(self.request, 'Kata sandi berhasil diubah.')
         return super().form_valid(form)
-
-
-# =============================================================
-# Export tabel administrasi user/role/log (PDF, Excel, CSV)
-# =============================================================
-def _require_admin_system(user):
-    if not (user.is_superuser or user.groups.filter(name='Admin System').exists()):
-        raise PermissionDenied('Hanya Admin System yang dapat melakukan export data ini.')
-
-
-def _role_names(user):
-    names = list(user.groups.values_list('name', flat=True))
-    if user.is_superuser:
-        names.insert(0, 'Superuser')
-    return ', '.join(names) or 'Tanpa role'
-
-
-def _user_columns():
-    return [
-        ('No', '__no__'), ('Username', 'username'), ('Nama Lengkap', lambda o: o.get_full_name()),
-        ('Email', 'email'), ('Unit Kerja', 'profile__unit_kerja__nama_unit'),
-        ('Role', _role_names), ('Aktif', lambda o: 'Aktif' if o.is_active else 'Nonaktif'),
-        ('Superuser', lambda o: 'Ya' if o.is_superuser else 'Tidak'), ('Terakhir Login', 'last_login'), ('Tanggal Bergabung', 'date_joined'),
-    ]
-
-
-def _login_history_columns():
-    return [
-        ('No', '__no__'), ('Waktu Login', 'login_at'), ('Username', 'user__username'),
-        ('Nama', lambda o: o.user.get_full_name() if o.user else ''), ('Email', 'user__email'),
-        ('Unit Kerja', 'user__profile__unit_kerja__nama_unit'), ('Role', lambda o: _role_names(o.user) if o.user else ''),
-        ('IP Address', 'ip_address'), ('User Agent', 'user_agent'),
-    ]
-
-
-def _visit_counter_columns():
-    return [
-        ('No', '__no__'), ('Username', 'user__username'), ('Nama', lambda o: o.user.get_full_name() if o.user else ''),
-        ('Email', 'user__email'), ('Unit Kerja', 'user__profile__unit_kerja__nama_unit'),
-        ('Role', lambda o: _role_names(o.user) if o.user else ''), ('Total Kunjungan', 'total_kunjungan'),
-        ('Kunjungan Terakhir', 'last_visit_at'), ('Halaman Terakhir', 'last_path'), ('IP Terakhir', 'last_ip_address'),
-    ]
-
-
-def _role_columns():
-    return [('No', '__no__'), ('Nama Role', 'name'), ('Jumlah User', lambda o: o.user_set.count())]
-
-
-@login_required
-def export_users(request, fmt):
-    _require_admin_system(request.user)
-    qs = get_user_model().objects.select_related('profile__unit_kerja').prefetch_related('groups')
-    qs = apply_search_filter(qs, request, UserListView.search_fields).distinct()
-    return export_queryset(request, qs, fmt, 'manajemen_user', 'Manajemen User', _user_columns(), order_by=['username'])
-
-
-@login_required
-def export_login_history(request, fmt):
-    _require_admin_system(request.user)
-    qs = LoginHistory.objects.select_related('user', 'user__profile__unit_kerja').prefetch_related('user__groups')
-    qs = apply_search_filter(qs, request, LoginHistoryListView.search_fields)
-    return export_queryset(request, qs, fmt, 'riwayat_login_user', 'Riwayat Login User', _login_history_columns(), order_by=['-login_at'])
-
-
-@login_required
-def export_visit_counter(request, fmt):
-    _require_admin_system(request.user)
-    qs = UserVisitCounter.objects.select_related('user', 'user__profile__unit_kerja').prefetch_related('user__groups')
-    qs = apply_search_filter(qs, request, UserVisitCounterListView.search_fields)
-    return export_queryset(request, qs, fmt, 'counter_kunjungan_user', 'Counter Kunjungan User', _visit_counter_columns(), order_by=['-total_kunjungan', 'user__username'])
-
-
-@login_required
-def export_roles(request, fmt):
-    _require_admin_system(request.user)
-    qs = Group.objects.all()
-    qs = apply_search_filter(qs, request, RoleListView.search_fields)
-    return export_queryset(request, qs, fmt, 'manajemen_role', 'Manajemen Role', _role_columns(), order_by=['name'], landscape_mode=False)

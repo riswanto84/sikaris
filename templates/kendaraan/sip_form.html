@@ -9,7 +9,7 @@ Form SIP Kendaraan
     <div class="form-header">
         <div>
             <h2>Form SIP Kendaraan</h2>
-            <p>Lengkapi data dasar Surat Izin Pemakaian kendaraan. Dokumen PDF SIP akan digenerate dan diupload oleh pejabat penerbit setelah proses persetujuan/TTE BSrE.</p>
+            <p>Alur: pilih kendaraan → sistem mengisi jenis kendaraan, kode barang, dan NUP dari Master Kendaraan → pilih pejabat penandatangan SIP Kendaraan → isi nama pemegang SIP, masa berlaku, dan data pendukung → klik Buat/Generate SIP Kendaraan.</p>
         </div>
     </div>
 
@@ -24,7 +24,7 @@ Form SIP Kendaraan
 
         <div class="form-grid">
             {% for field in form %}
-                <p class="{% if field.name == 'tujuan_pemakaian' or field.name == 'dasar_penerbitan' or field.name == 'catatan' or field.name == 'dokumen_lainnya' %}full{% endif %}">
+                <p class="{% if field.name == 'tujuan_pemakaian' or field.name == 'dasar_penerbitan' or field.name == 'catatan' or field.name == 'dokumen_lainnya' or field.name == 'file_signed_pdf' %}full{% endif %}">
                     <label for="{{ field.id_for_label }}">
                         {{ field.label }}
                     </label>
@@ -32,7 +32,9 @@ Form SIP Kendaraan
                     {{ field }}
 
 
-                    {% if field.help_text %}
+                    {% if field.name == 'jenis_kendaraan_master' or field.name == 'kode_barang_master' or field.name == 'nup_master' %}
+                        <small class="hint">Otomatis dari data Master Kendaraan dan tidak dapat diubah di form SIP.</small>
+                    {% elif field.help_text %}
                         <small class="hint">{{ field.help_text }}</small>
                     {% endif %}
 
@@ -45,13 +47,13 @@ Form SIP Kendaraan
 
         
         <div class="message info" style="margin-top:18px;">
-            Dokumen SIP Kendaraan utama tidak diupload dari form ini. Konsep/final PDF dibuat melalui alur persetujuan. Lampiran pendukung opsional dapat diupload melalui field Dokumen Lainnya.
+            Tombol di bawah akan menyimpan data SIP sekaligus membuat/generate konsep PDF SIP Kendaraan. Jika dokumen SIP sudah selesai TTE, upload pada kolom Upload SIP Kendaraan yang sudah TTE. Jika belum tersedia, kolom tersebut boleh dikosongkan dan konsep PDF tetap dapat digenerate.
         </div>
 
 
         <div class="form-actions">
             <button class="btn btn-primary" type="submit">
-                Simpan
+                {{ submit_label|default:'Buat / Generate SIP Kendaraan' }}
             </button>
 
             <a class="btn btn-secondary" href="{% url 'kendaraan:sip_list' %}">
@@ -60,6 +62,55 @@ Form SIP Kendaraan
         </div>
     </form>
 </div>
+
+{% if sip_form_preview_docs %}
+<div class="card form-card document-section">
+    <div class="document-header">
+        <h3>Preview PDF SIP Kendaraan</h3>
+        <p>Preview dokumen ditampilkan di bawah halaman form sesuai alur penerbitan SIP.</p>
+    </div>
+    {% for doc in sip_form_preview_docs %}
+        <div style="margin-bottom:18px;">
+            <h4 style="margin:0 0 10px;">{{ doc.label }}</h4>
+            {% if doc.is_pdf %}
+                <div class="pdf-preview">
+                    <iframe src="{{ doc.url }}#toolbar=1&navpanes=0&scrollbar=1" title="{{ doc.label }}"></iframe>
+                </div>
+                <div class="form-actions" style="margin-top:12px;">
+                    <a class="btn btn-secondary" href="{{ doc.url }}" target="_blank" rel="noopener">Buka PDF</a>
+                </div>
+            {% else %}
+                <a class="btn btn-secondary" href="{{ doc.url }}" target="_blank" rel="noopener">Buka Dokumen</a>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<script>
+(function() {
+    const data = {{ kendaraan_master_json|default:'{}'|safe }};
+    const kendaraan = document.getElementById('id_kendaraan');
+    const jenis = document.getElementById('id_jenis_kendaraan_master');
+    const kode = document.getElementById('id_kode_barang_master');
+    const nup = document.getElementById('id_nup_master');
+    const jenisSnapshot = document.getElementById('id_jenis_pemakaian');
+
+    function updateMasterFields() {
+        if (!kendaraan) return;
+        const row = data[kendaraan.value] || {};
+        if (jenis) jenis.value = row.jenis_kendaraan || '';
+        if (kode) kode.value = row.kode_barang || '';
+        if (nup) nup.value = row.nup || '';
+        if (jenisSnapshot) jenisSnapshot.value = row.jenis_kendaraan_value || '';
+    }
+
+    if (kendaraan) {
+        kendaraan.addEventListener('change', updateMasterFields);
+        updateMasterFields();
+    }
+})();
+</script>
 
 <style>
     .document-section {

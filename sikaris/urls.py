@@ -14,6 +14,7 @@ urlpatterns = [
     path('penghapusan-bmn/', include('penghapusan.urls')),
     path('psp-bmn/', include('psp.urls')),
     path('laporan/', include('laporan.urls')), 
+    path('barang-lainnya/', include('barang_lainnya.urls')),
 ]
 
 if settings.DEBUG:

@@ -5,6 +5,7 @@ ADMIN_SYSTEM = 'Admin System'
 PENGELOLA_BMN = 'Pengelola BMN'
 PEMELIHARAAN_KENDARAAN = 'Pemeliharaan Kendaraan'
 BIRO_UMUM = 'Biro Umum'
+ANAK_SATKER = 'Anak Satker'
 SEKRETARIS_JENDERAL = 'Sekretaris Jenderal'
 KEPALA_BIRO_UMUM = 'Kepala Biro Umum'
 PEJABAT_PENERBIT_SIP = 'Pejabat Penerbit SIP'
@@ -30,6 +31,10 @@ def is_pengelola_bmn(user):
 
 def is_pemeliharaan_kendaraan(user):
     return user.is_authenticated and has_group(user, PEMELIHARAAN_KENDARAAN)
+
+
+def is_anak_satker(user):
+    return user.is_authenticated and has_group(user, ANAK_SATKER)
 
 
 def is_sekretaris_jenderal(user):
@@ -112,7 +117,7 @@ class AdminSystemRequiredMixin(RoleRequiredMixin):
 
 
 class BMNRequiredMixin(RoleRequiredMixin):
-    allowed_roles = [ADMIN_SYSTEM, PENGELOLA_BMN, BIRO_UMUM]
+    allowed_roles = [ADMIN_SYSTEM, PENGELOLA_BMN, BIRO_UMUM, ANAK_SATKER]
 
 
 class SekjenRequiredMixin(RoleRequiredMixin):
@@ -136,7 +141,7 @@ class MaintenanceRequiredMixin(RoleRequiredMixin):
 
 
 class VehicleViewRequiredMixin(RoleRequiredMixin):
-    allowed_roles = [ADMIN_SYSTEM, PENGELOLA_BMN, PEMELIHARAAN_KENDARAAN, BIRO_UMUM, SEKRETARIS_JENDERAL, KEPALA_BIRO_UMUM, PEJABAT_PENERBIT_SIP, SEKRETARIS_DITJEN, SEKRETARIS_ESELON_I, SEKRETARIS_UKE_II, KEPALA_SENTRA, KEPALA_BALAI]
+    allowed_roles = [ADMIN_SYSTEM, PENGELOLA_BMN, PEMELIHARAAN_KENDARAAN, BIRO_UMUM, ANAK_SATKER, SEKRETARIS_JENDERAL, KEPALA_BIRO_UMUM, PEJABAT_PENERBIT_SIP, SEKRETARIS_DITJEN, SEKRETARIS_ESELON_I, SEKRETARIS_UKE_II, KEPALA_SENTRA, KEPALA_BALAI]
 
 
 def bmn_required(view_func):

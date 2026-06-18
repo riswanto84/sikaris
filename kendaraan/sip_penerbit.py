@@ -212,6 +212,18 @@ def suggest_jabatan_penerbit(unit):
 
 
 def get_pejabat_penerbit_sip_kendaraan(sip):
+    # Prioritas utama sesuai ketentuan terbaru:
+    # pejabat penandatangan SIP Kendaraan dipilih oleh user pada Form SIP Kendaraan.
+    selected = getattr(sip, 'pejabat_penerbit_sip_kendaraan', None)
+    if selected:
+        return selected
+
+    # Fallback untuk data lama: masih dapat membaca pejabat dari Master Kendaraan
+    # bila SIP lama belum memiliki pejabat yang dipilih pada form.
+    kendaraan = getattr(sip, 'kendaraan', None)
+    if kendaraan and getattr(kendaraan, 'pejabat_penandatangan_sip_id', None):
+        return kendaraan.pejabat_penandatangan_sip
+
     unit = get_unit_for_sip_kendaraan(sip)
     target_unit = get_target_unit_penerbit_sip_kendaraan(unit)
 
@@ -246,7 +258,17 @@ def get_pejabat_penerbit_sip_kendaraan(sip):
 def apply_snapshot_penerbit_sip_kendaraan(sip, force=False):
     unit = get_unit_for_sip_kendaraan(sip)
     pegawai = get_pejabat_penerbit_sip_kendaraan(sip)
-    jabatan = suggest_jabatan_penerbit(unit)
+    # Jika pejabat dipilih pada Form SIP Kendaraan, jabatan PDF memakai
+    # jabatan pegawai tersebut. Jika belum diisi, baru fallback ke konfigurasi.
+    if getattr(sip, 'pejabat_penerbit_sip_kendaraan_id', None) and pegawai:
+        jabatan = getattr(pegawai, 'jabatan', None) or 'Pejabat Penerbit SIP Kendaraan'
+    else:
+        kendaraan = getattr(sip, 'kendaraan', None)
+        from_master_kendaraan = bool(kendaraan and getattr(kendaraan, 'pejabat_penandatangan_sip_id', None))
+        if from_master_kendaraan and pegawai:
+            jabatan = getattr(pegawai, 'jabatan', None) or 'Pejabat Penerbit SIP Kendaraan'
+        else:
+            jabatan = suggest_jabatan_penerbit(unit)
 
     if pegawai and not jabatan:
         jabatan = pegawai.jabatan

@@ -5,7 +5,6 @@ import os
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q
@@ -27,7 +26,6 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from core.access import get_user_unit_kerja, is_biro_umum_user, is_global_bmn_scope_user, require_user_unit_or_all, scope_queryset_by_user
 from core.roles import is_sekretaris_jenderal
 from core.listing import SearchListMixin
-from core.export_utils import apply_search_filter, export_queryset
 from .forms import ImportBarangPSPForm, PermohonanPSPBMNForm
 from .models import BarangPSP, FotoBarangPSP, PermohonanPSPBMN
 
@@ -1017,55 +1015,3 @@ class ExportLampiranPSPPDFView(PermohonanPSPAccessMixin, View):
         buffer.seek(0)
         filename = f'lampiran_psp_{obj.pk}.pdf'
         return FileResponse(buffer, as_attachment=True, filename=filename)
-
-
-# =============================================================
-# Export daftar Permohonan PSP BMN (PDF, Excel, CSV)
-# =============================================================
-def _psp_columns():
-    return [
-        ('No', '__no__'),
-        ('Nomor Permohonan', 'nomor_permohonan'),
-        ('Tanggal Permohonan', 'tanggal_permohonan'),
-        ('Nomor Nota ke Sekjen', 'nomor_nota_permohonan_psp'),
-        ('Tiket SIMAN', 'nomor_tiket_siman'),
-        ('Unit Kerja', 'unit_kerja__nama_unit'),
-        ('Pemohon', 'pemohon__nama'),
-        ('NIP Pemohon', 'pemohon__nip'),
-        ('Judul Paket', 'judul_paket'),
-        ('Jenis Barang', 'display:jenis_barang'),
-        ('Nama Barang', 'nama_barang'),
-        ('Kode Barang', 'kode_barang'),
-        ('NUP', 'nup'),
-        ('Nilai PSP', 'nilai_psp'),
-        ('Kategori Nilai', lambda o: getattr(o, 'kategori_nilai_display', '') or ''),
-        ('Status', 'display:status'),
-        ('Nomor SK PSP', 'nomor_sk_psp'),
-        ('Tanggal SK PSP', 'tanggal_sk_psp'),
-        ('Catatan Biro Umum', 'catatan_biro_umum'),
-        ('Catatan Unit', 'catatan_unit'),
-    ]
-
-
-def _psp_queryset_for_mode(request, mode):
-    view = PermohonanPSPListView()
-    view.request = request
-    view.mode = mode or 'permohonan'
-    if mode == 'verifikasi':
-        view.__class__ = VerifikasiPSPListView
-    elif mode == 'persetujuan_sekjen':
-        view.__class__ = PersetujuanSekjenPSPListView
-    qs = view.get_base_queryset_for_mode()
-    return apply_search_filter(qs, request, PermohonanPSPListView.search_fields)
-
-
-@login_required
-def export_psp(request, fmt):
-    mode = (request.GET.get('mode') or 'permohonan').strip()
-    qs = _psp_queryset_for_mode(request, mode)
-    title_map = {
-        'verifikasi': 'Verifikasi Usulan PSP BMN',
-        'persetujuan_sekjen': 'Persetujuan/Penetapan PSP BMN',
-    }
-    filename = f'transaksi_psp_bmn_{mode}'
-    return export_queryset(request, qs, fmt, filename, title_map.get(mode, 'Permohonan PSP BMN'), _psp_columns(), order_by=['-tanggal_permohonan', '-id'])

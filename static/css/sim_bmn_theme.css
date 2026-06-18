@@ -1,0 +1,222 @@
+
+/* =====================================================
+   SIM Pengelolaan BMN Theme - Kemensos
+   Berlaku untuk base template, login, tabel, form, dan menu.
+   ===================================================== */
+:root{
+  --sim-primary:#0f5fe8;
+  --sim-primary-dark:#073b91;
+  --sim-primary-deep:#052b6b;
+  --sim-accent:#16a34a;
+  --sim-gold:#f5b21b;
+  --sim-bg:#f3f7fc;
+  --sim-card:#ffffff;
+  --sim-text:#0f1f3d;
+  --sim-muted:#65758f;
+  --sim-border:#dbe7f5;
+  --sim-shadow:0 18px 48px rgba(8,35,85,.10);
+}
+body{background:linear-gradient(180deg,#f7fbff 0%,var(--sim-bg) 100%)!important;color:var(--sim-text)!important;}
+.app-shell{background:linear-gradient(90deg,#eef5ff 0,#f8fbff 42%,#f3f7fc 100%)}
+.sidebar{
+  width:292px!important;
+  padding:0 14px 16px!important;
+  background:linear-gradient(180deg,#082f74 0%,#062865 42%,#041d4f 100%)!important;
+  border-right:1px solid rgba(255,255,255,.10);
+  box-shadow:14px 0 42px rgba(5,25,69,.20)!important;
+}
+.content-area{margin-left:292px!important;padding:24px 26px 30px!important;}
+.brand-block{
+  align-items:center!important;
+  gap:12px!important;
+  padding:18px 10px 18px!important;
+  margin:0 -4px 10px!important;
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+.brand-block img{width:54px!important;height:54px!important;border-radius:0!important;filter:drop-shadow(0 8px 20px rgba(0,0,0,.18));}
+.brand-title{
+  font-size:17px!important;
+  line-height:1.16!important;
+  letter-spacing:.02em!important;
+  font-weight:950!important;
+  color:#fff!important;
+  max-width:190px!important;
+}
+.brand-subtitle{
+  font-size:10.5px!important;
+  line-height:1.35!important;
+  letter-spacing:.04em!important;
+  color:#c9ddff!important;
+  text-transform:uppercase;
+  margin-top:5px!important;
+}
+.nav-menu{padding-bottom:10px;}
+.nav-group{
+  margin:0 -2px 6px!important;
+  padding:10px 0 8px!important;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.nav-group-title{
+  margin:0 10px 8px!important;
+  font-size:10px!important;
+  color:#a9c8f6!important;
+  letter-spacing:.15em!important;
+  font-weight:900!important;
+}
+.nav-link{
+  min-height:43px!important;
+  padding:10px 12px!important;
+  margin:2px 0!important;
+  border-radius:13px!important;
+  color:#eaf3ff!important;
+  font-size:14px!important;
+  font-weight:800!important;
+  letter-spacing:.005em!important;
+}
+.nav-link:hover{
+  background:rgba(255,255,255,.12)!important;
+  transform:translateX(3px)!important;
+}
+.nav-link.active,.nav-link[aria-current="page"]{
+  background:linear-gradient(135deg,#1670ff 0%,#0b53d7 100%)!important;
+  color:#fff!important;
+  box-shadow:0 12px 28px rgba(14,84,235,.38)!important;
+}
+.nav-icon{
+  width:26px!important;
+  height:26px!important;
+  border-radius:9px!important;
+  background:rgba(255,255,255,.10);
+  font-size:15px!important;
+}
+.nav-link.active .nav-icon{background:rgba(255,255,255,.18)}
+.sidebar-footer{padding:12px 2px 0!important;}
+.btn-logout{background:rgba(255,255,255,.10)!important;color:#fff!important;border:1px solid rgba(255,255,255,.18)!important;}
+.topbar{
+  min-height:60px;
+  padding:0 2px 8px;
+  border-bottom:1px solid rgba(219,231,245,.75);
+  margin-bottom:22px!important;
+}
+.page-heading{font-size:26px!important;color:#0b1f44!important;letter-spacing:-.02em;}
+.notify-chip,.profile-chip,.card,.panel-card,.summary-card,.welcome-panel,.table-card,.form-card{
+  border-color:var(--sim-border)!important;
+  box-shadow:var(--sim-shadow)!important;
+}
+.profile-chip{border-radius:18px!important;padding:8px 14px!important;}
+.avatar-circle{background:linear-gradient(135deg,#0f5fe8,#22a2ff)!important;}
+.btn-primary,.login-btn{
+  background:linear-gradient(135deg,#0f66f2,#054ac3)!important;
+  color:#fff!important;
+  box-shadow:0 14px 30px rgba(15,95,232,.28)!important;
+}
+.btn-secondary{background:#eef6ff!important;border-color:#cfe0ff!important;color:#0a50bc!important;}
+.table th{background:#f4f8fd!important;color:#60708a!important;font-size:11px!important;letter-spacing:.08em!important;}
+.table td{background:#fff;}
+.table tbody tr:hover td{background:#f8fbff!important;}
+.form-control,input,select,textarea{border-color:#cfdbea!important;border-radius:14px!important;}
+.form-control:focus,input:focus,select:focus,textarea:focus{border-color:#8bb8ff!important;box-shadow:0 0 0 4px rgba(15,95,232,.10)!important;}
+.status-badge,.badge{font-weight:900!important;}
+
+/* Login baru */
+.sim-bmn-login-body{
+  min-height:100vh!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:24px!important;
+  background:
+    radial-gradient(circle at 18% 16%,rgba(255,255,255,.18),transparent 30%),
+    linear-gradient(135deg,#061d4f 0%,#073b91 48%,#0f7ae5 100%)!important;
+}
+.sim-login-shell{
+  width:min(1180px,100%);
+  display:grid;
+  grid-template-columns:1.08fr .92fr;
+  gap:24px;
+  align-items:stretch;
+  position:relative;
+}
+.sim-login-hero{
+  position:relative;
+  overflow:hidden;
+  min-height:640px;
+  border-radius:30px;
+  padding:34px;
+  background:linear-gradient(145deg,rgba(4,29,79,.98),rgba(7,59,145,.95));
+  color:#fff;
+  box-shadow:0 30px 90px rgba(3,16,52,.35);
+}
+.sim-login-hero:before{
+  content:"";
+  position:absolute;
+  inset:auto -120px -130px auto;
+  width:380px;
+  height:380px;
+  border-radius:50%;
+  background:rgba(245,178,27,.20);
+}
+.sim-login-hero:after{
+  content:"";
+  position:absolute;
+  top:120px;
+  right:54px;
+  width:170px;
+  height:170px;
+  border-radius:44px;
+  background:rgba(255,255,255,.08);
+  transform:rotate(18deg);
+}
+.sim-login-brandbar{display:flex;align-items:center;gap:14px;position:relative;z-index:1;}
+.sim-login-brandbar img{width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 12px 24px rgba(0,0,0,.28));}
+.kemensos-name{font-weight:950;line-height:1.12;letter-spacing:.02em;}
+.sim-app-short{display:inline-flex;margin-top:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900;letter-spacing:.10em;}
+.sim-login-copy{position:relative;z-index:1;margin-top:104px;max-width:620px;}
+.sim-login-copy .eyebrow{text-transform:uppercase;letter-spacing:.15em;color:#bdd6ff;font-weight:900;font-size:12px;margin-bottom:12px;}
+.sim-login-copy h1{font-size:54px;line-height:1.02;margin:0 0 18px;letter-spacing:-.04em;}
+.sim-login-copy p{font-size:18px;line-height:1.7;color:#dceaff;margin:0;}
+.sim-login-points{position:absolute;left:34px;right:34px;bottom:34px;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.sim-login-points span{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:13px 14px;font-weight:800;color:#f5fbff;}
+.sim-login-card{
+  max-width:none!important;
+  width:100%!important;
+  min-height:640px;
+  padding:40px 44px!important;
+  border-radius:30px!important;
+  align-self:stretch;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  box-shadow:0 30px 90px rgba(3,16,52,.25)!important;
+}
+.sim-login-header{text-align:left!important;margin-bottom:8px;}
+.sim-login-header img{width:68px!important;height:68px!important;}
+.login-kemensos{font-size:12px;font-weight:950;color:#0b3479;margin-top:10px;letter-spacing:.06em;}
+.sim-login-header .login-title{font-size:36px!important;line-height:1.1!important;color:#0b1f44!important;margin:18px 0 6px!important;letter-spacing:-.03em;}
+.sim-login-header .login-sub{font-size:14px!important;color:#64748b!important;margin-bottom:24px!important;line-height:1.5;}
+.sim-login-form p{margin:0 0 16px;}
+.sim-login-form label{font-size:13px!important;color:#233755!important;}
+.sim-login-form input{min-height:48px;}
+.login-note{margin-top:20px!important;background:#eef6ff!important;color:#334155!important;border-color:#d7e7ff!important;}
+.login-footer{grid-column:1/-1;color:rgba(255,255,255,.86)!important;margin-top:-4px!important;}
+
+@media (max-width:1100px){
+  .sim-login-shell{grid-template-columns:1fr;max-width:620px;}
+  .sim-login-hero{min-height:auto;padding:28px;}
+  .sim-login-copy{margin-top:34px;}
+  .sim-login-copy h1{font-size:40px;}
+  .sim-login-points{position:relative;left:auto;right:auto;bottom:auto;margin-top:30px;}
+  .sim-login-card{min-height:auto;}
+}
+@media (max-width:900px){
+  .content-area{margin-left:0!important;padding:18px!important;}
+  .sidebar{width:86%!important;}
+}
+@media (max-width:640px){
+  .sim-login-shell{gap:16px;}
+  .sim-login-hero,.sim-login-card{border-radius:24px!important;padding:24px!important;}
+  .sim-login-copy h1{font-size:32px;}
+  .sim-login-copy p{font-size:15px;}
+  .sim-login-points{grid-template-columns:1fr;}
+  .brand-title{font-size:15px!important;}
+}

@@ -22,7 +22,7 @@ def get_pegawai_by_jabatan(jabatan_keyword, fallback):
             .first()
         )
         if pegawai:
-            return f'{pegawai.nama} - {pegawai.jabatan or jabatan_keyword} (TTE BSrE)'
+            return f'{pegawai.nama} - {pegawai.jabatan or jabatan_keyword}'
     except Exception:
         pass
     return fallback
@@ -34,7 +34,7 @@ class SIPKendaraan(TimeStampedModel):
     pegawai = models.ForeignKey(Pegawai, on_delete=models.CASCADE, related_name='sip_kendaraan')
     tanggal_mulai = models.DateField()
     tanggal_akhir = models.DateField()
-    jenis_pemakaian = models.CharField('Jenis Kendaraan', max_length=30, choices=JENIS_KENDARAAN_CHOICES, blank=True, null=True)
+    jenis_pemakaian = models.CharField('Jenis Kendaraan', max_length=100, choices=JENIS_KENDARAAN_CHOICES, blank=True, null=True)
     tujuan_pemakaian = models.TextField(blank=True, null=True)
     lokasi_penggunaan = models.CharField(max_length=200, blank=True, null=True)
     dasar_penerbitan = models.TextField(blank=True, null=True)
@@ -75,6 +75,10 @@ class SIPKendaraan(TimeStampedModel):
             if self.pk: qs = qs.exclude(pk=self.pk)
             if qs.filter(tanggal_mulai__lte=self.tanggal_akhir, tanggal_akhir__gte=self.tanggal_mulai).exists():
                 raise ValidationError('Kendaraan sudah memiliki SIP aktif pada periode tersebut.')
+    @property
+    def status_aktif_display(self):
+        return 'Aktif' if self.status in ['TERBIT', 'AKTIF'] else 'Non Aktif'
+
     @property
     def masa_berlaku_display(self):
         if self.masa_berlaku_sip:

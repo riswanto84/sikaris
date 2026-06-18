@@ -34,8 +34,8 @@
         <a class="btn btn-primary" target="_blank" href="{% url 'psp:generate_dokumen' object.pk 'sk' %}">Generate Word SK Penetapan PSP</a>
       </div>
     {% else %}
-      <h3>Generate Dokumen PSP SIKARIS</h3>
-      <p class="small-muted">Dokumen berikut digenerate oleh aplikasi dalam format Word (.docx) agar nomor surat, redaksi, dan tanda tangan dapat diedit manual. Setelah selesai ditandatangani/TTE dan diberi meterai biasa atau e-Meterai sesuai kebutuhan, upload hasil akhirnya sebagai PDF Dokumen PSP SIKARIS sebelum diteruskan ke Sekjen.</p>
+      <h3>Generate Dokumen PSP SIM Pengelolaan BMN</h3>
+      <p class="small-muted">Dokumen berikut digenerate oleh aplikasi dalam format Word (.docx) agar nomor surat, redaksi, dan tanda tangan dapat diedit manual. Setelah selesai ditandatangani/TTE dan diberi meterai biasa atau e-Meterai sesuai kebutuhan, upload hasil akhirnya sebagai PDF Dokumen PSP SIM Pengelolaan BMN sebelum diteruskan ke Sekjen.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
         <a class="btn btn-secondary" target="_blank" href="{% url 'psp:generate_dokumen' object.pk 'nota' %}">Generate Word Nota Dinas</a>
         <a class="btn btn-secondary" target="_blank" href="{% url 'psp:generate_dokumen' object.pk 'keterangan' %}">Generate Word Surat Keterangan Dokumen Digital</a>
@@ -49,14 +49,14 @@
   <div class="card" style="padding:18px">
     {% if can_verifikasi_psp %}
       <h3>Verifikasi Usulan PSP - Biro Umum</h3>
-      <p class="small-muted">Biro Umum melakukan verifikasi kelengkapan usulan, mengembalikan untuk perbaikan, atau meneruskan ke Sekjen. Sebelum diteruskan ke Sekjen, wajib upload PDF Dokumen PSP SIKARIS final/gabungan. PDF dapat memakai TTE BSrE atau tanda tangan manual, serta meterai biasa atau e-Meterai sesuai kebutuhan.</p>
+      <p class="small-muted">Biro Umum melakukan verifikasi kelengkapan usulan, mengembalikan untuk perbaikan, atau meneruskan ke Sekjen. Sebelum diteruskan ke Sekjen, wajib upload PDF Dokumen PSP SIM Pengelolaan BMN final/gabungan. PDF dapat memakai TTE BSrE atau tanda tangan manual, serta meterai biasa atau e-Meterai sesuai kebutuhan.</p>
       <form method="post" enctype="multipart/form-data" action="{% url 'psp:proses' object.pk %}" style="display:grid;gap:12px;margin-top:12px">
         {% csrf_token %}
         <textarea class="form-control" name="catatan" rows="3" placeholder="Catatan Biro Umum / alasan perbaikan">{{ object.catatan_biro_umum|default:'' }}</textarea>
-        <label><strong>Upload Dokumen PSP SIKARIS Final/Gabungan (PDF)</strong></label>
+        <label><strong>Upload Dokumen PSP SIM Pengelolaan BMN Final/Gabungan (PDF)</strong></label>
         <input class="form-control" type="file" name="dokumen_permohonan_psp" accept="application/pdf,.pdf">
         <small class="hint">Wajib sebelum diteruskan ke Sekjen. File dapat hasil TTE BSrE atau tanda tangan manual; meterai dapat meterai biasa/e-Meterai.</small>
-        {% if object.dokumen_permohonan_psp %}<small class="hint">File saat ini: <a href="{{ object.dokumen_permohonan_psp.url }}" target="_blank">Lihat Dokumen PSP SIKARIS PDF</a></small>{% endif %}
+        {% if object.dokumen_permohonan_psp %}<small class="hint">File saat ini: <a href="{{ object.dokumen_permohonan_psp.url }}" target="_blank">Lihat Dokumen PSP SIM Pengelolaan BMN PDF</a></small>{% endif %}
 
         <style>
           .psp-check-card {
@@ -167,7 +167,7 @@
             <label class="psp-check-item">
               <input type="checkbox" name="check_dokumen_psp_final" value="1" {% if object.dokumen_permohonan_psp %}checked{% endif %}>
               <span class="psp-check-text">
-                <span class="psp-check-title">Dokumen PSP SIKARIS Final/Gabungan</span>
+                <span class="psp-check-title">Dokumen PSP SIM Pengelolaan BMN Final/Gabungan</span>
                 <span class="psp-check-subtitle">PDF final sudah tersedia dan siap menjadi dokumen utama untuk Sekjen.</span>
               </span>
             </label>
@@ -245,7 +245,7 @@
 
   <div style="height:18px"></div>
   <div class="card" style="padding:18px">
-    <h3>Nomor Surat Dokumen PSP SIKARIS</h3>
+    <h3>Nomor Surat Dokumen PSP SIM Pengelolaan BMN</h3>
     <table class="table" style="margin-top:14px">
       <tbody>
         <tr><th>Nota Permohonan PSP ke Sekjen (manual di Word)</th><td>{{ object.nomor_nota_permohonan_psp|default:'-' }}{% if object.tanggal_nota_permohonan_psp %} - {{ object.tanggal_nota_permohonan_psp|date:'d/m/Y' }}{% endif %}</td></tr>
@@ -262,8 +262,8 @@
   <div class="card" style="padding:18px">
     <h3>Dokumen Permohonan dan e-Meterai</h3>
     <div class="list-stack">
-      <div class="list-item"><div class="list-main"><strong>Dokumen PSP SIKARIS Final/Gabungan</strong><span>{% if object.dokumen_permohonan_psp %}<a href="{{ object.dokumen_permohonan_psp.url }}" target="_blank">Lihat Dokumen PSP SIKARIS PDF</a>{% else %}-{% endif %}</span></div></div>
-      <div class="list-item"><div class="list-main"><strong>Surat Pernyataan Kepala Satker</strong><span>{% if object.surat_pernyataan_kepala_satker %}<a href="{{ object.surat_pernyataan_kepala_satker.url }}" target="_blank">Lihat Dokumen PSP SIKARIS PDF</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Dokumen PSP SIM Pengelolaan BMN Final/Gabungan</strong><span>{% if object.dokumen_permohonan_psp %}<a href="{{ object.dokumen_permohonan_psp.url }}" target="_blank">Lihat Dokumen PSP SIM Pengelolaan BMN PDF</a>{% else %}-{% endif %}</span></div></div>
+      <div class="list-item"><div class="list-main"><strong>Surat Pernyataan Kepala Satker</strong><span>{% if object.surat_pernyataan_kepala_satker %}<a href="{{ object.surat_pernyataan_kepala_satker.url }}" target="_blank">Lihat Dokumen PSP SIM Pengelolaan BMN PDF</a>{% else %}-{% endif %}</span></div></div>
       <div class="list-item"><div class="list-main"><strong>Dokumen Bermeterai Elektronik</strong><span>{{ object.get_status_emeterai_display }}{% if object.dokumen_bermeterai %} - <a href="{{ object.dokumen_bermeterai.url }}" target="_blank">Lihat PDF e-Meterai</a>{% endif %}</span></div></div>
       <div class="list-item"><div class="list-main"><strong>File Sebelum TTE BSrE</strong><span>{% if object.file_sebelum_tte %}<a href="{{ object.file_sebelum_tte.url }}" target="_blank">Lihat PDF</a>{% else %}-{% endif %}</span></div></div>
       <div class="list-item"><div class="list-main"><strong>SK Penetapan PSP</strong><span>{% if object.sk_penetapan_psp %}<a href="{{ object.sk_penetapan_psp.url }}" target="_blank">Lihat SK PSP</a>{% else %}-{% endif %}</span></div></div>

@@ -3,6 +3,8 @@ from core.access import filter_form_fields_by_user
 from django.core.exceptions import ValidationError
 
 from .models import SIPRumahDinas
+from master.models import Pegawai
+from django.utils import timezone
 
 
 def validate_pdf_file(uploaded_file):
@@ -59,11 +61,32 @@ class BootstrapModelForm(forms.ModelForm):
 
 
 class SIPRumahDinasForm(BootstrapModelForm):
+    jabatan_pejabat_penandatangan_display = forms.CharField(
+        label='Jabatan Pejabat Penandatangan',
+        required=False,
+        disabled=True,
+        help_text='Otomatis dari Master Pegawai berdasarkan nama pejabat penandatangan yang dipilih. Field ini tidak dapat diedit manual.',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'readonly': 'readonly',
+            'placeholder': 'Otomatis dari Master Pegawai'
+        })
+    )
+
     class Meta:
         model = SIPRumahDinas
 
-        # dokumen_bast sengaja tidak ditampilkan
-        exclude = ['dibuat_oleh', 'pejabat_penandatangan', 'dokumen_bast', 'dokumen_sip', 'status', 'file_konsep_pdf', 'file_tte_calon_pengguna', 'status_tte_calon_pengguna', 'tanggal_tte_calon_pengguna', 'catatan_tte_calon_pengguna', 'file_final_pdf', 'file_signed_pdf', 'status_tte', 'tanggal_tte', 'catatan_tte', 'tanggal_pengajuan', 'tanggal_persetujuan', 'disetujui_oleh', 'catatan_penolakan']
+        # dokumen_bast dan field teknis workflow sengaja tidak ditampilkan.
+        # Nama pejabat penandatangan dan file SIP final TTE ditampilkan untuk role Pengelola BMN.
+        exclude = [
+            'dibuat_oleh', 'dokumen_bast', 'dokumen_sip', 'status', 'file_konsep_pdf',
+            'pejabat_penandatangan',
+            'file_tte_calon_pengguna', 'status_tte_calon_pengguna', 'tanggal_tte_calon_pengguna',
+            'catatan_tte_calon_pengguna', 'file_final_pdf', 'status_tte', 'tanggal_tte',
+            'catatan_tte', 'tanggal_pengajuan', 'tanggal_persetujuan', 'disetujui_oleh',
+            'catatan_penolakan', 'nama_pejabat_penandatangan', 'nip_pejabat_penandatangan',
+            'jabatan_pejabat_penandatangan'
+        ]
 
         labels = {
             'nomor_sip': 'Nomor SIP',
@@ -81,7 +104,9 @@ class SIPRumahDinasForm(BootstrapModelForm):
             'jenis_masa_berlaku': 'Jenis Masa Berlaku SIP',
             'masa_berlaku_sip': 'Keterangan Masa Berlaku SIP',
             'dasar_penerbitan': 'Dasar Penerbitan',
-            'pejabat_penandatangan': 'Pejabat Penandatangan',
+            'pejabat_penandatangan_pegawai': 'Nama Pejabat Penandatangan',
+            'jabatan_pejabat_penandatangan_display': 'Jabatan Pejabat Penandatangan',
+            'file_signed_pdf': 'Upload SIP Rumah Negara yang sudah TTE',
             'jumlah_anggota_keluarga': 'Jumlah Anggota Keluarga',
             'status': 'Status',
             'dokumen_sip': 'Dokumen SIP Rumah Negara (PDF)',
@@ -116,6 +141,10 @@ class SIPRumahDinasForm(BootstrapModelForm):
                 'accept': 'application/pdf,.pdf',
                 'class': 'form-control'
             }),
+            'file_signed_pdf': forms.ClearableFileInput(attrs={
+                'accept': 'application/pdf,.pdf',
+                'class': 'form-control'
+            }),
             'dokumen_lainnya': forms.ClearableFileInput(attrs={
                 'accept': 'application/pdf,.pdf,image/*,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx',
                 'class': 'form-control'
@@ -138,6 +167,13 @@ class SIPRumahDinasForm(BootstrapModelForm):
         validate_pdf_file(dokumen)
         return dokumen
 
+    def clean_file_signed_pdf(self):
+        dokumen = self.cleaned_data.get('file_signed_pdf')
+        if not dokumen:
+            return dokumen
+        validate_pdf_file(dokumen)
+        return dokumen
+
     def clean(self):
         cleaned = super().clean()
 
@@ -153,11 +189,48 @@ class SIPRumahDinasForm(BootstrapModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        if 'pejabat_penandatangan_pegawai' in self.fields:
+            self.fields['pejabat_penandatangan_pegawai'].queryset = Pegawai.objects.select_related('unit_kerja').order_by('nama')
+            self.fields['pejabat_penandatangan_pegawai'].required = False
+            self.fields['pejabat_penandatangan_pegawai'].help_text = 'Pilih nama pejabat penandatangan dari Master Pegawai. Nama, NIP, dan jabatan akan digenerate pada PDF SIP Rumah Negara.'
+
+        if 'jabatan_pejabat_penandatangan_display' in self.fields:
+            pejabat = None
+            if self.instance and getattr(self.instance, 'pejabat_penandatangan_pegawai_id', None):
+                pejabat = self.instance.pejabat_penandatangan_pegawai
+            jabatan = (getattr(pejabat, 'jabatan', '') or getattr(self.instance, 'jabatan_pejabat_penandatangan', '') or getattr(self.instance, 'pejabat_penandatangan', '') or '')
+            self.fields['jabatan_pejabat_penandatangan_display'].initial = jabatan
+            self.fields['jabatan_pejabat_penandatangan_display'].widget.attrs.update({
+                'readonly': 'readonly',
+                'aria-readonly': 'true',
+            })
+
+        if 'file_signed_pdf' in self.fields:
+            self.fields['file_signed_pdf'].required = False
+            self.fields['file_signed_pdf'].help_text = 'Opsional. Upload PDF SIP Rumah Negara yang sudah TTE. Jika diisi, status TTE otomatis menjadi Sudah TTE.'
+
         for field_name in ['tanggal_sip', 'tanggal_mulai', 'tanggal_akhir', 'tanggal_bayar_pnbp']:
             value = getattr(self.instance, field_name, None)
 
             if self.instance and self.instance.pk and value:
                 self.fields[field_name].initial = value.strftime('%Y-%m-%d')
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        pejabat = self.cleaned_data.get('pejabat_penandatangan_pegawai')
+        if pejabat:
+            instance.nama_pejabat_penandatangan = getattr(pejabat, 'nama', '') or ''
+            instance.nip_pejabat_penandatangan = getattr(pejabat, 'nip', '') or ''
+            instance.jabatan_pejabat_penandatangan = getattr(pejabat, 'jabatan', '') or ''
+            instance.pejabat_penandatangan = instance.jabatan_pejabat_penandatangan or 'Pejabat Penandatangan'
+        if self.cleaned_data.get('file_signed_pdf'):
+            instance.dokumen_sip = self.cleaned_data.get('file_signed_pdf')
+            instance.status_tte = 'SUDAH_TTE'
+            instance.tanggal_tte = timezone.now()
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 class SIPRumahCalonPenggunaTTEUploadForm(forms.ModelForm):
     class Meta:

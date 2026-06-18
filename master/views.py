@@ -12,7 +12,7 @@ from django.contrib.auth.decorators import login_required
 from core.roles import BMNRequiredMixin, VehicleViewRequiredMixin, can_manage_master, is_pengelola_bmn, is_admin_system
 from core.forms import ImportFileForm
 from core.import_utils import read_tabular_upload, pick, to_int, to_decimal, to_date, normalize_choice
-from core.constants import KONDISI_ASET, STATUS_PEMANFAATAN_KENDARAAN, STATUS_PEMANFAATAN_RUMAH, JENIS_KENDARAAN_CHOICES, JENIS_UNIT_KERJA_CHOICES
+from core.constants import KONDISI_ASET, STATUS_PENGGUNAAN_KENDARAAN, STATUS_PEMANFAATAN_RUMAH, JENIS_KENDARAAN_CHOICES
 from core.listing import SearchListMixin
 from core.detail import GenericDetailMixin
 from core.access import UnitScopedQuerysetMixin, UnitScopedFormMixin, BiroUmumOnlyMixin, scope_queryset_by_user, is_biro_umum_user, get_user_unit_kerja, require_user_unit_or_all, is_global_bmn_scope_user, get_accessible_unit_ids_for_user
@@ -73,7 +73,7 @@ class UnitKerjaDetailView(BMNRequiredMixin, UnitScopedQuerysetMixin, GenericDeta
     detail_title = 'Detail Unit Kerja'
     back_url_name = 'master:unitkerja_list'
     edit_url_name = 'master:unitkerja_update'
-    delete_url_name = 'master:unitkerja_delete'
+    delete_url_name = None
 
 
 class UnitKerjaDeleteView(BMNRequiredMixin, BiroUmumOnlyMixin, UnitScopedQuerysetMixin, SafeDeleteMixin, DeleteView):
@@ -161,7 +161,7 @@ class KendaraanListView(VehicleViewRequiredMixin, UnitScopedQuerysetMixin, Searc
     template_name = 'master/kendaraan_list.html'
     select_related = ['unit_kerja']
     search_fields = [
-        ('kode_kendaraan', 'Kode Kendaraan'),
+        ('kode_kendaraan', 'Kode Register'),
         ('nomor_polisi', 'Nomor Polisi'),
         ('merek', 'Merek'),
         ('tipe', 'Tipe'),
@@ -175,7 +175,7 @@ class KendaraanListView(VehicleViewRequiredMixin, UnitScopedQuerysetMixin, Searc
         ('kode_barang', 'Kode Barang'),
         ('unit_kerja__nama_unit', 'Unit Kerja'),
         ('kondisi', 'Kondisi'),
-        ('status_pemanfaatan', 'Status Pemanfaatan'),
+        ('status_penggunaan', 'Status Penggunaan'),
     ]
 
 
@@ -225,7 +225,7 @@ class KendaraanDetailView(VehicleViewRequiredMixin, UnitScopedQuerysetMixin, Gen
     detail_title = 'Detail Kendaraan'
     back_url_name = 'master:kendaraan_list'
     edit_url_name = 'master:kendaraan_update'
-    delete_url_name = 'master:kendaraan_delete'
+    delete_url_name = None
     exclude_fields = ['id', 'pengguna']
 
 
@@ -272,7 +272,7 @@ class RumahDinasListView(BMNRequiredMixin, UnitScopedQuerysetMixin, SearchListMi
         ('status_tanah', 'Status Tanah'),
         ('unit_kerja__nama_unit', 'Unit Kerja'),
         ('kondisi', 'Kondisi'),
-        ('status_pemanfaatan', 'Status Pemanfaatan'),
+        ('status_pemanfaatan', 'Status Penggunaan'),
     ]
 
 
@@ -322,7 +322,7 @@ class RumahDinasDetailView(BMNRequiredMixin, UnitScopedQuerysetMixin, GenericDet
     detail_title = 'Detail Rumah Negara'
     back_url_name = 'master:rumah_list'
     edit_url_name = 'master:rumah_update'
-    delete_url_name = 'master:rumah_delete'
+    delete_url_name = None
 
 
 class RumahDinasDeleteView(BMNRequiredMixin, UnitScopedQuerysetMixin, SafeDeleteMixin, DeleteView):
@@ -476,7 +476,7 @@ def _export_pdf_response(filename, title, headers, rows, landscape_mode=True):
 
 
 def _unit_rows(qs):
-    return [[i, o.nama_unit, getattr(o, 'jenis_unit', ''), getattr(o, 'nama_jabatan_penerbit_sip_kendaraan', '') or '', o.keterangan or ''] for i, o in enumerate(qs, start=1)]
+    return [[i, getattr(o, 'kode_satker', '') or '', o.nama_unit, getattr(o, 'nama_jabatan_penerbit_sip_kendaraan', '') or '', o.keterangan or ''] for i, o in enumerate(qs, start=1)]
 
 
 def _pegawai_rows(qs):
@@ -484,11 +484,11 @@ def _pegawai_rows(qs):
 
 
 def _kendaraan_rows(qs):
-    return [[o.nomor_polisi, o.merek or '', o.tipe or '', o.jenis_kendaraan or '', o.tahun_perolehan or '', o.unit_kerja.nama_unit if o.unit_kerja else '', o.nup or '', o.kode_barang or '', o.nilai_perolehan or 0, o.kondisi or '', o.status_pemanfaatan or ''] for o in qs]
+    return [[o.kode_kendaraan, o.nomor_polisi, o.merek or '', o.tipe or '', o.jenis_kendaraan or '', o.tanggal_perolehan or o.tahun_perolehan or '', o.unit_kerja.nama_unit if o.unit_kerja else '', o.kode_satker or '', o.nup or '', o.kode_barang or '', o.nilai_perolehan or 0, o.kondisi or '', o.status_penggunaan or '', o.keterangan_status_pemanfaatan or ''] for o in qs]
 
 
 def _rumah_rows(qs):
-    return [[o.kode_rumah, o.nama_rumah or '', o.jenis_rumah or '', o.unit_kerja.nama_unit if o.unit_kerja else '', o.alamat or '', o.nup or '', o.kode_barang or '', o.nilai_perolehan or 0, o.kondisi or '', o.status_pemanfaatan or ''] for o in qs]
+    return [[o.kode_rumah, o.nama_rumah or '', o.jenis_rumah or '', o.unit_kerja.nama_unit if o.unit_kerja else '', o.kode_satker or '', o.alamat or '', o.nup or '', o.kode_barang or '', o.tanggal_perolehan or o.tahun_perolehan or '', o.jumlah_lantai or '', o.njop_per_meter_tanah or 0, o.nilai_perolehan or 0, o.kondisi or '', o.status_penggunaan or o.status_pemanfaatan or '', o.status_hukum or ''] for o in qs]
 
 
 @login_required
@@ -678,8 +678,7 @@ def _excel_import_template_response(filename, title, headers, sample_row, notes=
 def template_import_unitkerja(request):
     headers = [
         'nama_unit',
-        'jenis_unit',
-        'nama_jabatan_penerbit_sip_kendaraan',
+                'nama_jabatan_penerbit_sip_kendaraan',
         'pejabat_penerbit_nip',
         'keterangan',
     ]
@@ -692,8 +691,7 @@ def template_import_unitkerja(request):
     ]
     notes = [
         'Kolom nama_unit wajib diisi dan menjadi kunci update data.',
-        'jenis_unit dapat diisi: BIRO_UMUM, DITJEN, ITJEN, BADAN, PUSAT, SENTRA, BALAI, atau LAINNYA.',
-        'pejabat_penerbit_nip opsional. Isi NIP pegawai yang sudah ada pada Master Pegawai jika ingin mengatur pejabat penerbit SIP Kendaraan.',
+                'pejabat_penerbit_nip opsional. Isi NIP pegawai yang sudah ada pada Master Pegawai jika ingin mengatur pejabat penerbit SIP Kendaraan.',
         'Jika pejabat_penerbit_nip kosong atau tidak ditemukan, data unit kerja tetap diimpor tanpa pejabat penerbit.',
     ]
     return _excel_import_template_response('template_import_unit_kerja.xlsx', 'Template Import Unit Kerja', headers, sample, notes)
@@ -706,14 +704,14 @@ def template_import_pegawai(request):
 
 
 def template_import_kendaraan(request):
-    headers = ['kode_kendaraan', 'nomor_polisi', 'merek', 'tipe', 'jenis_kendaraan', 'tahun_pembuatan', 'tahun_perolehan', 'warna', 'nomor_rangka', 'nomor_mesin', 'nomor_bpkb', 'nomor_stnk', 'masa_berlaku_stnk', 'jatuh_tempo_pajak', 'nup', 'kode_barang', 'nilai_perolehan', 'unit_kerja', 'kondisi', 'status_pemanfaatan', 'kilometer_terakhir']
+    headers = ['kode_register', 'nomor_polisi', 'merek', 'tipe', 'jenis_kendaraan', 'tahun_pembuatan', 'tanggal_perolehan', 'warna', 'nomor_rangka', 'nomor_mesin', 'nomor_bpkb', 'nomor_stnk', 'masa_berlaku_stnk', 'jatuh_tempo_pajak', 'nup', 'kode_barang', 'nilai_perolehan', 'unit_kerja', 'kode_satker', 'kondisi', 'status_penggunaan', 'keterangan_status_pemanfaatan']
     sample = ['KDR-001', 'B 1234 KMS', 'Toyota', 'Innova', 'Operasional', 2022, 2022, 'Hitam', 'MHFXW42G...', '2GD123...', 'BPKB001', 'STNK001', '2027-06-15', '2026-12-31', '001', '3.02.01.02.003', 350000000, 'Biro Umum', 'Baik', 'Digunakan', 25000]
     notes = ['Pengguna kendaraan tidak diisi pada master kendaraan, karena pengguna dicatat melalui SIP Kendaraan.']
     return _excel_import_template_response('template_import_kendaraan.xlsx', 'Template Import Aset Kendaraan', headers, sample, notes)
 
 
 def template_import_rumah(request):
-    headers = ['kode_rumah', 'nama_rumah', 'jenis_rumah', 'alamat', 'provinsi', 'kabupaten_kota', 'kecamatan', 'kelurahan', 'latitude', 'longitude', 'luas_tanah', 'luas_bangunan', 'jumlah_kamar_tidur', 'jumlah_kamar_mandi', 'daya_listrik', 'tahun_dibangun', 'tahun_perolehan', 'nup', 'kode_barang', 'nilai_perolehan', 'unit_kerja', 'nomor_sertifikat', 'status_tanah', 'kondisi', 'status_pemanfaatan']
+    headers = ['kode_register', 'nama_rumah', 'jenis_rumah', 'alamat', 'provinsi', 'kabupaten_kota', 'kecamatan', 'kelurahan', 'latitude', 'longitude', 'luas_tanah', 'njop_per_meter_tanah', 'luas_bangunan', 'jumlah_lantai', 'jumlah_kamar_tidur', 'jumlah_kamar_mandi', 'daya_listrik', 'tanggal_perolehan', 'nup', 'kode_barang', 'nilai_perolehan', 'unit_kerja', 'kode_satker', 'nomor_sertifikat', 'status_penggunaan', 'status_hukum', 'kondisi', 'status_pemanfaatan']
     sample = ['RN-001', 'Rumah Negara Contoh', 'Rumah Negara Golongan II', 'Jl. Contoh No. 1', 'DKI Jakarta', 'Jakarta Pusat', 'Senen', 'Senen', -6.175392, 106.827153, 120, 80, 3, 2, '2200 VA', 2010, 2011, '001', '4.01.01.01.001', 750000000, 'Biro Umum', 'SHM-001', 'Sertifikat', 'Baik', 'Kosong']
     return _excel_import_template_response('template_import_rumah_negara.xlsx', 'Template Import Aset Rumah Negara', headers, sample)
 
@@ -758,7 +756,7 @@ class BaseImportView(BMNRequiredMixin, FormView):
 class UnitKerjaImportView(BiroUmumOnlyMixin, BaseImportView):
     title = 'Impor Unit Kerja'
     template_url_name = 'master:unitkerja_template_import'
-    description = 'Kolom yang didukung: nama_unit, jenis_unit, nama_jabatan_penerbit_sip_kendaraan, pejabat_penerbit_nip, keterangan. File dapat berupa Excel (.xlsx/.xlsm) atau CSV.'
+    description = 'Kolom yang didukung: kode_satker, nama_unit, nama_jabatan_penerbit_sip_kendaraan, pejabat_penerbit_nip, keterangan. File dapat berupa Excel (.xlsx/.xlsm) atau CSV.'
     back_url_name = 'master:unitkerja_list'
 
     def process_rows(self, rows):
@@ -769,12 +767,6 @@ class UnitKerjaImportView(BiroUmumOnlyMixin, BaseImportView):
                 errors += 1
                 continue
 
-            jenis_unit = normalize_choice(
-                pick(row, 'jenis_unit', 'jenis', 'tipe_unit', default='LAINNYA'),
-                JENIS_UNIT_KERJA_CHOICES,
-                'LAINNYA'
-            )
-
             pejabat = None
             pejabat_nip = pick(row, 'pejabat_penerbit_nip', 'nip_pejabat_penerbit', 'nip_pejabat')
             pejabat_nama = pick(row, 'pejabat_penerbit_nama', 'nama_pejabat_penerbit', 'nama_pejabat')
@@ -784,7 +776,7 @@ class UnitKerjaImportView(BiroUmumOnlyMixin, BaseImportView):
                 pejabat = Pegawai.objects.filter(nama__iexact=str(pejabat_nama).strip()).first()
 
             defaults = {
-                'jenis_unit': jenis_unit,
+                'kode_satker': pick(row, 'kode_satker', 'kode_satker_siman', 'kode_satker_simak'),
                 'nama_jabatan_penerbit_sip_kendaraan': pick(
                     row,
                     'nama_jabatan_penerbit_sip_kendaraan',
@@ -835,13 +827,13 @@ class PegawaiImportView(BaseImportView):
 class KendaraanImportView(BaseImportView):
     title = 'Impor Aset Kendaraan'
     template_url_name = 'master:kendaraan_template_import'
-    description = 'Kolom yang didukung: kode_kendaraan, nomor_polisi, merek, tipe, jenis_kendaraan, tahun_pembuatan, tahun_perolehan, warna, nomor_rangka, nomor_mesin, nomor_bpkb, nomor_stnk, masa_berlaku_stnk, jatuh_tempo_pajak, nup, kode_barang, nilai_perolehan, unit_kerja, kondisi, status_pemanfaatan, kilometer_terakhir. Pengguna kendaraan dicatat melalui SIP Kendaraan, bukan master kendaraan.'
+    description = 'Kolom yang didukung: kode_register/kode_kendaraan, nomor_polisi, merek, tipe, jenis_kendaraan, tahun_pembuatan, tanggal_perolehan, warna, nomor_rangka, nomor_mesin, nomor_bpkb, nomor_stnk, masa_berlaku_stnk, jatuh_tempo_pajak, nup, kode_barang, nilai_perolehan, unit_kerja, kondisi, status_penggunaan/status_pemanfaatan, keterangan_status_pemanfaatan. Pengguna kendaraan dicatat melalui SIP Kendaraan, bukan master kendaraan.'
     back_url_name = 'master:kendaraan_list'
 
     def process_rows(self, rows):
         created = updated = errors = 0
         for row in rows:
-            kode = pick(row, 'kode_kendaraan', 'kode', 'nup')
+            kode = pick(row, 'kode_register', 'kode_kendaraan', 'kode', 'nup')
             nopol = pick(row, 'nomor_polisi', 'nopol', 'plat_nomor')
             merek = pick(row, 'merek', 'merk', default='-')
             if not kode or not nopol:
@@ -851,15 +843,16 @@ class KendaraanImportView(BaseImportView):
                 defaults={
                     'kode_kendaraan': str(kode), 'merek': merek, 'tipe': pick(row, 'tipe'),
                     'jenis_kendaraan': normalize_choice(pick(row, 'jenis_kendaraan'), JENIS_KENDARAAN_CHOICES, None),
-                    'tahun_pembuatan': to_int(pick(row, 'tahun_pembuatan')), 'tahun_perolehan': to_int(pick(row, 'tahun_perolehan')),
+                    'tahun_pembuatan': to_int(pick(row, 'tahun_pembuatan')), 'tahun_perolehan': to_int(pick(row, 'tahun_perolehan')), 'tanggal_perolehan': to_date(pick(row, 'tanggal_perolehan', 'tgl_perolehan')), 
                     'warna': pick(row, 'warna'), 'nomor_rangka': pick(row, 'nomor_rangka'), 'nomor_mesin': pick(row, 'nomor_mesin'),
                     'nomor_bpkb': pick(row, 'nomor_bpkb'), 'nomor_stnk': pick(row, 'nomor_stnk'),
                     'masa_berlaku_stnk': to_date(pick(row, 'masa_berlaku_stnk')), 'jatuh_tempo_pajak': to_date(pick(row, 'jatuh_tempo_pajak')),
-                    'nup': pick(row, 'nup'), 'kode_barang': pick(row, 'kode_barang'), 'nilai_perolehan': to_decimal(pick(row, 'nilai_perolehan', 'nilai'), 0),
+                    'nup': to_int(pick(row, 'nup')), 'kode_barang': pick(row, 'kode_barang'), 'nilai_perolehan': to_decimal(pick(row, 'nilai_perolehan', 'nilai'), 0),
                     'unit_kerja': _get_or_create_unit(pick(row, 'unit_kerja', 'satker'), self.request.user),
+                    'kode_satker': pick(row, 'kode_satker', 'kode_satker_siman'),
                     'kondisi': normalize_choice(pick(row, 'kondisi'), KONDISI_ASET, 'BAIK'),
-                    'status_pemanfaatan': normalize_choice(pick(row, 'status_pemanfaatan', 'status'), STATUS_PEMANFAATAN_KENDARAAN, 'TERSEDIA'),
-                    'kilometer_terakhir': to_int(pick(row, 'kilometer_terakhir', 'km'), 0) or 0,
+                    'status_penggunaan': normalize_choice(pick(row, 'status_penggunaan', 'status_pemanfaatan', 'status'), STATUS_PENGGUNAAN_KENDARAAN, 'DIGUNAKAN_SENDIRI_OPERASIONAL'),
+                    'keterangan_status_pemanfaatan': pick(row, 'keterangan_status_pemanfaatan', 'keterangan_status'),
                 })
             created += 1 if is_created else 0; updated += 0 if is_created else 1
         return created, updated, errors
@@ -874,7 +867,7 @@ class RumahNegaraImportView(BaseImportView):
     def process_rows(self, rows):
         created = updated = errors = 0
         for row in rows:
-            kode = pick(row, 'kode_rumah', 'kode', 'nup')
+            kode = pick(row, 'kode_register', 'kode_rumah', 'kode', 'nup')
             nama = pick(row, 'nama_rumah', 'nama', 'nama_aset', default=str(kode or ''))
             alamat = pick(row, 'alamat', default='-')
             if not kode:
@@ -886,14 +879,15 @@ class RumahNegaraImportView(BaseImportView):
                     'provinsi': pick(row, 'provinsi'), 'kabupaten_kota': pick(row, 'kabupaten_kota','kabupaten','kota'),
                     'kecamatan': pick(row, 'kecamatan'), 'kelurahan': pick(row, 'kelurahan'),
                     'latitude': to_decimal(pick(row, 'latitude', 'lat'), None), 'longitude': to_decimal(pick(row, 'longitude','long','lng'), None),
-                    'luas_tanah': to_decimal(pick(row, 'luas_tanah'), None), 'luas_bangunan': to_decimal(pick(row, 'luas_bangunan'), None),
+                    'luas_tanah': to_decimal(pick(row, 'luas_tanah'), None), 'njop_per_meter_tanah': to_decimal(pick(row, 'njop_per_meter_tanah', 'njop_m_tanah', 'njop'), 0), 'luas_bangunan': to_decimal(pick(row, 'luas_bangunan'), None),
+                    'jumlah_lantai': to_int(pick(row, 'jumlah_lantai', 'lantai'), 1) or 1,
                     'jumlah_kamar_tidur': to_int(pick(row, 'jumlah_kamar_tidur','kamar_tidur'), 0) or 0,
                     'jumlah_kamar_mandi': to_int(pick(row, 'jumlah_kamar_mandi','kamar_mandi'), 0) or 0,
                     'daya_listrik': pick(row, 'daya_listrik'), 'tahun_dibangun': to_int(pick(row, 'tahun_dibangun')),
-                    'tahun_perolehan': to_int(pick(row, 'tahun_perolehan')), 'nup': pick(row, 'nup'), 'kode_barang': pick(row, 'kode_barang'),
-                    'nilai_perolehan': to_decimal(pick(row, 'nilai_perolehan','nilai'), 0), 'unit_kerja': _get_or_create_unit(pick(row, 'unit_kerja', 'satker'), self.request.user),
+                    'tahun_perolehan': to_int(pick(row, 'tahun_perolehan')), 'nup': to_int(pick(row, 'nup')), 'kode_barang': pick(row, 'kode_barang'),
+                    'nilai_perolehan': to_decimal(pick(row, 'nilai_perolehan','nilai'), 0), 'unit_kerja': _get_or_create_unit(pick(row, 'unit_kerja', 'satker'), self.request.user), 'kode_satker': pick(row, 'kode_satker', 'kode_satker_siman'),
                     'nomor_sertifikat': pick(row, 'nomor_sertifikat'),
-                    'status_tanah': pick(row, 'status_tanah'), 'kondisi': normalize_choice(pick(row, 'kondisi'), KONDISI_ASET, 'BAIK'),
+                    'status_tanah': pick(row, 'status_tanah'), 'status_penggunaan': pick(row, 'status_penggunaan'), 'status_hukum': normalize_choice(pick(row, 'status_hukum'), [('TIDAK_ADA_SENGKETA','Tidak ada sengketa'),('SENGKETA','Sengketa')], 'TIDAK_ADA_SENGKETA'), 'kondisi': normalize_choice(pick(row, 'kondisi'), KONDISI_ASET, 'BAIK'),
                     'status_pemanfaatan': normalize_choice(pick(row, 'status_pemanfaatan', 'status'), STATUS_PEMANFAATAN_RUMAH, 'KOSONG'),
                 })
             created += 1 if is_created else 0; updated += 0 if is_created else 1

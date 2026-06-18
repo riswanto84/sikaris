@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block page_title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Detail SIP Barang Lainnya</h1></div>
+<div class="card">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+    <a class="btn btn-secondary" href="{% url 'barang_lainnya:sip_list' %}">Kembali</a>
+    <a class="btn btn-secondary" href="{% url 'barang_lainnya:sip_update' object.pk %}">Edit</a>
+    <a class="btn btn-primary" href="{% url 'barang_lainnya:sip_generate_konsep_pdf' object.pk %}" target="_blank">Generate Konsep PDF</a>
+    {% if object.status == 'DRAFT' or object.status == 'DITOLAK' %}
+      <form method="post" action="{% url 'barang_lainnya:sip_teruskan' object.pk %}">{% csrf_token %}<button class="btn btn-primary">Teruskan</button></form>
+    {% endif %}
+  </div>
+  <div class="form-grid form-grid-2">
+    <div class="form-field"><label>Nomor SIP</label><div class="static-field">{{ object.nomor_sip }}</div></div>
+    <div class="form-field"><label>Tanggal SIP</label><div class="static-field">{{ object.tanggal_sip|date:'d F Y' }}</div></div>
+    <div class="form-field"><label>Pemegang SIP</label><div class="static-field">{{ object.pemegang_sip }}</div></div>
+    <div class="form-field"><label>Pengguna Aktual</label><div class="static-field">{{ object.pengguna_aktual|default:'-' }}</div></div>
+    <div class="form-field"><label>Periode</label><div class="static-field">{{ object.masa_berlaku_display }}</div></div>
+    <div class="form-field"><label>Pejabat Penandatangan</label><div class="static-field">{{ object.nama_pejabat_penandatangan|default:'-' }}{% if object.jabatan_pejabat_penandatangan %}<br><small>{{ object.jabatan_pejabat_penandatangan }}</small>{% endif %}</div></div>
+    <div class="form-field full-width"><label>Tujuan Penggunaan</label><div class="static-field">{{ object.tujuan_penggunaan|default:'-'|linebreaksbr }}</div></div>
+    <div class="form-field full-width"><label>Dasar Penerbitan</label><div class="static-field">{{ object.dasar_penerbitan|default:'-'|linebreaksbr }}</div></div>
+  </div>
+</div>
+<div class="card" style="margin-top:16px">
+  <h2>Daftar Barang</h2>
+  <div class="table-responsive"><table class="table"><thead><tr><th>No</th><th>Nama Barang</th><th>Spesifikasi</th><th>Jumlah</th><th>Satuan</th><th>NUP</th><th>Serial Number</th><th>Keterangan</th></tr></thead><tbody>{% for item in object.items.all %}<tr><td>{{ forloop.counter }}</td><td>{{ item.nama_barang }}</td><td>{{ item.spesifikasi|default:'-' }}</td><td>{{ item.jumlah }}</td><td>{{ item.satuan }}</td><td>{{ item.nup|default:'-' }}</td><td>{{ item.serial_number|default:'-' }}</td><td>{{ item.keterangan|default:'-' }}</td></tr>{% empty %}<tr><td colspan="8">Belum ada item.</td></tr>{% endfor %}</tbody></table></div>
+</div>
+{% if object.status == 'DIAJUKAN' %}
+<div class="card" style="margin-top:16px">
+  <h2>Review Persetujuan SIP Barang Lainnya</h2>
+  <div class="form-grid form-grid-2">
+    <form method="post" action="{% url 'barang_lainnya:sip_setujui' object.pk %}">{% csrf_token %}<label>Keterangan Persetujuan</label><textarea name="catatan" rows="3" class="form-control"></textarea><div class="form-actions" style="margin-top:12px"><button type="submit" class="btn btn-primary">Setujui SIP</button></div></form>
+    <form method="post" action="{% url 'barang_lainnya:sip_tolak' object.pk %}">{% csrf_token %}<label>Alasan Penolakan</label><textarea name="catatan_penolakan" rows="3" class="form-control" required></textarea><div class="form-actions" style="margin-top:12px"><button type="submit" class="btn btn-danger">Tolak SIP</button></div></form>
+  </div>
+</div>
+{% endif %}
+{% if object.file_konsep_pdf %}
+<div class="card" style="margin-top:16px"><h2>Preview PDF SIP Barang Lainnya</h2><iframe src="{{ object.file_konsep_pdf.url }}" width="100%" height="720" style="border:1px solid #ddd;border-radius:10px"></iframe></div>
+{% endif %}
+{% endblock %}

@@ -4,7 +4,6 @@
 {% block content %}
 <div class="toolbar">
   {% include 'includes/list_search.html' %}
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-secondary" href="{% url 'penghapusan:export' 'pdf' %}?mode={{ mode }}&{{ request.GET.urlencode }}">Export PDF</a><a class="btn btn-secondary" href="{% url 'penghapusan:export' 'xlsx' %}?mode={{ mode }}&{{ request.GET.urlencode }}">Export Excel</a><a class="btn btn-secondary" href="{% url 'penghapusan:export' 'csv' %}?mode={{ mode }}&{{ request.GET.urlencode }}">Export CSV</a></div>
   <div style="display:flex;gap:10px;flex-wrap:wrap">
     {% if show_create_buttons %}<a class="btn btn-primary" href="{% url 'penghapusan:create' %}">+ Ajukan Penghapusan BMN</a>{% endif %}<a class="btn btn-secondary" href="{% url 'penghapusan:template_import_barang' %}">Download Template Import Barang</a>
   </div>
