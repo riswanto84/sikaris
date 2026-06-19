@@ -1,4 +1,4 @@
-# Perbaikan SIKARIS 12 Juni 2026
+# Perbaikan SIM Pengelolaan BMN 12 Juni 2026
 
 Perbaikan yang diterapkan:
 
@@ -7,7 +7,7 @@ Perbaikan yang diterapkan:
 3. Username kanan atas menjadi menu profile dengan akses Edit Profile, Ubah Kata Sandi, dan Logout.
 4. Status pemanfaatan kendaraan ditambah: Tidak Diketahui Keberadaannya dan Dikuasai Pihak Lain, serta field keterangan status pemanfaatan.
 5. Status rumah negara ditambah: Dalam Penguasaan Pihak Lain, serta field keterangan status pemanfaatan.
-6. Subtitle logo SIKARIS dikembalikan menjadi Sistem Informasi Kendaraan dan Rumah Dinas.
+6. Subtitle logo SIM Pengelolaan BMN dikembalikan menjadi Sistem Informasi Kendaraan dan Rumah Dinas.
 7. Detail SIP Rumah Negara menampilkan foto rumah, latitude, longitude, dan preview Google Maps dari master Rumah Negara.
 8. Form service kendaraan tidak lagi meminta input total biaya. Total biaya otomatis dihitung dari biaya jasa + biaya sparepart.
 9. Menu Riwayat Kondisi di Pemeliharaan Kendaraan dihilangkan dari sidebar.

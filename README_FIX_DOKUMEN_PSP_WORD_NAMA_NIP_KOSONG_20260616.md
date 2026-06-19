@@ -2,7 +2,7 @@
 
 Perubahan:
 
-1. Generate Dokumen PSP SIKARIS sekarang menghasilkan file Word `.docx`, bukan PDF, agar dapat diedit sebelum e-Meterai dan TTE BSrE.
+1. Generate Dokumen PSP SIM Pengelolaan BMN sekarang menghasilkan file Word `.docx`, bukan PDF, agar dapat diedit sebelum e-Meterai dan TTE BSrE.
    - Nota Dinas PSP
    - Surat Keterangan Kebenaran Dokumen Digital
    - Surat Pernyataan Formil dan Materiil/e-Meterai

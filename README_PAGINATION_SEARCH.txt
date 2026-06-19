@@ -1,4 +1,4 @@
-FITUR PAGINATION DAN PENCARIAN LIST DATA SIKARIS
+FITUR PAGINATION DAN PENCARIAN LIST DATA SIM Pengelolaan BMN
 ================================================
 
 Perubahan yang ditambahkan:

@@ -1,4 +1,4 @@
-PANDUAN DATA DUMMY SIKARIS
+PANDUAN DATA DUMMY SIM Pengelolaan BMN
 ==========================
 
 File ini menjelaskan cara mengisi database dengan data dummy untuk uji coba aplikasi.
@@ -19,7 +19,7 @@ core/management/commands/generate_dummy_data.py
 CARA INJECT KE DATABASE
 =======================
 
-1. Extract ZIP project SIKARIS.
+1. Extract ZIP project SIM Pengelolaan BMN.
 2. Masuk ke folder project yang berisi manage.py:
 
    cd sikaris

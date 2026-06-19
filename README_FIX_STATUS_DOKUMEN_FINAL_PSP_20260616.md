@@ -2,7 +2,7 @@
 
 Perubahan:
 
-1. Label **Belum TTE BSrE** tidak lagi ditampilkan pada ringkasan PSP karena SIKARIS tidak melakukan validasi keaslian TTE BSrE secara otomatis.
+1. Label **Belum TTE BSrE** tidak lagi ditampilkan pada ringkasan PSP karena SIM Pengelolaan BMN tidak melakukan validasi keaslian TTE BSrE secara otomatis.
 2. Ringkasan detail PSP sekarang memakai label **Status Dokumen Final**.
 3. Label yang tampil disesuaikan dengan kondisi:
    - Menunggu Penetapan Sekjen

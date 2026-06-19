@@ -1,4 +1,4 @@
-UPDATE FITUR SIKARIS - RUMAH NEGARA, IMPORT EXCEL/CSV, DAN TANAH NEGARA
+UPDATE FITUR SIM Pengelolaan BMN - RUMAH NEGARA, IMPORT EXCEL/CSV, DAN TANAH NEGARA
 
 Perubahan utama:
 1. Seluruh label menu/tampilan Rumah Dinas diganti menjadi Rumah Negara.

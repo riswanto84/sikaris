@@ -1,11 +1,11 @@
-UPDATE FITUR MANAJEMEN USER DAN ROLE - SIKARIS
+UPDATE FITUR MANAJEMEN USER DAN ROLE - SIM Pengelolaan BMN
 ================================================
 
 Perubahan yang ditambahkan:
 
 1. Menu Django Admin di sidebar dihapus untuk semua role.
    - URL /admin/ tetap tidak ditampilkan pada menu aplikasi.
-   - Pengelolaan user dan role sekarang dilakukan melalui menu internal SIKARIS.
+   - Pengelolaan user dan role sekarang dilakukan melalui menu internal SIM Pengelolaan BMN.
 
 2. Menu baru untuk Admin System:
    - Pengaturan > Manajemen User

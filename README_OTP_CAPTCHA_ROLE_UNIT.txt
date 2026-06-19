@@ -1,4 +1,4 @@
-SIKARIS - OTP EMAIL, CAPTCHA, DAN BATASAN AKSES UNIT KERJA
+SIM Pengelolaan BMN - OTP EMAIL, CAPTCHA, DAN BATASAN AKSES UNIT KERJA
 ============================================================
 
 1. FITUR LOGIN AMAN

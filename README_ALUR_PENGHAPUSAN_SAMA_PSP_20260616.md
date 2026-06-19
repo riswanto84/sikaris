@@ -27,7 +27,7 @@ Perubahan 2026-06-16:
    - Balai: Kepala Balai → Sekretaris Jenderal.
    - Unit pusat: Sekretaris Unit Eselon I → Sekretaris Jenderal.
 
-4. Sebelum diteruskan dari Biro Umum, Dokumen Penghapusan SIKARIS Final/Gabungan PDF wajib diupload.
+4. Sebelum diteruskan dari Biro Umum, Dokumen Penghapusan SIM Pengelolaan BMN Final/Gabungan PDF wajib diupload.
 
 5. Role Sekjen hanya menetapkan/menolak dan upload SK final, tidak edit umum.
 

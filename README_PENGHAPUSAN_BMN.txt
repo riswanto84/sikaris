@@ -1,4 +1,4 @@
-FITUR PERMOHONAN PENGHAPUSAN BMN - SIKARIS
+FITUR PERMOHONAN PENGHAPUSAN BMN - SIM Pengelolaan BMN
 ================================================
 
 Perubahan:

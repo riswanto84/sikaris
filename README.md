@@ -1,4 +1,4 @@
-# SIKARIS - Sistem Informasi Kendaraan dan Rumah Dinas
+# SIM Pengelolaan BMN - Sistem Informasi Kendaraan dan Rumah Dinas
 
 Versi ini sudah diperbaiki dengan:
 

@@ -1,12 +1,12 @@
-PERBAIKAN FORMAT NOMOR SIP OTOMATIS - SIKARIS
+PERBAIKAN FORMAT NOMOR SIP OTOMATIS - SIM Pengelolaan BMN
 
 1. Format nomor SIP Rumah Negara diubah menjadi:
-   nomor/1.5/PL.03/SIKARIS/bulan/tahun
-   Contoh: 1/1.5/PL.03/SIKARIS/01/2026
+   nomor/1.5/PL.03/SIM Pengelolaan BMN/bulan/tahun
+   Contoh: 1/1.5/PL.03/SIM Pengelolaan BMN/01/2026
 
 2. Format nomor SIP Kendaraan diubah menjadi:
-   nomor/1/PL.02/SIKARIS/bulan/tahun
-   Contoh: 2/1/PL.02/SIKARIS/01/2025
+   nomor/1/PL.02/SIM Pengelolaan BMN/bulan/tahun
+   Contoh: 2/1/PL.02/SIM Pengelolaan BMN/01/2025
 
 3. Nomor urut tetap otomatis meneruskan nomor terbesar sebelumnya pada tahun berjalan.
 

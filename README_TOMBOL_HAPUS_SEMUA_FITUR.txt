@@ -1,4 +1,4 @@
-PERUBAHAN: Tombol Hapus untuk Semua Fitur List SIKARIS
+PERUBAHAN: Tombol Hapus untuk Semua Fitur List SIM Pengelolaan BMN
 
 Perubahan yang ditambahkan:
 1. Tombol Hapus ditambahkan di sebelah tombol Edit pada halaman list:

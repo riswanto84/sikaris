@@ -1,4 +1,4 @@
-FITUR LAMA PROSES PERMOHONAN - SIKARIS
+FITUR LAMA PROSES PERMOHONAN - SIM Pengelolaan BMN
 ======================================
 
 Modul yang diperbarui:

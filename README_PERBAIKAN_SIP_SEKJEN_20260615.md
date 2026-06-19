@@ -1,4 +1,4 @@
-# Perbaikan SIKARIS - Generate Konsep PDF SIP dan Persetujuan Sekjen
+# Perbaikan SIM Pengelolaan BMN - Generate Konsep PDF SIP dan Persetujuan Sekjen
 
 Perubahan utama:
 

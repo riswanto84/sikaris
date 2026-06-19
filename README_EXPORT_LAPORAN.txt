@@ -1,4 +1,4 @@
-Perbaikan fitur Laporan & Export SIKARIS
+Perbaikan fitur Laporan & Export SIM Pengelolaan BMN
 =========================================
 
 Fitur yang ditambahkan:

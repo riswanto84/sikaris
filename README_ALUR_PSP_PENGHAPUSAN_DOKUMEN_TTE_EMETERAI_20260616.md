@@ -1,9 +1,9 @@
-# Alur Bisnis PSP BMN dan Penghapusan BMN - SIKARIS
+# Alur Bisnis PSP BMN dan Penghapusan BMN - SIM Pengelolaan BMN
 
 ## PSP BMN
 
 1. Unit kerja/satker membuat Permohonan PSP BMN dan dapat mengunggah Dokumen Permohonan PSP Gabungan serta import lampiran banyak barang.
-2. Biro Umum membuka menu Verifikasi Usulan PSP, memeriksa kelengkapan dan menghasilkan konsep dokumen dari SIKARIS:
+2. Biro Umum membuka menu Verifikasi Usulan PSP, memeriksa kelengkapan dan menghasilkan konsep dokumen dari SIM Pengelolaan BMN:
    - Nota Dinas Permohonan PSP ke Sekjen: wajib TTE BSrE Kepala Biro Umum.
    - Surat Keterangan Kebenaran Dokumen Digital: wajib TTE BSrE Kepala Biro Umum.
    - Surat Pernyataan Formil dan Materiil: wajib e-Meterai elektronik dan TTE BSrE Kepala Biro Umum.

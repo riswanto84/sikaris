@@ -1,6 +1,6 @@
 # Perbaikan Dokumen PSP dan Rule Nota Dinas Penghapusan BMN
 
-## A. PSP BMN - Dokumen hasil generate SIKARIS
+## A. PSP BMN - Dokumen hasil generate SIM Pengelolaan BMN
 
 Format hasil generate PDF PSP diperbaiki agar mengikuti contoh dokumen Biro Umum:
 

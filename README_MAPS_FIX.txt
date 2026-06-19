@@ -1,4 +1,4 @@
-SIKARIS - Perbaikan Google Maps Rumah Dinas
+SIM Pengelolaan BMN - Perbaikan Google Maps Rumah Dinas
 
 Perubahan:
 1. templates/master/rumah_form.html diperbarui agar menampilkan Google Maps di bawah foto rumah dinas.

@@ -3,12 +3,12 @@ PERBAIKAN PENOMORAN OTOMATIS DAN LAMPIRAN KONSEP SIP
 
 Perubahan:
 1. Penomoran SIP Rumah Negara otomatis memakai format:
-   nomor/1.5/PL.03/SIKARIS/bulan/tahun
-   Contoh: 1/1.5/PL.03/SIKARIS/01/2026
+   nomor/1.5/PL.03/SIM Pengelolaan BMN/bulan/tahun
+   Contoh: 1/1.5/PL.03/SIM Pengelolaan BMN/01/2026
 
 2. Penomoran SIP Kendaraan otomatis memakai format:
-   nomor/1/PL.02/SIKARIS/bulan/tahun
-   Contoh: 2/1/PL.02/SIKARIS/01/2025
+   nomor/1/PL.02/SIM Pengelolaan BMN/bulan/tahun
+   Contoh: 2/1/PL.02/SIM Pengelolaan BMN/01/2025
 
 3. Nomor urut otomatis meneruskan nomor sebelumnya:
    - sistem membaca nomor urut terbesar yang sudah ada pada tahun berjalan,

@@ -1,4 +1,4 @@
-PERBAIKAN NOTIFIKASI AKTIF DAN JUDUL LOGIN SIKARIS
+PERBAIKAN NOTIFIKASI AKTIF DAN JUDUL LOGIN SIM Pengelolaan BMN
 
 Perubahan:
 1. Tombol notifikasi di kanan atas sekarang dapat diklik.

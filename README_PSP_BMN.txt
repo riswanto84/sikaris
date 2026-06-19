@@ -1,4 +1,4 @@
-FITUR PERMOHONAN PSP BMN - SIKARIS
+FITUR PERMOHONAN PSP BMN - SIM Pengelolaan BMN
 ==================================
 
 Menu baru:
